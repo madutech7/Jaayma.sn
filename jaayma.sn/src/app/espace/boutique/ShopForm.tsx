@@ -1,0 +1,331 @@
+"use client";
+
+import { useActionState, useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { upsertShop } from "../../actions/shop";
+import { formatPhone } from "@/lib/phone";
+import { suggestSlug } from "@/lib/slug";
+import type { Shop } from "@/types/schema";
+import ImageUploader from "@/components/ImageUploader";
+import { useRouter } from "next/navigation";
+
+const initialState: { error?: string; success?: boolean } = {};
+
+const SHOP_CATEGORIES = [
+  "Mode",
+  "Beauté",
+  "Alimentation",
+  "Maison",
+  "High-Tech",
+  "Artisanat",
+  "Autre",
+];
+
+export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; publicOrigin: string }) {
+  const router = useRouter();
+  const [state, formAction, isPending] = useActionState(upsertShop, initialState);
+  const [name, setName] = useState(shop?.name || "");
+  const [slug, setSlug] = useState(shop?.slug || "");
+  const [selectedCategory, setSelectedCategory] = useState(shop?.category || "");
+  const [waveNumber, setWaveNumber] = useState(
+    shop?.waveNumber ? formatPhone(shop.waveNumber) : ""
+  );
+  const [orangeMoneyNumber, setOrangeMoneyNumber] = useState(
+    shop?.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : ""
+  );
+  const [slugTouched, setSlugTouched] = useState(Boolean(shop?.slug));
+  const publicHost = new URL(publicOrigin).host;
+
+  useEffect(() => {
+    if (shop) {
+      setName(shop.name);
+      setSlug(shop.slug);
+      setSelectedCategory(shop.category || "");
+      setWaveNumber(shop.waveNumber ? formatPhone(shop.waveNumber) : "");
+      setOrangeMoneyNumber(shop.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : "");
+    }
+  }, [shop]);
+
+  useEffect(() => {
+    if (state?.success) {
+      router.refresh();
+    }
+  }, [state, router]);
+
+  return (
+    <div className="p-5 max-w-xl mx-auto lg:max-w-2xl min-h-screen pb-24" style={{ backgroundColor: "#0F1E3D" }}>
+      <form action={formAction} className="space-y-6">
+      {/*  HEADER  */}
+      <div className="flex items-center gap-4 mb-10 mt-4">
+        <ImageUploader
+          currentKey={shop?.logoKey ?? null}
+          inputName="logoKey"
+          folder="logos"
+          variant="avatar"
+          tone="dark"
+          label=""
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-bricolage font-black text-white text-2xl leading-none mb-1">{shop ? (name || shop.name) : "Créer ta boutique"}</h1>
+          <p className="text-sm font-bold leading-snug" style={{ color: "#FFC83D", overflowWrap: "anywhere" }}>
+            {shop ? `${publicHost}/${slug || shop.slug}` : "Choisis son nom, son lien et ses informations."}
+          </p>
+        </div>
+      </div>
+
+        {/*  NOM ET SLUG DE LA BOUTIQUE  */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Nom de la boutique</label>
+            <input
+              name="name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => {
+                const next = e.target.value;
+                setName(next);
+                if (!slugTouched) setSlug(suggestSlug(next));
+              }}
+              placeholder="Awa Couture"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Lien de la boutique</label>
+            <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border-[2.5px] border-ink sm:flex-row sm:items-center" style={{ backgroundColor: "#FFFBF2" }}>
+              <span className="px-4 pt-3 text-xs font-medium sm:shrink-0 sm:py-3.5" style={{ color: "#3F4B69", overflowWrap: "anywhere" }}>{publicHost}/</span>
+              <input
+                name="slug"
+                type="text"
+                required
+                value={slug}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setSlug(e.target.value);
+                }}
+                className="w-full min-w-0 px-4 pb-3 pt-1 text-sm font-bold outline-none bg-transparent sm:flex-1 sm:px-2 sm:py-3.5"
+                style={{ color: "#0F1E3D" }}
+              />
+            </div>
+          </div>
+
+          {/*  CATÉGORIE (Pills)  */}
+          <div>
+            <label className="block text-xs font-bold mb-2" style={{ color: "#C3CCE6" }}>
+              Catégorie d'activité
+            </label>
+            <input type="hidden" name="category" value={selectedCategory} />
+            <div className="flex flex-wrap gap-2">
+              {SHOP_CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(isSelected ? "" : cat)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold border-[2px] transition-all active:scale-95"
+                    style={{
+                      backgroundColor: isSelected ? "#FFC83D" : "#16264D",
+                      color: isSelected ? "#0F1E3D" : "#C3CCE6",
+                      borderColor: isSelected ? "#0F1E3D" : "rgba(255,255,255,0.15)",
+                      boxShadow: isSelected ? "2px 2px 0 #0F1E3D" : "none",
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/*  ACCROCHE / SLOGAN  */}
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
+              Slogan / Accroche courte
+            </label>
+            <input
+              name="tagline"
+              type="text"
+              defaultValue={shop?.headline || shop?.tagline || ""}
+              placeholder="Ex: Créations sur mesure & prêt-à-porter sénégalais"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          {/*  QUARTIER / VILLE  */}
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
+              Quartier / Ville
+            </label>
+            <input
+              name="quartier"
+              type="text"
+              defaultValue={shop?.area || shop?.quartier || ""}
+              placeholder="Ex: Mermoz, Dakar"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          {/*  DESCRIPTION  */}
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
+              Description détaillée
+            </label>
+            <textarea
+              name="description"
+              rows={3}
+              defaultValue={shop?.description || ""}
+              placeholder="Présente ton univers, ton savoir-faire et tes produits..."
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun resize-none placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+        </div>
+
+        <ImageUploader
+          currentKey={shop?.coverKey ?? null}
+          inputName="coverKey"
+          folder="covers"
+          label="Photo de couverture"
+          aspectRatio="wide"
+          tone="dark"
+        />
+
+        {/*  COULEURS (Juste visuel pour le design, ou a lier au schema plus tard)  */}
+        <div>
+          <label className="block text-xs font-bold mb-3" style={{ color: "#C3CCE6" }}>Couleur de ta boutique</label>
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full border-[3px] border-white cursor-pointer" style={{ backgroundColor: "#C8265A" }} />
+            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#0E7C66" }} />
+            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#FFC83D" }} />
+            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#3B4A7A" }} />
+            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#B4531E" }} />
+          </div>
+        </div>
+
+        {/*  CONTACTS  */}
+        <div className="space-y-4 pt-4">
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>WhatsApp</label>
+            <input
+              name="whatsapp"
+              type="tel"
+              defaultValue={shop?.whatsapp ? formatPhone(shop.whatsapp) : ""}
+              placeholder="77 123 45 67"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Frais de livraison standard (FCFA)</label>
+            <input
+              name="deliveryFee"
+              type="number"
+              defaultValue={shop?.deliveryFee ?? 0}
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Note & Délais de livraison</label>
+            <input
+              name="deliveryNote"
+              type="text"
+              defaultValue={shop?.deliveryNote || ""}
+              placeholder="Ex: Livré sous 24h à Dakar, expédition partout au Sénégal"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          {/* Faux champs pour coller au design */}
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Numéro Wave</label>
+            <input
+              name="waveNumber"
+              type="tel"
+              value={waveNumber}
+              onChange={(e) => setWaveNumber(e.target.value)}
+              placeholder="77 000 00 00"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Numéro Orange Money</label>
+            <input
+              name="orangeMoneyNumber"
+              type="tel"
+              value={orangeMoneyNumber}
+              onChange={(e) => setOrangeMoneyNumber(e.target.value)}
+              placeholder="78 000 00 00"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+        </div>
+
+        {/*  TOGGLES  */}
+        <div className="pt-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <span className="text-[15px] font-bold text-white">Espèces à la livraison</span>
+            <label className="relative inline-block w-11 h-6">
+              <input
+                type="checkbox"
+                name="acceptsCash"
+                defaultChecked={shop?.acceptsCash ?? true}
+                className="peer sr-only"
+              />
+              <div className="w-11 h-6 rounded-full peer-checked:bg-[#0E7C66] bg-[#3A4A75] transition-colors"></div>
+              <div className="absolute left-[4px] top-[4px] w-4 h-4 rounded-full bg-white transition-all peer-checked:left-[22px]"></div>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-[15px] font-bold text-white">Boutique visible</span>
+            <label className="relative inline-block w-11 h-6">
+              <input
+                type="checkbox"
+                name="isPublished"
+                defaultChecked={shop?.isPublished ?? false}
+                className="peer sr-only"
+              />
+              <div className="w-11 h-6 rounded-full peer-checked:bg-[#0E7C66] bg-[#3A4A75] transition-colors"></div>
+              <div className="absolute left-[4px] top-[4px] w-4 h-4 rounded-full bg-white transition-all peer-checked:left-[22px]"></div>
+            </label>
+          </div>
+        </div>
+
+        {/* MESSAGES */}
+        {state?.error && (
+          <div className="p-4 rounded-xl border-[2px] text-sm font-bold mt-4" style={{ backgroundColor: "rgba(200,38,90,0.1)", borderColor: "#C8265A", color: "#C8265A" }}>
+            {state.error}
+          </div>
+        )}
+        {state?.success && (
+          <div className="p-4 rounded-xl border-[2px] text-sm font-bold mt-4" style={{ backgroundColor: "rgba(14,124,102,0.1)", borderColor: "#0E7C66", color: "#0E7C66" }}>
+             {shop ? "Modifications enregistrées !" : "Ta boutique a été créée !"}
+          </div>
+        )}
+
+        {/*  BOUTON SAUVEGARDER  */}
+        <div className="pt-8">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60"
+            style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
+          >
+            {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : shop ? "Enregistrer les modifications" : "Créer ma boutique"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

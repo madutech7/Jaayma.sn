@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ShopStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PAID
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  name         String   @default("")
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  shops        Shop[]
+}
+
+model Shop {
+  id                String       @id @default(cuid())
+  ownerId           String?
+  slug              String       @unique
+  name              String
+  headline          String       @default("")
+  area              String       @default("")
+  description       String       @default("")
+  category          String?
+  whatsapp          String?
+  waveNumber        String?
+  orangeMoneyNumber String?
+  acceptsCash       Boolean      @default(true)
+  deliveryFee       Int          @default(0)
+  deliveryNote      String?
+  logoUrl           String?
+  coverUrl          String?
+  rating            Float        @default(0)
+  featured          Boolean      @default(false)
+  plan              String       @default("free")
+  planExpiresAt     DateTime?
+  status            ShopStatus   @default(ACTIVE)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  owner             User?        @relation(fields: [ownerId], references: [id])
+  products          Product[]
+  orders            Order[]
+
+  @@index([status, featured])
+  @@index([area])
+  @@index([category])
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  shopId      String
+  name        String
+  description String        @default("")
+  price       Int
+  stock       Int           @default(0)
+  position    Int           @default(0)
+  status      ProductStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  shop        Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  images      ProductImage[]
+  orderItems  OrderItem[]
+
+  @@index([shopId, status])
+  @@index([shopId, position])
+  @@index([createdAt])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String   @default("")
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  reference       String      @unique
+  shopId          String
+  customerName    String
+  customerPhone   String
+  deliveryAddress String
+  note            String?
+  paymentMethod   String      @default("cash")
+  paymentStatus   String      @default("pending")
+  subtotal        Int
+  deliveryFee     Int         @default(0)
+  total           Int
+  status          OrderStatus @default(NEW)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  shop            Shop        @relation(fields: [shopId], references: [id])
+  items           OrderItem[]
+
+  @@index([shopId, status, createdAt])
+  @@index([shopId, createdAt])
+  @@index([customerPhone])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
