@@ -1,31 +1,22 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "jaayma",
+	"pages_build_output_dir": ".open-next/assets",
 	"compatibility_date": "2025-04-05",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	"cache": {
-		"enabled": true
-	},
-	"main": ".open-next/worker.js",
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "jaayma-db",
-			"database_id": "d0a539b9-6352-4f16-8706-b221477c1ce3",
-			"remote": true
+			"database_id": "d0a539b9-6352-4f16-8706-b221477c1ce3"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",
-			"bucket_name": "jaayma-images",
-			"remote": true
+			"bucket_name": "jaayma-images"
 		}
 	]
 }

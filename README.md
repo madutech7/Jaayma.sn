@@ -1,142 +1,145 @@
 ﻿<div align="center">
-  <img src="jaayma.sn/public/logo.svg" alt="Jaayma.sn Logo" width="180" />
+  <img src="jaayma.sn/public/logo.svg" alt="Jaayma.sn" width="160" />
 
   <h1>Jaayma.sn</h1>
-  <p><strong>La plateforme e-commerce des vendeurs sénégalais</strong></p>
+  <p><strong>La plateforme e-commerce des vendeurs senegalais</strong></p>
 
   <p>
-    <a href="https://github.com/madutech7/Jaayma.sn/actions"><img src="https://img.shields.io/github/actions/workflow/status/madutech7/Jaayma.sn/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
-    <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" alt="Next.js 15" />
-    <img src="https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs" alt="NestJS" />
-    <img src="https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare" alt="Cloudflare" />
-    <img src="https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma" alt="Prisma" />
-    <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+    <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" />
+    <img src="https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs" />
+    <img src="https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat-square&logo=cloudflare" />
+    <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" />
+    <img src="https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma" />
   </p>
 
   <p>
-    <a href="#aperçu">Aperçu</a> •
-    <a href="#stack">Stack</a> •
-    <a href="#démarrage-rapide">Démarrage rapide</a> •
-    <a href="#structure-du-projet">Structure</a> •
-    <a href="#variables-denvironnement">Environnement</a> •
-    <a href="#déploiement">Déploiement</a>
+    <a href="#presentation">Presentation</a> &bull;
+    <a href="#stack">Stack</a> &bull;
+    <a href="#demarrage-local">Demarrage local</a> &bull;
+    <a href="#structure">Structure</a> &bull;
+    <a href="#variables-denvironnement">Variables d'environnement</a> &bull;
+    <a href="#deploiement">Deploiement</a>
   </p>
 </div>
 
 ---
 
-## Aperçu
+## Presentation
 
-**Jaayma.sn** (du wolof *jaay* — vendre) est une plateforme SaaS qui permet à chaque vendeur sénégalais de créer sa boutique en ligne en quelques minutes, gérer ses produits et recevoir des commandes via WhatsApp — sans avoir besoin de connaissances techniques.
+**Jaayma.sn** (du wolof *jaay* — vendre) est une plateforme SaaS qui permet a chaque vendeur senegalais de creer sa boutique en ligne en quelques minutes, gerer ses produits et recevoir des commandes via WhatsApp, sans connaissances techniques.
 
-### Fonctionnalités clés
+### Fonctionnalites principales
 
 | Vendeurs | Acheteurs |
 |---|---|
-| 🏪 Création de boutique personnalisée | 🛒 Catalogue produits par boutique |
-| 📦 Gestion des produits (stock, prix, images) | 📱 Commande sans inscription |
-| 📋 Suivi des commandes en temps réel | 💬 Confirmation par WhatsApp |
-| 📊 Tableau de bord & statistiques | 🗺️ Exploration des boutiques |
-| 💳 Plans d'abonnement (Gratuit / Pro) | 🔍 Recherche par catégorie & ville |
+| Creation de boutique personnalisee | Catalogue produits par boutique |
+| Gestion des produits (stock, prix, images) | Commande sans inscription |
+| Suivi des commandes en temps reel | Confirmation par WhatsApp |
+| Tableau de bord et statistiques | Exploration des boutiques |
+| Plans d'abonnement (Gratuit / Pro) | Recherche par categorie et ville |
 
 ---
 
 ## Stack
 
 ### Frontend — `jaayma.sn/`
-| Technologie | Version | Rôle |
+
+| Technologie | Version | Role |
 |---|---|---|
 | [Next.js](https://nextjs.org) | 15 | Framework React (App Router) |
 | [React](https://react.dev) | 19 | UI Library |
-| [Tailwind CSS](https://tailwindcss.com) | 3 | Styling utilitaire |
-| [Lucide React](https://lucide.dev) | latest | Icônes vectorielles |
+| [Tailwind CSS](https://tailwindcss.com) | 3 | Styling |
+| [Lucide React](https://lucide.dev) | latest | Icones vectorielles |
 | [Zustand](https://zustand-demo.pmnd.rs) | 5 | State management (panier) |
+| [OpenNext Cloudflare](https://opennext.js.org/cloudflare) | latest | Adapter Cloudflare Pages |
 | [Vitest](https://vitest.dev) | latest | Tests unitaires |
-| [OpenNext Cloudflare](https://opennext.js.org/cloudflare) | latest | Adapter Cloudflare Workers |
 
 ### Backend — `backend/`
-| Technologie | Version | Rôle |
+
+| Technologie | Version | Role |
 |---|---|---|
 | [NestJS](https://nestjs.com) | 11 | Framework API REST |
-| [Prisma](https://prisma.io) | 6 | ORM & migrations |
-| [Neon](https://neon.tech) | — | Base de données PostgreSQL serverless |
-| [Cloudflare R2](https://cloudflare.com/products/r2/) | — | Stockage d'images |
-| [Zod](https://zod.dev) | 4 | Validation des données |
+| [Prisma](https://prisma.io) | 6 | ORM et migrations |
+| [Neon](https://neon.tech) | — | PostgreSQL serverless |
+| [Cloudflare R2](https://developers.cloudflare.com/r2/) | — | Stockage images |
+| [Zod](https://zod.dev) | 4 | Validation des donnees |
 
 ---
 
-## Démarrage rapide
+## Demarrage local
 
-### Prérequis
+### Prerequis
 
-- [Node.js](https://nodejs.org) ≥ 20
-- [npm](https://npmjs.com) ≥ 10
+- Node.js >= 20
+- npm >= 10
 
-### 1. Cloner le dépôt
+### 1. Cloner le depot
 
 ```bash
 git clone https://github.com/madutech7/Jaayma.sn.git
 cd Jaayma.sn
 ```
 
-### 2. Configurer le backend
+### 2. Backend
 
 ```bash
 cd backend
 cp .env.example .env
 # Renseigner les variables dans .env
 npm install
-npm run db:deploy   # Appliquer les migrations Prisma
-npm run db:seed     # (Optionnel) Données de test
-npm run start:dev   # Démarrer en mode watch
+npm run db:deploy
+npm run start:dev
 ```
 
-> L'API sera disponible sur `http://localhost:3001`
+L'API sera disponible sur `http://localhost:4000`
 
-### 3. Configurer le frontend
+### 3. Frontend
 
 ```bash
 cd jaayma.sn
 cp .env.example .env.local
 # Renseigner les variables dans .env.local
 npm install
-npm run dev         # Démarrer avec Turbopack
+npm run dev
 ```
 
-> L'application sera disponible sur `http://localhost:3000`
+L'application sera disponible sur `http://localhost:3000`
 
 ---
 
-## Structure du projet
+## Structure
 
 ```
 Jaayma.sn/
-├── backend/                    # API NestJS
+├── backend/                     # API NestJS
+│   ├── render.yaml              # Configuration deploiement Render
 │   ├── prisma/
-│   │   ├── schema.prisma       # Schéma de la base de données
-│   │   ├── migrations/         # Historique des migrations
-│   │   └── seed.ts             # Données initiales
+│   │   ├── schema.prisma        # Schema base de donnees
+│   │   ├── migrations/          # Migrations Prisma
+│   │   └── seed.ts              # Donnees initiales
 │   └── src/
-│       ├── auth/               # Authentification (OTP SMS)
-│       ├── shops/              # CRUD boutiques
-│       ├── products/           # CRUD produits
-│       ├── orders/             # Gestion des commandes
-│       ├── uploads/            # Upload vers Cloudflare R2
-│       └── main.ts             # Point d'entrée
+│       ├── auth/                # Authentification (OTP)
+│       ├── shops/               # CRUD boutiques
+│       ├── products/            # CRUD produits
+│       ├── orders/              # Commandes
+│       ├── uploads/             # Upload vers R2
+│       └── main.ts              # Point d'entree
 │
-└── jaayma.sn/                  # Application Next.js
+└── jaayma.sn/                   # Application Next.js
+    ├── wrangler.jsonc            # Configuration Cloudflare Pages
+    ├── open-next.config.ts       # Adapter OpenNext
     └── src/
         ├── app/
-        │   ├── [shopSlug]/     # Page publique boutique
-        │   ├── explorer/       # Explorateur de boutiques
-        │   ├── espace/         # Tableau de bord vendeur
-        │   │   ├── boutique/   # Gestion profil boutique
-        │   │   ├── produits/   # Gestion produits
-        │   │   └── commandes/  # Suivi des commandes
-        │   ├── admin/          # Back-office administrateur
-        │   └── actions/        # Server Actions Next.js
-        ├── components/         # Composants réutilisables
-        └── lib/                # Utilitaires & helpers
+        │   ├── [shopSlug]/      # Page publique boutique
+        │   ├── explorer/        # Explorateur de boutiques
+        │   ├── espace/          # Dashboard vendeur
+        │   │   ├── boutique/    # Profil boutique
+        │   │   ├── produits/    # Gestion produits
+        │   │   └── commandes/   # Suivi commandes
+        │   ├── admin/           # Back-office
+        │   └── actions/         # Server Actions Next.js
+        ├── components/          # Composants reutilisables
+        └── lib/                 # Utilitaires
 ```
 
 ---
@@ -146,32 +149,27 @@ Jaayma.sn/
 ### Backend — `backend/.env`
 
 ```env
-# Base de données (Neon PostgreSQL)
 DATABASE_URL=postgresql://user:password@host/db?sslmode=require
 
-# Cloudflare R2 (Stockage images)
+PORT=4000
+NODE_ENV=development
+
+JWT_SECRET=
+
+CORS_ORIGIN=http://localhost:3000
+
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=
-
-# JWT & Auth
-JWT_SECRET=
-
-# App
-PORT=3001
+R2_PUBLIC_URL=
 ```
 
 ### Frontend — `jaayma.sn/.env.local`
 
 ```env
-# URL de l'API backend
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:4000
 
-# Cloudflare R2 (URL publique des images)
-NEXT_PUBLIC_R2_URL=
-
-# Auth
 AUTH_SECRET=
 ```
 
@@ -182,61 +180,69 @@ AUTH_SECRET=
 ### Backend
 
 ```bash
-npm run start:dev    # Démarrage en watch mode
-npm run start:prod   # Production (après build)
+npm run start:dev    # Developpement (watch mode)
+npm run start:prod   # Production
 npm run build        # Compilation TypeScript
 npm run db:deploy    # Appliquer les migrations
-npm run db:seed      # Seeder la base de données
+npm run db:seed      # Seeder la base de donnees
 ```
 
 ### Frontend
 
 ```bash
-npm run dev          # Développement (Turbopack)
-npm run build        # Build production Next.js
-npm run deploy       # Build + Deploy Cloudflare Workers
-npm run test         # Lancer les tests Vitest
-npm run lint         # Vérification ESLint
+npm run dev              # Developpement (Turbopack)
+npm run build:cloudflare # Build pour Cloudflare Pages
+npm run test             # Tests Vitest
+npm run lint             # Verification ESLint
 ```
 
 ---
 
-## Déploiement
+## Deploiement
 
-### Frontend — Cloudflare Workers
+Le deploiement est entierement gere via **GitHub** (push = deploy automatique).
 
-```bash
-cd jaayma.sn
-npm run deploy
-```
+### Frontend — Cloudflare Pages
 
-Le frontend utilise [OpenNext.js](https://opennext.js.org/cloudflare) pour adapter Next.js 15 aux Cloudflare Workers (edge computing mondial).
+Connexion GitHub → Cloudflare Pages avec les parametres suivants :
 
-### Backend — Serveur Node.js
+| Parametre | Valeur |
+|---|---|
+| Root directory | `jaayma.sn` |
+| Build command | `npm run build:cloudflare` |
+| Output directory | `.open-next/assets` |
+| Node.js version | 20 |
 
-```bash
-cd backend
-npm run build
-npm run start:prod
-```
+### Backend — Render
 
-Compatible avec tout hébergeur Node.js (Railway, Render, VPS…).
+Connexion GitHub → Render en utilisant le fichier `backend/render.yaml`.
+
+Render detecte automatiquement la configuration :
+
+| Parametre | Valeur |
+|---|---|
+| Root directory | `backend` |
+| Build command | `npm install && npm run build && npx prisma generate` |
+| Start command | `npm run start:prod` |
+| Health check | `/health` |
+
+Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN).
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│               Cloudflare Workers                 │
-│              Next.js 15 App Router               │
-│         (jaayma.sn — edge worldwide)             │
-└───────────────────┬─────────────────────────────┘
-                    │ Server Actions / API calls
-┌───────────────────▼─────────────────────────────┐
-│              NestJS REST API                     │
-│           (backend — Node.js server)             │
-└──────────┬──────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│           Cloudflare Pages                  │
+│          Next.js 15 (OpenNext)              │
+│         (jaayma.sn — edge mondial)          │
+└─────────────────┬───────────────────────────┘
+                  │ API REST
+┌─────────────────▼───────────────────────────┐
+│              Render                         │
+│           NestJS API REST                   │
+└──────────┬────────────────────────────────--┘
            │                    │
 ┌──────────▼──────┐   ┌─────────▼──────────┐
 │  Neon PostgreSQL │   │  Cloudflare R2     │
@@ -248,23 +254,21 @@ Compatible avec tout hébergeur Node.js (Railway, Render, VPS…).
 
 ## Contribution
 
-Les contributions sont les bienvenues ! Pour proposer une amélioration :
-
-1. Fork le dépôt
-2. Crée une branche (`git checkout -b feat/ma-fonctionnalite`)
-3. Commit tes changements (`git commit -m "feat: ma fonctionnalité"`)
-4. Push la branche (`git push origin feat/ma-fonctionnalite`)
+1. Fork le depot
+2. Cree une branche : `git checkout -b feat/ma-fonctionnalite`
+3. Commit : `git commit -m "feat: ma fonctionnalite"`
+4. Push : `git push origin feat/ma-fonctionnalite`
 5. Ouvre une Pull Request
 
 ---
 
 ## Licence
 
-Distribué sous licence MIT. Voir [LICENSE](LICENSE) pour plus d'informations.
+Distribue sous licence MIT.
 
 ---
 
 <div align="center">
-  <p>Fait avec ❤️ au Sénégal 🇸🇳</p>
+  <p>Fait au Senegal</p>
   <p><strong>Jaayma.sn</strong> — <em>Vendez en ligne, simplement.</em></p>
 </div>
