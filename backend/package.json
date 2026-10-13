@@ -7,7 +7,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "start": "tsx --env-file=.env src/main.ts",
     "start:dev": "tsx watch --env-file=.env src/main.ts",
-    "start:prod": "node --env-file=.env dist/main.js",
+    "start:prod": "node dist/main.js",
     "prisma": "prisma",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed"
