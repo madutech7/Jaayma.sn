@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
+  DeleteObjectsCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -34,64 +36,79 @@ const imageUploadSchema = z.object({
 
 @Injectable()
 export class UploadsService {
+  private readonly logger = new Logger(UploadsService.name);
+
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private getS3Config() {
-    const bucket =
-      process.env.S3_BUCKET ||
-      process.env.STORAGE_BUCKET ||
-      process.env.R2_BUCKET ||
-      'jaayma';
-
-    const accessKeyId =
-      process.env.AWS_ACCESS_KEY_ID ||
-      process.env.S3_ACCESS_KEY_ID ||
-      process.env.STORAGE_ACCESS_KEY_ID ||
-      process.env.R2_ACCESS_KEY_ID;
-
-    const secretAccessKey =
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      process.env.S3_SECRET_ACCESS_KEY ||
-      process.env.STORAGE_SECRET_ACCESS_KEY ||
-      process.env.R2_SECRET_ACCESS_KEY;
-
-    const endpoint =
-      process.env.AWS_ENDPOINT_URL_S3 ||
-      process.env.AWS_ENDPOINT_URL ||
-      process.env.S3_ENDPOINT ||
-      process.env.STORAGE_ENDPOINT ||
-      (process.env.R2_ACCOUNT_ID
-        ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-        : undefined);
-
-    const region =
-      process.env.AWS_REGION ||
-      process.env.S3_REGION ||
-      process.env.STORAGE_REGION ||
-      'eu-central-1';
-
-    const publicBaseUrl =
-      process.env.S3_PUBLIC_URL ||
-      process.env.STORAGE_PUBLIC_URL ||
-      process.env.PUBLIC_R2_BASE_URL;
+    const bucket = process.env.S3_BUCKET ?? 'jaayma';
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+    const endpoint = process.env.AWS_ENDPOINT_URL_S3;
+    const region = process.env.AWS_REGION ?? 'eu-central-1';
+    const publicBaseUrl = process.env.S3_PUBLIC_URL;
 
     if (!accessKeyId || !secretAccessKey) {
       throw new BadRequestException(
-        'Configuration Storage manquante (AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis)',
+        'Configuration Neon Storage manquante (AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis)',
       );
     }
 
     const s3Client = new S3Client({
       region,
       endpoint: endpoint || undefined,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
+      credentials: { accessKeyId, secretAccessKey },
       forcePathStyle: true,
     });
 
     return { s3Client, bucket, publicBaseUrl };
+  }
+
+  /**
+   * Extrait la clé S3 depuis une URL publique.
+   * Ex: "http://localhost:4000/uploads/file/products/abc/uuid.webp" → "products/abc/uuid.webp"
+   */
+  private urlToKey(url: string): string | null {
+    try {
+      const { publicBaseUrl } = this.getS3Config();
+      if (publicBaseUrl) {
+        const base = publicBaseUrl.replace(/\/$/, '');
+        if (url.startsWith(base + '/')) {
+          return url.slice(base.length + 1);
+        }
+      }
+      // Fallback: chemin après /uploads/file/
+      const match = url.match(/\/uploads\/file\/(.+)$/);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Supprime plusieurs fichiers de Neon Storage à partir de leurs URLs publiques.
+   * Ne lève pas d'erreur si un fichier n'existe pas (idempotent).
+   */
+  async deleteByUrls(urls: string[]): Promise<void> {
+    const keys = urls.map((u) => this.urlToKey(u)).filter((k): k is string => k !== null);
+    if (keys.length === 0) return;
+
+    try {
+      const { s3Client, bucket } = this.getS3Config();
+      await s3Client.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: {
+            Objects: keys.map((Key) => ({ Key })),
+            Quiet: true,
+          },
+        }),
+      );
+      this.logger.log(`Supprimé ${keys.length} fichier(s) Neon Storage`);
+    } catch (err) {
+      // On log l'erreur mais on ne bloque pas la suppression en DB
+      this.logger.error('Erreur suppression Neon Storage', err);
+    }
   }
 
   async createImageUpload(input: unknown) {

@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
   <img src="jaayma.sn/public/logo.svg" alt="Jaayma.sn" width="160" />
 
   <h1>Jaayma.sn</h1>
@@ -7,7 +7,7 @@
   <p>
     <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" />
     <img src="https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs" />
-    <img src="https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat-square&logo=cloudflare" />
+    <img src="https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare" />
     <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" />
     <img src="https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma" />
   </p>
@@ -202,16 +202,17 @@ npm run lint             # Verification ESLint
 
 Le deploiement est entierement gere via **GitHub** (push = deploy automatique).
 
-### Frontend — Cloudflare Pages
+### Frontend — Cloudflare Workers (OpenNext)
 
-Connexion GitHub → Cloudflare Pages avec les parametres suivants :
+Connexion GitHub → Cloudflare Workers via Workers Builds :
 
 | Parametre | Valeur |
 |---|---|
 | Root directory | `jaayma.sn` |
-| Build command | `npm run build:cloudflare` |
-| Output directory | `.open-next/assets` |
-| Node.js version | 20 |
+| Build command | `npm install --legacy-peer-deps && npm run build:cloudflare` |
+| Deploy command | `npx wrangler deploy` |
+| Node.js version | 22 |
+| URL de production | https://jaayma-sn.madutech0.workers.dev |
 
 ### Backend — Render
 
@@ -225,6 +226,7 @@ Render detecte automatiquement la configuration :
 | Build command | `npm install && npm run build && npx prisma generate` |
 | Start command | `npm run start:prod` |
 | Health check | `/health` |
+| URL de production | https://jaayma-sn.onrender.com |
 
 Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN).
 
@@ -234,15 +236,16 @@ Les variables d'environnement sont a renseigner manuellement dans le dashboard R
 
 ```
 ┌─────────────────────────────────────────────┐
-│           Cloudflare Pages                  │
+│          Cloudflare Workers                 │
 │          Next.js 15 (OpenNext)              │
-│         (jaayma.sn — edge mondial)          │
+│  (jaayma-sn.madutech0.workers.dev)          │
 └─────────────────┬───────────────────────────┘
                   │ API REST
 ┌─────────────────▼───────────────────────────┐
 │              Render                         │
 │           NestJS API REST                   │
-└──────────┬────────────────────────────────--┘
+│      (jaayma-sn.onrender.com)               │
+└──────────┬──────────────────────────────────┘
            │                    │
 ┌──────────▼──────┐   ┌─────────▼──────────┐
 │  Neon PostgreSQL │   │  Cloudflare R2     │

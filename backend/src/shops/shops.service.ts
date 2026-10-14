@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 const shopSchema = z.object({
   ownerId: z.string().optional().nullable(),
@@ -28,7 +29,10 @@ const updateShopSchema = shopSchema.partial().omit({ slug: true });
 
 @Injectable()
 export class ShopsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(UploadsService) private readonly uploads: UploadsService,
+  ) {}
 
   async findAll(query?: { q?: string; category?: string }) {
     const whereClause: Record<string, unknown> = {
@@ -100,7 +104,7 @@ export class ShopsService {
       throw new NotFoundException('Boutique introuvable');
     }
 
-    return this.prisma.shop.update({
+    const updated = await this.prisma.shop.update({
       where: { id },
       data: parsed.data,
       include: {
@@ -110,6 +114,20 @@ export class ShopsService {
         },
       },
     });
+
+    // Supprimer les anciennes images du storage si elles ont été remplacées
+    const urlsToDelete: string[] = [];
+    if (parsed.data.logoUrl !== undefined && parsed.data.logoUrl !== shop.logoUrl && shop.logoUrl) {
+      urlsToDelete.push(shop.logoUrl);
+    }
+    if (parsed.data.coverUrl !== undefined && parsed.data.coverUrl !== shop.coverUrl && shop.coverUrl) {
+      urlsToDelete.push(shop.coverUrl);
+    }
+    if (urlsToDelete.length > 0) {
+      setImmediate(() => this.uploads.deleteByUrls(urlsToDelete));
+    }
+
+    return updated;
   }
 
   async findBySlug(slug: string) {

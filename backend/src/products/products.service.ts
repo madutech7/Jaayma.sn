@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 const productImageSchema = z.object({
   url: z.string().min(1),
@@ -22,7 +23,10 @@ const updateProductSchema = productSchema.partial();
 
 @Injectable()
 export class ProductsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(UploadsService) private readonly uploads: UploadsService,
+  ) {}
 
   async findByShop(shopId: string) {
     return this.prisma.product.findMany({
@@ -167,6 +171,12 @@ export class ProductsService {
 
     return this.prisma.$transaction(async (tx) => {
       if (images !== undefined) {
+        // Récupérer les anciennes images pour les supprimer du storage
+        const oldImages = await tx.productImage.findMany({
+          where: { productId: id },
+          select: { url: true },
+        });
+
         await tx.productImage.deleteMany({ where: { productId: id } });
         if (images.length > 0) {
           await tx.productImage.createMany({
@@ -178,6 +188,10 @@ export class ProductsService {
             })),
           });
         }
+
+        // Supprimer les fichiers remplacés du storage (en dehors de la transaction)
+        const oldUrls = oldImages.map((i) => i.url);
+        setImmediate(() => this.uploads.deleteByUrls(oldUrls));
       }
 
       return tx.product.update({
@@ -189,12 +203,20 @@ export class ProductsService {
   }
 
   async delete(id: string) {
-    const existing = await this.prisma.product.findUnique({ where: { id } });
+    const existing = await this.prisma.product.findUnique({
+      where: { id },
+      include: { images: { select: { url: true } } },
+    });
     if (!existing) {
       throw new NotFoundException('Produit introuvable');
     }
 
     await this.prisma.product.delete({ where: { id } });
+
+    // Supprimer les fichiers images du Neon Storage
+    const imageUrls = existing.images.map((i) => i.url);
+    await this.uploads.deleteByUrls(imageUrls);
+
     return { success: true };
   }
 }
