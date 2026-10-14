@@ -12,8 +12,32 @@ async function bootstrap() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const defaultOrigins = [
+    'https://jaayma.sn',
+    'https://www.jaayma.sn',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+
   app.enableCors({
-    origin: allowedOrigins?.length ? allowedOrigins : process.env.NODE_ENV === 'production' ? false : true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins?.length && (allowedOrigins.includes(origin) || allowedOrigins.includes('*'))) {
+        return callback(null, true);
+      }
+
+      if (
+        origin.endsWith('.workers.dev') ||
+        origin.endsWith('.pages.dev') ||
+        defaultOrigins.includes(origin) ||
+        process.env.NODE_ENV !== 'production'
+      ) {
+        return callback(null, true);
+      }
+
+      callback(new Error(`Origine CORS non autorisée : ${origin}`));
+    },
     credentials: true,
   });
   app.enableShutdownHooks();

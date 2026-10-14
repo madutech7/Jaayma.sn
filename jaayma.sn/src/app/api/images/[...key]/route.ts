@@ -6,7 +6,9 @@ export const runtime = "nodejs";
 const API_BASE_URL =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:4000";
+  (process.env.NODE_ENV === "production"
+    ? "https://jaayma-sn.onrender.com"
+    : "http://127.0.0.1:4000");
 
 async function getLegacyImage(key: string): Promise<NextResponse | null> {
   try {

@@ -4,12 +4,15 @@ const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
   OFFLINE_URL,
-  "/favicon.ico",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(PRECACHE_ASSETS).catch((err) => {
+        console.warn("[SW] Precache skipped:", err);
+      })
+    )
   );
   self.skipWaiting();
 });
