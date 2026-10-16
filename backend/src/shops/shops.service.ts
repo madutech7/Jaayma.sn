@@ -22,6 +22,8 @@ const shopSchema = z.object({
   deliveryNote: z.string().optional().nullable(),
   logoUrl: z.string().optional().nullable(),
   coverUrl: z.string().optional().nullable(),
+  facebookPixelId: z.string().optional().nullable(),
+  tiktokPixelId: z.string().optional().nullable(),
   status: z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED']).optional().default('ACTIVE'),
 });
 

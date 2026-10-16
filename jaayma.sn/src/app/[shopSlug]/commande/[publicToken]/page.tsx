@@ -4,6 +4,7 @@ import { formatPhone } from "@/lib/phone";
 import Link from "next/link";
 import { waLink } from "@/lib/whatsapp";
 import AutoRefresh from "./AutoRefresh";
+import MarketingPixel from "@/components/MarketingPixel";
 import { OrderStatus } from "@/lib/orders";
 import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
@@ -81,6 +82,20 @@ export default async function OrderSuccessPage({
   return (
     <div className="min-h-screen pb-10" style={{ backgroundColor: "#FFC83D" }}>
       <AutoRefresh intervalMs={30000} />
+      <MarketingPixel
+        facebookPixelId={shop.facebookPixelId}
+        tiktokPixelId={shop.tiktokPixelId}
+        event="Purchase"
+        eventData={{
+          content_name: shop.name,
+          content_type: "product",
+          content_ids: items.map((i: any) => i.productId || i.id),
+          value: order.total || 0,
+          currency: "XOF",
+          num_items: items.length,
+          order_id: order.reference,
+        }}
+      />
 
       <div className="max-w-xl mx-auto px-5">
         {/* ─── CHECK ICON ─── */}

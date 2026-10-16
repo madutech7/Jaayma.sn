@@ -34,6 +34,8 @@ export async function upsertShop(
     : undefined;
   const rawWave = (formData.get("waveNumber") as string) || "";
   const rawOrange = (formData.get("orangeMoneyNumber") as string) || "";
+  const facebookPixelId = (formData.get("facebookPixelId") as string)?.trim() || null;
+  const tiktokPixelId = (formData.get("tiktokPixelId") as string)?.trim() || null;
 
   if (!name) {
     return { error: "Le nom de la boutique est obligatoire." };
@@ -83,6 +85,8 @@ export async function upsertShop(
       status: isPublished ? "ACTIVE" : "DRAFT",
       waveNumber,
       orangeMoneyNumber,
+      facebookPixelId,
+      tiktokPixelId,
       ...(logoKey !== undefined ? { logoUrl: logoKey } : {}),
       ...(coverKey !== undefined ? { coverUrl: coverKey } : {}),
     };

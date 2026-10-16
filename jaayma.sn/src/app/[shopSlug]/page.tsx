@@ -6,6 +6,7 @@ import { formatFcfa } from "@/lib/money";
 import { getImageUrl } from "@/lib/images";
 import { waLink } from "@/lib/whatsapp";
 import TrackVisit from "@/components/TrackVisit";
+import MarketingPixel from "@/components/MarketingPixel";
 import Link from "next/link";
 import { cache } from "react";
 import { api } from "@/lib/api";
@@ -61,6 +62,15 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
   return (
     <div className="min-h-screen pb-28" style={{ backgroundColor: "#FFFBF2" }}>
       <TrackVisit shopId={shop.id} />
+      <MarketingPixel
+        facebookPixelId={shop.facebookPixelId}
+        tiktokPixelId={shop.tiktokPixelId}
+        event="PageView"
+        eventData={{
+          content_name: shop.name,
+          content_type: "storefront",
+        }}
+      />
 
       {/* ─── HEADER BOUTIQUE (fond Hibiscus) ─── */}
       <div className="relative overflow-hidden" style={{ backgroundColor: "#C8265A" }}>

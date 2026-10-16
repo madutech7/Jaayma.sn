@@ -46,6 +46,8 @@ export interface Shop {
   logoKey?: string | null;
   coverUrl?: string | null;
   coverKey?: string | null;
+  facebookPixelId?: string | null;
+  tiktokPixelId?: string | null;
   rating?: number;
   featured?: boolean;
   plan?: string;

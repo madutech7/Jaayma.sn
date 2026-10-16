@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Check, Copy, Loader2 } from "lucide-react";
 import { upsertShop } from "../../actions/shop";
 import { formatPhone } from "@/lib/phone";
 import { suggestSlug } from "@/lib/slug";
@@ -34,6 +34,7 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
     shop?.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : ""
   );
   const [slugTouched, setSlugTouched] = useState(Boolean(shop?.slug));
+  const [copiedFeed, setCopiedFeed] = useState(false);
   const publicHost = new URL(publicOrigin).host;
 
   useEffect(() => {
@@ -269,6 +270,85 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
               style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
             />
           </div>
+        </div>
+
+        {/*  MARKETING & PIXELS (Meta, TikTok, Catalogue)  */}
+        <div className="space-y-4 pt-6 border-t border-white/10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold text-white">Tracking & Pixels Publicitaires</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#FFC83D] text-[#0F1E3D]">
+                Marketing
+              </span>
+            </div>
+            <p className="text-xs" style={{ color: "#8D98AF" }}>
+              Connecte tes pixels pour tracker tes visites, conversions et optimiser tes pubs Facebook, Instagram et TikTok.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
+              ID Pixel Meta (Facebook & Instagram)
+            </label>
+            <input
+              name="facebookPixelId"
+              type="text"
+              defaultValue={shop?.facebookPixelId || ""}
+              placeholder="Ex: 1234567890123456"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal font-mono"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
+              ID Pixel TikTok
+            </label>
+            <input
+              name="tiktokPixelId"
+              type="text"
+              defaultValue={shop?.tiktokPixelId || ""}
+              placeholder="Ex: C1234567890ABCDEF"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal font-mono"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+          </div>
+
+          {shop?.slug && (
+            <div className="p-4 rounded-2xl border-[2px] border-dashed border-[#FFC83D]/40 bg-[#16264D]/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#FFC83D]">Flux Catalogue Produits (XML)</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = `${publicOrigin}/api/shops/${shop.slug}/catalog.xml`;
+                    navigator.clipboard.writeText(url);
+                    setCopiedFeed(true);
+                    setTimeout(() => setCopiedFeed(false), 2000);
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/20 hover:border-[#FFC83D] text-white transition-colors flex items-center gap-1.5"
+                >
+                  {copiedFeed ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#0E7C66]" />
+                      <span>Copié !</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copier le lien</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-[#8D98AF] leading-relaxed">
+                Utilise ce lien dans Meta Commerce Manager ou TikTok Catalog pour synchroniser automatiquement tes produits et faire du retargeting.
+              </p>
+              <div className="text-[11px] font-mono p-2 rounded-xl bg-[#0F1E3D] text-[#C3CCE6] truncate border border-white/5 select-all">
+                {`${publicOrigin}/api/shops/${shop.slug}/catalog.xml`}
+              </div>
+            </div>
+          )}
         </div>
 
         {/*  TOGGLES  */}
