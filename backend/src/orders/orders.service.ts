@@ -17,6 +17,7 @@ const orderSchema = z.object({
       z.object({
         productId: z.string().min(1),
         quantity: z.number().int().positive(),
+        options: z.string().optional().nullable(),
       }),
     )
     .min(1),
@@ -109,19 +110,16 @@ export class OrdersService {
       throw new BadRequestException(parsed.error.flatten());
     }
 
-    const quantitiesByProductId = new Map<string, number>();
+    const totalQuantityByProductId = new Map<string, number>();
 
     for (const item of parsed.data.items) {
-      quantitiesByProductId.set(
+      totalQuantityByProductId.set(
         item.productId,
-        (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity,
+        (totalQuantityByProductId.get(item.productId) ?? 0) + item.quantity,
       );
     }
 
-    const items = Array.from(quantitiesByProductId, ([productId, quantity]) => ({
-      productId,
-      quantity,
-    }));
+    const productIds = Array.from(totalQuantityByProductId.keys());
 
     return this.prisma.$transaction(async (transaction) => {
       const shop = await transaction.shop.findFirst({
@@ -133,7 +131,6 @@ export class OrdersService {
         throw new BadRequestException('Boutique introuvable');
       }
 
-      const productIds = items.map((item) => item.productId);
       const products = await transaction.product.findMany({
         where: {
           id: { in: productIds },
@@ -149,21 +146,21 @@ export class OrdersService {
 
       const productsById = new Map(products.map((product) => [product.id, product]));
 
-      for (const item of items) {
-        const product = productsById.get(item.productId);
+      for (const [productId, totalQty] of totalQuantityByProductId) {
+        const product = productsById.get(productId);
 
-        if (!product || product.stock < item.quantity) {
+        if (!product || product.stock < totalQty) {
           throw new BadRequestException('Stock insuffisant pour un des produits');
         }
 
         const result = await transaction.product.updateMany({
           where: {
-            id: item.productId,
+            id: productId,
             shopId: parsed.data.shopId,
             status: 'ACTIVE',
-            stock: { gte: item.quantity },
+            stock: { gte: totalQty },
           },
-          data: { stock: { decrement: item.quantity } },
+          data: { stock: { decrement: totalQty } },
         });
 
         if (result.count !== 1) {
@@ -172,7 +169,7 @@ export class OrdersService {
       }
 
       const priceByProductId = new Map(products.map((product) => [product.id, product.price]));
-      const subtotal = items.reduce(
+      const subtotal = parsed.data.items.reduce(
         (sum, item) => sum + item.quantity * (priceByProductId.get(item.productId) ?? 0),
         0,
       );
@@ -192,10 +189,11 @@ export class OrdersService {
           deliveryFee,
           total: subtotal + deliveryFee,
           items: {
-            create: items.map((item) => ({
+            create: parsed.data.items.map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
               unitPrice: priceByProductId.get(item.productId) ?? 0,
+              options: item.options || null,
             })),
           },
         },

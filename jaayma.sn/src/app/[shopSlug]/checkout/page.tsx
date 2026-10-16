@@ -118,6 +118,7 @@ export default function CheckoutPage({
       items: items.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
+        options: item.optionsString || null,
       })),
       honeypot: (formData.get("website") as string) || "",
     };
@@ -191,27 +192,33 @@ export default function CheckoutPage({
                   Vider le panier
                 </button>
               </div>
-              {items.map((item) => (
-                <div key={item.product.id}>
-                  <div className="flex items-start justify-between py-1.5">
-                    <div>
-                      <p className="text-sm font-bold text-ink">{item.product.name}</p>
-                      <p className="text-xs" style={{ color: "#3F4B69" }}>x{item.quantity}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="font-bricolage font-black text-ink text-sm">{formatFcfa(item.product.price * item.quantity)}</p>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.product.id)}
-                        aria-label={`Retirer ${item.product.name} du panier`}
-                        className="w-9 h-9 rounded-full flex items-center justify-center border border-[#C8265A]/30 text-[#C8265A]"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </button>
+              {items.map((item) => {
+                const itemKey = `${item.product.id}-${item.optionsString || ""}`;
+                return (
+                  <div key={itemKey}>
+                    <div className="flex items-start justify-between py-1.5">
+                      <div>
+                        <p className="text-sm font-bold text-ink">{item.product.name}</p>
+                        {item.optionsString && (
+                          <p className="text-xs font-semibold text-[#0E7C66]">{item.optionsString}</p>
+                        )}
+                        <p className="text-xs" style={{ color: "#3F4B69" }}>x{item.quantity}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="font-bricolage font-black text-ink text-sm">{formatFcfa(item.product.price * item.quantity)}</p>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.product.id, item.optionsString)}
+                          aria-label={`Retirer ${item.product.name} du panier`}
+                          className="w-9 h-9 rounded-full flex items-center justify-center border border-[#C8265A]/30 text-[#C8265A]"
+                        >
+                          <Trash2 size={16} aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               <DottedDivider />
 

@@ -3,12 +3,9 @@
 import { useCartStore } from "@/lib/cart-store";
 import ProductImageFrame, { WAX_PATTERNS } from "@/components/ProductImageFrame";
 import PriceDisplay from "@/components/PriceDisplay";
-import type { Product } from "@/types/schema";
+import type { Product, ProductOption } from "@/types/schema";
 import { formatFcfa } from "@/lib/money";
 import { useState } from "react";
-
-type Size = "XS" | "S" | "M" | "L" | "XL" | "XXL";
-const COMMON_SIZES: Size[] = ["S", "M", "L", "XL"];
 
 /* ─── Product modal (fiche produit — design 04) ─── */
 type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[] };
@@ -20,11 +17,35 @@ function ProductModal({
 }: {
   product: ProductCard;
   onClose: () => void;
-  onAdd: (product: Product, size?: string, qty?: number) => void;
+  onAdd: (product: Product, selectedOptions?: Record<string, string>, qty?: number) => void;
 }) {
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState<string>("M");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const productOptions: ProductOption[] = (() => {
+    if (!product.optionsJson) return [];
+    try {
+      const parsed = JSON.parse(product.optionsJson);
+      return Array.isArray(parsed)
+        ? parsed.filter(
+            (o) => o?.name && Array.isArray(o?.values) && o.values.length > 0
+          )
+        : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const opt of productOptions) {
+      if (opt.values[0]) {
+        initial[opt.name] = opt.values[0];
+      }
+    }
+    return initial;
+  });
+
   const imageUrls = product.imageUrls?.length
     ? product.imageUrls
     : product.imageUrl
@@ -115,28 +136,50 @@ function ProductModal({
             </p>
           )}
 
-          {/* Sélecteur de taille (optionnel, basé sur optionsJson) */}
-          {product.optionsJson && JSON.parse(product.optionsJson || "[]").some((o: any) => o.name?.toLowerCase().includes("taille")) ? (
-            <>
-              <p className="text-sm font-bold text-ink mb-2">Taille</p>
-              <div className="flex gap-2 mb-5">
-                {COMMON_SIZES.map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className="w-12 h-10 rounded-xl text-sm font-bold border-[2.5px] transition-all"
-                    style={{
-                      backgroundColor: selectedSize === sz ? "#FFC83D" : "transparent",
-                      borderColor: "#0F1E3D",
-                      color: "#0F1E3D",
-                    }}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
+          {/* Options & Variantes dynamiques (Taille, Couleur, Pointure...) */}
+          {productOptions.length > 0 && (
+            <div className="space-y-4 mb-5 pt-1">
+              {productOptions.map((opt) => (
+                <div key={opt.name}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-ink uppercase tracking-wider">
+                      {opt.name}
+                    </p>
+                    <span className="text-xs font-bold text-[#C8265A]">
+                      {selectedOptions[opt.name] || "Sélectionne"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {opt.values.map((val) => {
+                      const isSelected = selectedOptions[opt.name] === val;
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() =>
+                            setSelectedOptions((prev) => ({
+                              ...prev,
+                              [opt.name]: val,
+                            }))
+                          }
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold border-[2px] transition-all active:scale-95"
+                          style={{
+                            backgroundColor: isSelected ? "#FFC83D" : "#FFFBF2",
+                            borderColor: "#0F1E3D",
+                            color: "#0F1E3D",
+                            boxShadow: isSelected ? "2px 2px 0 #0F1E3D" : "none",
+                            transform: isSelected ? "scale(1.02)" : "scale(1)",
+                          }}
+                        >
+                          {val}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Quantité + Ajouter */}
           <div className="flex items-center gap-3">
@@ -159,7 +202,10 @@ function ProductModal({
 
             {/* CTA */}
             <button
-              onClick={() => { onAdd(product, selectedSize, qty); onClose(); }}
+              onClick={() => {
+                onAdd(product, selectedOptions, qty);
+                onClose();
+              }}
               className="flex-1 py-3.5 rounded-full font-bold text-sm border-[2.5px] border-ink transition-transform active:scale-95"
               style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
             >
@@ -183,12 +229,33 @@ export default function ProductList({
   const { addItem, items, shopId: cartShopId, clearCart } = useCartStore();
   const [modalProduct, setModalProduct] = useState<ProductCard | null>(null);
 
-  const handleAdd = (product: Product, size?: string, qty: number = 1) => {
+  const handleAdd = (
+    product: Product,
+    selectedOptions?: Record<string, string>,
+    qty: number = 1
+  ) => {
     if (cartShopId && cartShopId !== shopId) {
       if (!confirm("Votre panier contient des articles d'une autre boutique. Voulez-vous le vider ?")) return;
       clearCart();
     }
-    for (let i = 0; i < qty; i++) addItem(product);
+    addItem(product, selectedOptions, qty);
+  };
+
+  const handleCardAdd = (e: React.MouseEvent, product: ProductCard) => {
+    e.stopPropagation();
+    let hasOptions = false;
+    try {
+      if (product.optionsJson) {
+        const parsed = JSON.parse(product.optionsJson);
+        hasOptions = Array.isArray(parsed) && parsed.length > 0;
+      }
+    } catch {}
+
+    if (hasOptions) {
+      setModalProduct(product);
+    } else {
+      handleAdd(product);
+    }
   };
 
   const handleTap = (product: ProductCard) => setModalProduct(product);
@@ -198,7 +265,17 @@ export default function ProductList({
       <div className="grid grid-cols-2 gap-3">
         {products.map((product, i) => {
           const wax = WAX_PATTERNS[i % WAX_PATTERNS.length];
-          const qty = items.find((it) => it.product.id === product.id)?.quantity || 0;
+          const qty = items
+            .filter((it) => it.product.id === product.id)
+            .reduce((sum, it) => sum + it.quantity, 0);
+
+          let optionCount = 0;
+          try {
+            if (product.optionsJson) {
+              const parsed = JSON.parse(product.optionsJson);
+              if (Array.isArray(parsed)) optionCount = parsed.length;
+            }
+          } catch {}
 
           return (
             <div
@@ -209,8 +286,8 @@ export default function ProductList({
               onClick={() => handleTap(product)}
             >
               {/* Wax pattern */}
-          <div className="relative">
-            <ProductImageFrame imageUrl={product.imageUrl} alt={product.name} wax={wax} height={190} />
+              <div className="relative">
+                <ProductImageFrame imageUrl={product.imageUrl} alt={product.name} wax={wax} height={190} />
                 {/* Dot favori */}
                 <span
                   className="absolute top-2 right-2 w-3 h-3 rounded-full border-[2px] border-ink"
@@ -219,6 +296,11 @@ export default function ProductList({
                 {product.imageUrls && product.imageUrls.length > 1 && (
                   <span className="absolute top-2 left-2 rounded-full border border-ink bg-white/95 px-2 py-1 text-[10px] font-bold text-ink">
                     {product.imageUrls.length} photos
+                  </span>
+                )}
+                {optionCount > 0 && (
+                  <span className="absolute bottom-2 left-2 rounded-full border border-ink bg-[#FFC83D] px-2 py-0.5 text-[10px] font-bold text-ink shadow-sm">
+                    Variantes
                   </span>
                 )}
               </div>
@@ -231,9 +313,10 @@ export default function ProductList({
                 </div>
                 {/* Plus button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleAdd(product); }}
+                  onClick={(e) => handleCardAdd(e, product)}
                   className="w-8 h-8 rounded-full border-[2px] border-ink flex items-center justify-center shrink-0 active:scale-90 transition-transform"
                   style={{ backgroundColor: qty > 0 ? "#0E7C66" : "#FFC83D", color: "#0F1E3D" }}
+                  aria-label={optionCount > 0 ? `Choisir les options pour ${product.name}` : `Ajouter ${product.name} au panier`}
                 >
                   {qty > 0 ? (
                     <span className="text-white text-xs font-black">{qty}</span>

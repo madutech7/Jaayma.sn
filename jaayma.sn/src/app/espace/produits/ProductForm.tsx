@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/schema";
 import ProductImagesUploader from "@/components/ProductImagesUploader";
+import ProductOptionsEditor from "@/components/ProductOptionsEditor";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -113,6 +114,9 @@ export default function ProductForm({
             />
           </div>
         </div>
+
+        {/*  OPTIONS & VARIANTES (Shopify style)  */}
+        <ProductOptionsEditor initialOptionsJson={product?.optionsJson} />
 
         {/*  TOGGLE  */}
         <div className="pt-2">

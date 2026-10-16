@@ -48,7 +48,10 @@ export default async function CommandesPage({
 
   const ordersWithItems = pageOrders.map((order) => {
     const itemsSummary = (order.items ?? [])
-      .map((i) => i.name || i.product?.name)
+      .map((i) => {
+        const base = i.name || i.product?.name;
+        return i.options ? `${base} (${i.options})` : base;
+      })
       .filter(Boolean)
       .join(", ");
     return { ...order, itemsSummary };

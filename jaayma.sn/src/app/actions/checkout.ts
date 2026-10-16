@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 type CheckoutItemInput = {
   productId: string;
   quantity: number;
+  options?: string | null;
   optionLabel?: string | null;
 };
 
@@ -57,6 +58,7 @@ export async function createOrder(data: CheckoutData) {
       items: data.items.map((i) => ({
         productId: i.productId,
         quantity: Math.max(1, Math.min(50, Math.floor(i.quantity || 1))),
+        options: i.options || i.optionLabel || undefined,
       })),
     });
 

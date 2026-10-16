@@ -57,12 +57,15 @@ export async function createProduct(
       position: idx,
     }));
 
+    const optionsJson = (formData.get("optionsJson") as string) || null;
+
     await api.createProduct(shop.id, {
       name,
       description: description || "",
       price,
       stock,
       status: isActive ? "ACTIVE" : "DRAFT",
+      optionsJson,
       images,
     });
 
@@ -118,12 +121,15 @@ export async function updateProduct(
       position: idx,
     }));
 
+    const optionsJson = (formData.get("optionsJson") as string) || null;
+
     await api.updateProduct(id, {
       name,
       description: description || "",
       price,
       ...(stock !== undefined ? { stock } : {}),
       status: isActive ? "ACTIVE" : "DRAFT",
+      optionsJson,
       ...(imageKeys.length > 0 ? { images } : {}),
     });
 

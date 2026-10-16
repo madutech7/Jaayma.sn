@@ -74,7 +74,10 @@ export default async function OrderSuccessPage({
   const events: any[] = [];
 
   const trackingLink = `${await getRequestOrigin()}/${shopSlug}/commande/${publicToken}`;
-  const whatsappMessage = `Bonjour ${shop.name} ! Je vous contacte au sujet de ma commande ${order.reference}.\nLien de suivi : ${trackingLink}`;
+  const itemsSummary = items
+    .map((i) => `${i.name}${i.options ? ` (${i.options})` : ""} x${i.quantity}`)
+    .join(", ");
+  const whatsappMessage = `Bonjour ${shop.name} ! Je vous contacte au sujet de ma commande ${order.reference}${itemsSummary ? ` [${itemsSummary}]` : ""}.\nLien de suivi : ${trackingLink}`;
 
   const currentStatus = (order.status?.toLowerCase() || "new") as OrderStatus;
   const statusStyle = STATUS_COLORS[currentStatus] || STATUS_COLORS.new;
@@ -156,7 +159,17 @@ export default async function OrderSuccessPage({
             {/* Articles */}
             {items.map((item) => (
               <div key={item.id} className="flex justify-between py-1 text-sm">
-                <span className="font-medium text-ink">{item.name} <span className="text-xs font-normal" style={{ color: "#3F4B69" }}>x{item.quantity}</span></span>
+                <div>
+                  <span className="font-medium text-ink">
+                    {item.name}{" "}
+                    <span className="text-xs font-normal" style={{ color: "#3F4B69" }}>
+                      x{item.quantity}
+                    </span>
+                  </span>
+                  {item.options && (
+                    <p className="text-xs text-[#0E7C66] font-semibold">{item.options}</p>
+                  )}
+                </div>
                 <span className="font-bold text-ink">{formatFcfa(item.unitPrice * item.quantity)}</span>
               </div>
             ))}

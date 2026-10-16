@@ -60,6 +60,11 @@ export interface Shop {
   updatedAt?: string | number | Date;
 }
 
+export interface ProductOption {
+  name: string;
+  values: string[];
+}
+
 export interface OrderItem {
   id: string;
   orderId: string;
@@ -67,6 +72,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   name?: string;
+  options?: string | null;
   product?: Product;
 }
 

@@ -83,6 +83,7 @@ model Product {
   stock       Int           @default(0)
   position    Int           @default(0)
   status      ProductStatus @default(ACTIVE)
+  optionsJson String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   shop        Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -136,6 +137,7 @@ model OrderItem {
   productId String
   quantity  Int
   unitPrice Int
+  options   String?
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
 }

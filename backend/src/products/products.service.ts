@@ -16,6 +16,7 @@ const productSchema = z.object({
   stock: z.number().int().nonnegative().optional().default(0),
   position: z.number().int().optional().default(0),
   status: z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']).optional().default('ACTIVE'),
+  optionsJson: z.string().optional().nullable(),
   images: z.array(productImageSchema).max(8).optional().default([]),
 });
 
@@ -88,6 +89,7 @@ export class ProductsService {
         stock: true,
         position: true,
         status: true,
+        optionsJson: true,
         images: {
           orderBy: { position: 'asc' },
           take: 1,
@@ -143,6 +145,7 @@ export class ProductsService {
         stock: parsed.data.stock,
         position: parsed.data.position,
         status: parsed.data.status,
+        optionsJson: parsed.data.optionsJson ?? null,
         images: {
           create: parsed.data.images.map((image, index) => ({
             url: image.url,

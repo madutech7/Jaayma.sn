@@ -122,8 +122,13 @@ export default function OrderDetailView({ order }: { order: Order }) {
           {/* Articles */}
           <div className="space-y-2 mb-4">
             {items.map((item) => (
-              <div key={item.id} className="flex justify-between items-center text-[15px] font-bold">
-                <p className="text-ink truncate pr-4">{item.name} {item.quantity > 1 && `(x${item.quantity})`}</p>
+              <div key={item.id} className="flex justify-between items-start text-[15px] font-bold">
+                <div className="pr-4">
+                  <p className="text-ink">{item.name} {item.quantity > 1 && `(x${item.quantity})`}</p>
+                  {item.options && (
+                    <p className="text-xs text-[#0E7C66] font-bold">{item.options}</p>
+                  )}
+                </div>
                 <p className="text-ink shrink-0">{formatFcfa(item.unitPrice * item.quantity)}</p>
               </div>
             ))}
