@@ -98,18 +98,31 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || "/espace/commandes", self.location.origin);
-  if (target.origin !== self.location.origin) target.href = self.location.origin + "/espace/commandes";
+  let target;
+  try {
+    target = new URL(event.notification.data?.url || "/espace/commandes", self.location.origin);
+  } catch {
+    target = new URL("/espace/commandes", self.location.origin);
+  }
+  if (target.origin !== self.location.origin) {
+    target = new URL("/espace/commandes", self.location.origin);
+  }
 
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
-      for (const client of windows) {
-        if ("focus" in client && new URL(client.url).pathname.startsWith("/espace")) {
-          await client.navigate(target.href);
-          return client.focus();
-        }
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const sameOriginWindows = windows.filter((client) => new URL(client.url).origin === self.location.origin);
+    const appWindow = sameOriginWindows.find((client) => new URL(client.url).pathname.startsWith("/espace"))
+      || sameOriginWindows[0];
+
+    if (appWindow) {
+      try {
+        const navigatedWindow = await appWindow.navigate(target.href);
+        return (navigatedWindow || appWindow).focus();
+      } catch {
+        // If iOS cannot navigate the existing PWA window, open the order in a new one.
       }
-      return self.clients.openWindow(target.href);
-    }),
-  );
+    }
+
+    return self.clients.openWindow(target.href);
+  })());
 });
