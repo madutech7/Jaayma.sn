@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { setShopPlan, setShopSuspension } from "@/app/actions/admin";
 import { Loader2, ExternalLink, Package, ShoppingBag, Ban, CheckCircle2, FileText, Zap } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface ShopRowProps {
   shop: {
@@ -24,6 +25,7 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<"free" | "pro">(shop.plan);
   const [isSuspended, setIsSuspended] = useState(shop.isSuspended);
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
 
   const isPro = currentPlan === "pro";
 
@@ -48,14 +50,9 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
     setLoading(false);
   }
 
-  async function handleToggleSuspension() {
+  async function handleConfirmSuspension() {
+    setShowSuspendModal(false);
     const nextSuspended = !isSuspended;
-    const confirmMsg = nextSuspended
-      ? `Êtes-vous sûr de vouloir suspendre la boutique "${shop.name}" ? Elle ne sera plus accessible aux clients.`
-      : `Rétablir la boutique "${shop.name}" ?`;
-
-    if (!confirm(confirmMsg)) return;
-
     setLoading(true);
     const res = await setShopSuspension(shop.id, nextSuspended);
     if (!res.error) {
@@ -170,7 +167,7 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
           {/* Suspend Button */}
           <button
             type="button"
-            onClick={handleToggleSuspension}
+            onClick={() => setShowSuspendModal(true)}
             disabled={loading}
             className={`text-xs font-bold px-3 py-1.5 rounded-full border-[2px] border-ink transition-all ${
               isSuspended
@@ -180,6 +177,23 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
           >
             {isSuspended ? "Rétablir" : "Suspendre"}
           </button>
+
+          <ConfirmModal
+            isOpen={showSuspendModal}
+            onClose={() => setShowSuspendModal(false)}
+            onConfirm={handleConfirmSuspension}
+            title={isSuspended ? `Rétablir la boutique ?` : `Suspendre la boutique ?`}
+            description={
+              isSuspended
+                ? `Voulez-vous rétablir la boutique "${shop.name}" ? Elle sera de nouveau accessible aux clients.`
+                : `Êtes-vous sûr de vouloir suspendre la boutique "${shop.name}" ? Elle ne sera plus accessible aux clients.`
+            }
+            confirmLabel={isSuspended ? "Oui, rétablir" : "Oui, suspendre"}
+            cancelLabel="Annuler"
+            variant={isSuspended ? "primary" : "danger"}
+            icon="warning"
+            isLoading={loading}
+          />
         </div>
       </td>
     </tr>

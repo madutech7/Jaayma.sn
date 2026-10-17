@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { updateOrderStatus, updatePaymentStatus } from "../../actions/order";
 import type { OrderStatus, PaymentStatus } from "@/lib/orders";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const NEXT_LABEL: Record<string, string> = {
   preparing:        "Passer en préparation",
@@ -39,6 +40,7 @@ export default function OrderStatusButton({
   const [, startTransition] = useTransition();
   const [isPaymentSyncing, setIsPaymentSyncing] = useState(false);
   const [isStatusSyncing, setIsStatusSyncing] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const nextStatus = NEXT_STATUS[status];
@@ -107,9 +109,10 @@ export default function OrderStatusButton({
     });
   }
 
-  // ─── 0ms OPTIMISTIC CANCEL ───
-  function handleCancel() {
-    if (!confirm("Êtes-vous sûr de vouloir annuler cette commande ?") || isStatusSyncing) return;
+  // ─── OPTIMISTIC CANCEL ───
+  function handleConfirmCancel() {
+    setShowCancelModal(false);
+    if (isStatusSyncing) return;
     const previous = status;
 
     setStatus("cancelled");
@@ -195,7 +198,7 @@ export default function OrderStatusButton({
       {status !== "delivered" && status !== "cancelled" && (
         <button
           type="button"
-          onClick={handleCancel}
+          onClick={() => setShowCancelModal(true)}
           disabled={isStatusSyncing}
           className="w-full py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform mt-2 text-hibiscus hover:bg-hibiscus/15 disabled:opacity-60"
           style={{ backgroundColor: "rgba(200,38,90,0.08)" }}
@@ -203,6 +206,19 @@ export default function OrderStatusButton({
           Annuler la commande
         </button>
       )}
+
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        title="Annuler cette commande ?"
+        description="Cette action marquera la commande comme annulée. Le client en sera informé."
+        confirmLabel="Oui, annuler la commande"
+        cancelLabel="Ne pas annuler"
+        variant="danger"
+        icon="warning"
+        isLoading={isStatusSyncing}
+      />
     </div>
   );
 }

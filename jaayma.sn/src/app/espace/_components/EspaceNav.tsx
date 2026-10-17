@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutSeller } from "../../actions/auth";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const NAV = [
   {
@@ -75,11 +77,18 @@ function LogoMark({ size = 34 }: { size?: number }) {
 
 export default function EspaceNav() {
   const pathname = usePathname();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isItemActive = (href: string) => {
     if (href === "/espace") return pathname === href;
     return pathname === href || pathname.startsWith(`${href}/`);
   };
+
+  async function handleConfirmLogout() {
+    setIsLoggingOut(true);
+    await logoutSeller();
+  }
 
   return (
     <>
@@ -131,17 +140,16 @@ export default function EspaceNav() {
             </svg>
             Voir le site Jaayma
           </Link>
-          <form action={logoutSeller}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#3F4B69] transition-colors hover:bg-[#F6C3D2]/40 hover:text-[#8C1C41]"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Se déconnecter
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#3F4B69] transition-colors hover:bg-[#F6C3D2]/40 hover:text-[#8C1C41]"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Se déconnecter
+          </button>
         </div>
       </aside>
 
@@ -154,14 +162,13 @@ export default function EspaceNav() {
               <span className="block text-[10px] font-semibold text-[#65708A]">Espace vendeur</span>
             </span>
           </Link>
-          <form action={logoutSeller}>
-            <button
-              type="submit"
-              className="rounded-full border-2 border-ink px-3 py-1.5 text-[11px] font-black text-[#3F4B69] transition-colors hover:bg-[#F6C3D2]"
-            >
-              Quitter
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="rounded-full border-2 border-ink px-3 py-1.5 text-[11px] font-black text-[#3F4B69] transition-colors hover:bg-[#F6C3D2]"
+          >
+            Quitter
+          </button>
         </div>
       </header>
 
@@ -192,6 +199,21 @@ export default function EspaceNav() {
           })}
         </div>
       </nav>
+
+      <ConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => {
+          if (!isLoggingOut) setShowLogoutModal(false);
+        }}
+        onConfirm={handleConfirmLogout}
+        title="Se déconnecter ?"
+        description="Vous devrez vous reconnecter avec votre numéro de téléphone pour gérer votre boutique."
+        confirmLabel="Oui, me déconnecter"
+        cancelLabel="Rester connecté"
+        variant="danger"
+        icon="logout"
+        isLoading={isLoggingOut}
+      />
     </>
   );
 }

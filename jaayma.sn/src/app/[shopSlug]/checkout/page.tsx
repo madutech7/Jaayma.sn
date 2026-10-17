@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import { createOrder } from "../../actions/checkout";
 import { Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 /* ─── Ticket shape (haut du reçu) ─── */
 function TicketShape({ children }: { children: React.ReactNode }) {
@@ -73,6 +74,7 @@ export default function CheckoutPage({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("wave");
 
@@ -185,7 +187,7 @@ export default function CheckoutPage({
                 <p className="text-xs font-bold text-ink">Articles</p>
                 <button
                   type="button"
-                  onClick={clearCart}
+                  onClick={() => setShowClearCartModal(true)}
                   className="text-xs font-bold underline underline-offset-2"
                   style={{ color: "#C8265A" }}
                 >
@@ -333,6 +335,21 @@ export default function CheckoutPage({
           </button>
         </div>
       </form>
+
+      <ConfirmModal
+        isOpen={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        onConfirm={() => {
+          clearCart();
+          setShowClearCartModal(false);
+        }}
+        title="Vider votre panier ?"
+        description="Tous les articles actuellement sélectionnés seront retirés de votre commande."
+        confirmLabel="Oui, vider le panier"
+        cancelLabel="Garder mes articles"
+        variant="danger"
+        icon="trash"
+      />
     </div>
   );
 }

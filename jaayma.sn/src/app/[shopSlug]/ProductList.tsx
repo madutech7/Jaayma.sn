@@ -6,6 +6,7 @@ import PriceDisplay from "@/components/PriceDisplay";
 import type { Product, ProductOption } from "@/types/schema";
 import { formatFcfa } from "@/lib/money";
 import { useState } from "react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 /* ─── Product modal (fiche produit — design 04) ─── */
 type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[] };
@@ -228,6 +229,11 @@ export default function ProductList({
 }) {
   const { addItem, items, shopId: cartShopId, clearCart } = useCartStore();
   const [modalProduct, setModalProduct] = useState<ProductCard | null>(null);
+  const [pendingShopSwitch, setPendingShopSwitch] = useState<{
+    product: Product;
+    selectedOptions?: Record<string, string>;
+    qty: number;
+  } | null>(null);
 
   const handleAdd = (
     product: Product,
@@ -235,8 +241,8 @@ export default function ProductList({
     qty: number = 1
   ) => {
     if (cartShopId && cartShopId !== shopId) {
-      if (!confirm("Votre panier contient des articles d'une autre boutique. Voulez-vous le vider ?")) return;
-      clearCart();
+      setPendingShopSwitch({ product, selectedOptions, qty });
+      return;
     }
     addItem(product, selectedOptions, qty);
   };
@@ -341,6 +347,29 @@ export default function ProductList({
           onAdd={handleAdd}
         />
       )}
+
+      {/* Modal confirmation changement de boutique */}
+      <ConfirmModal
+        isOpen={pendingShopSwitch !== null}
+        onClose={() => setPendingShopSwitch(null)}
+        onConfirm={() => {
+          if (pendingShopSwitch) {
+            clearCart();
+            addItem(
+              pendingShopSwitch.product,
+              pendingShopSwitch.selectedOptions,
+              pendingShopSwitch.qty
+            );
+            setPendingShopSwitch(null);
+          }
+        }}
+        title="Changer de boutique ?"
+        description="Votre panier contient des articles d'une autre boutique. En continuant, votre panier actuel sera vidé."
+        confirmLabel="Vider et continuer"
+        cancelLabel="Conserver mon panier"
+        variant="warning"
+        icon="warning"
+      />
     </>
   );
 }

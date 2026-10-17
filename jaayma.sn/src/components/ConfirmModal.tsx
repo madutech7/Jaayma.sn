@@ -1,0 +1,122 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { Loader2, AlertTriangle, LogOut, Trash2 } from "lucide-react";
+
+export interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "danger" | "warning" | "primary";
+  icon?: "trash" | "logout" | "warning";
+  isLoading?: boolean;
+}
+
+export default function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  description,
+  confirmLabel = "Confirmer",
+  cancelLabel = "Annuler",
+  variant = "danger",
+  icon = "trash",
+  isLoading = false,
+}: ConfirmModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isOpen && !isLoading) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, isLoading, onClose]);
+
+  if (!isOpen) return null;
+
+  const iconColors = {
+    danger: { bg: "#FCE7EC", color: "#C8265A" },
+    warning: { bg: "#FEF3D6", color: "#B4531E" },
+    primary: { bg: "#E6F6F2", color: "#0E7C66" },
+  }[variant];
+
+  const confirmColors = {
+    danger: "bg-[#C8265A] text-white",
+    warning: "bg-[#FFC83D] text-[#0F1E3D]",
+    primary: "bg-[#0E7C66] text-white",
+  }[variant];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      style={{ backgroundColor: "rgba(10, 21, 48, 0.72)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isLoading) {
+          onClose();
+        }
+      }}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        ref={modalRef}
+        className="w-full max-w-sm rounded-[28px] border-[2.5px] border-ink p-6 text-ink shadow-[5px_5px_0_#0F1E3D] animate-in fade-in zoom-in-95 duration-150"
+        style={{ backgroundColor: "#FFFBF2" }}
+      >
+        <div className="flex flex-col items-center text-center">
+          <div
+            className="w-13 h-13 rounded-2xl flex items-center justify-center border-[2px] border-ink mb-4 shadow-[2px_2px_0_#0F1E3D]"
+            style={{ backgroundColor: iconColors.bg, width: 52, height: 52 }}
+          >
+            {icon === "trash" && <Trash2 className="w-5 h-5" style={{ color: iconColors.color }} />}
+            {icon === "logout" && <LogOut className="w-5 h-5 ml-0.5" style={{ color: iconColors.color }} />}
+            {icon === "warning" && <AlertTriangle className="w-5 h-5" style={{ color: iconColors.color }} />}
+          </div>
+
+          <h3 className="font-bricolage font-black text-xl text-ink mb-1.5 leading-tight">
+            {title}
+          </h3>
+
+          <p className="text-xs text-[#3F4B69] font-medium leading-relaxed mb-6">
+            {description}
+          </p>
+
+          <div className="flex w-full gap-3">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={onClose}
+              className="flex-1 py-3 px-4 rounded-full font-bold text-xs border-[2px] border-ink text-ink bg-white hover:bg-neutral-50 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50"
+            >
+              {cancelLabel}
+            </button>
+
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={onConfirm}
+              className={`flex-1 py-3 px-4 rounded-full font-bold text-xs border-[2px] border-ink flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 ${confirmColors}`}
+            >
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{confirmLabel}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
