@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { setShopPlan, setShopSuspension } from "@/app/actions/admin";
 import { Loader2, ExternalLink, Package, ShoppingBag, Ban, CheckCircle2, FileText, Zap } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -14,7 +15,10 @@ interface ShopRowProps {
     planExpiresAt: number | null;
     isPublished: boolean;
     isSuspended: boolean;
+    isDraft: boolean;
+    isExpiredPro: boolean;
     createdAt: number;
+    sellerName: string;
     sellerPhone: string;
     productCount: number;
     orderCount: number;
@@ -22,8 +26,11 @@ interface ShopRowProps {
 }
 
 export default function AdminShopRow({ shop }: ShopRowProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState<"free" | "pro">(shop.plan);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [currentPlan, setCurrentPlan] = useState<"free" | "pro">(shop.isExpiredPro ? "free" : shop.plan);
   const [isSuspended, setIsSuspended] = useState(shop.isSuspended);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
 
@@ -41,11 +48,15 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
   async function handleTogglePlan() {
     const nextPlan = isPro ? "free" : "pro";
     setLoading(true);
+    setError("");
+    setSuccess("");
     const res = await setShopPlan(shop.id, nextPlan, 30);
     if (!res.error) {
       setCurrentPlan(nextPlan);
+      setSuccess(nextPlan === "pro" ? "Plan Pro activé pour 30 jours." : "Plan Gratuit activé.");
+      router.refresh();
     } else {
-      alert(res.error);
+      setError(res.error);
     }
     setLoading(false);
   }
@@ -54,52 +65,57 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
     setShowSuspendModal(false);
     const nextSuspended = !isSuspended;
     setLoading(true);
+    setError("");
+    setSuccess("");
     const res = await setShopSuspension(shop.id, nextSuspended);
     if (!res.error) {
       setIsSuspended(nextSuspended);
+      setSuccess(nextSuspended ? "Boutique suspendue." : "Boutique rétablie.");
+      router.refresh();
     } else {
-      alert(res.error);
+      setError(res.error);
     }
     setLoading(false);
   }
 
   return (
-    <tr className={`border-b border-ink/15 hover:bg-white/55 transition-colors text-sm ${isSuspended ? "bg-hibiscus/10" : ""}`}>
+    <tr className={`border-t border-white/10 text-sm transition-colors hover:bg-white/[0.03] ${isSuspended ? "bg-hibiscus/[0.06]" : ""}`}>
       {/* Shop Info */}
       <td className="py-4 px-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-ink">{shop.name}</span>
+            <span className="font-bold text-white">{shop.name}</span>
             <a
               href={`/${shop.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="text-muted hover:text-hibiscus transition-colors"
+              className="text-ghost/70 transition-colors hover:text-sun"
               title="Visiter la boutique"
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
-          <p className="font-mono text-xs text-muted mt-0.5">/{shop.slug}</p>
+          <p className="mt-0.5 font-mono text-xs text-ghost/70">/{shop.slug}</p>
         </div>
       </td>
 
       {/* Seller */}
       <td className="py-4 px-4 text-xs">
-        <span className="font-mono text-ink block">{shop.sellerPhone}</span>
-        <span className="text-muted">
+        <span className="block font-semibold text-white">{shop.sellerName}</span>
+        <span className="mt-0.5 block font-mono text-ghost">{shop.sellerPhone}</span>
+        <span className="mt-1 block text-ghost/65">
           Créée le {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(shop.createdAt * 1000))}
         </span>
       </td>
 
       {/* Products & Orders */}
-      <td className="py-4 px-4 text-xs font-medium text-muted">
+      <td className="py-4 px-4 text-xs font-medium text-ghost">
         <div className="flex items-center gap-1.5">
-          <Package size={13} className="text-muted shrink-0" />
+          <Package size={13} className="shrink-0 text-ghost/70" />
           <span>{shop.productCount} {shop.productCount === 1 ? "produit" : "produits"}</span>
         </div>
         <div className="mt-1 flex items-center gap-1.5">
-          <ShoppingBag size={13} className="text-muted shrink-0" />
+          <ShoppingBag size={13} className="shrink-0 text-ghost/70" />
           <span>{shop.orderCount} {shop.orderCount === 1 ? "commande" : "commandes"}</span>
         </div>
       </td>
@@ -108,30 +124,36 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
       <td className="py-4 px-4">
         <div className="flex flex-col gap-1 items-start">
           {isSuspended ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded border-[2px] border-hibiscus text-hibiscus -rotate-2">
+            <span className="inline-flex -rotate-2 items-center gap-1 rounded border-2 border-hibiscus px-2.5 py-1 text-[11px] font-black text-[#FF9BAF]">
               <span>Suspendue</span>
               <Ban size={12} className="shrink-0" />
             </span>
+          ) : shop.isDraft ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-black text-ghost">
+              <FileText size={12} /> Brouillon
+            </span>
           ) : shop.isPublished ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded border-[2px] border-baobab text-baobab -rotate-2">
+            <span className="inline-flex -rotate-2 items-center gap-1 rounded border-2 border-baobab px-2.5 py-1 text-[11px] font-black text-[#64D2B0]">
               <span>En ligne</span>
               <CheckCircle2 size={12} className="shrink-0" />
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded border-[2px] border-muted text-muted -rotate-2">
+            <span className="inline-flex -rotate-2 items-center gap-1 rounded border-2 border-white/15 px-2.5 py-1 text-[11px] font-black text-ghost">
               <span>Brouillon</span>
               <FileText size={12} className="shrink-0" />
             </span>
           )}
 
-          {isPro ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded border-[2px] border-sun text-ink">
+          {shop.isExpiredPro ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#F3C65E]/40 bg-[#F3C65E]/10 px-2.5 py-1 text-[10px] font-black text-[#F3C65E]">Pro expiré</span>
+          ) : isPro ? (
+            <span className="inline-flex items-center gap-1 rounded border-2 border-sun px-2.5 py-1 text-[11px] font-black text-sun">
               <span>Pro</span>
-              <Zap size={11} className="shrink-0 fill-[#0F1E3D] text-[#0F1E3D]" />
+              <Zap size={11} className="shrink-0 fill-sun text-sun" />
               {expiryFormatted ? `(${expiryFormatted})` : ""}
             </span>
           ) : (
-            <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full border border-ink/20 text-muted">
+            <span className="inline-flex items-center rounded-full border border-white/15 px-2.5 py-1 text-[10px] font-semibold text-ghost">
               Gratuit
             </span>
           )}
@@ -159,7 +181,7 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
             ) : (
               <>
                 <Zap size={12} className="fill-[#0F1E3D] text-[#0F1E3D] shrink-0" />
-                <span>Activer Pro (30j)</span>
+                <span>{shop.isExpiredPro ? "Renouveler Pro (30j)" : "Activer Pro (30j)"}</span>
               </>
             )}
           </button>
@@ -195,6 +217,11 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
             isLoading={loading}
           />
         </div>
+        {(error || success) && (
+          <p role={error ? "alert" : "status"} className={`mt-2 text-right text-[10px] font-bold ${error ? "text-[#FF9BAF]" : "text-[#64D2B0]"}`}>
+            {error || success}
+          </p>
+        )}
       </td>
     </tr>
   );

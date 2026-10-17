@@ -55,6 +55,187 @@ async function request<T>(
 }
 
 export const api = {
+  // ─── ADMINISTRATION ───
+  async getAdminAccess(token: string): Promise<{ isAdmin: true; phone: string; name: string }> {
+    return request("/admin/access", { token, cache: "no-store" });
+  },
+
+  async getAdminOverview(
+    token: string,
+    params: { q?: string; status?: string; plan?: string; page?: number }
+  ): Promise<{
+    metrics: {
+      totalShops: number;
+      activeShops: number;
+      draftShops: number;
+      suspendedShops: number;
+      proShops: number;
+      expiredProShops: number;
+      sellers: number;
+      activeProducts: number;
+      totalOrders: number;
+      newOrders: number;
+      paidOrders: number;
+      revenue: number;
+      todayOrders: number;
+      revenueToday: number;
+    };
+    shops: {
+      items: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        plan: string;
+        planExpiresAt: string | null;
+        status: string;
+        createdAt: string;
+        whatsapp: string | null;
+        owner: { name: string; phone: string } | null;
+        _count: { products: number; orders: number };
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    };
+    recentOrders: Array<{
+      id: string;
+      reference: string;
+      customerName: string;
+      total: number;
+      createdAt: string;
+      shop: { name: string; slug: string };
+    }>;
+  }> {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.status) search.set("status", params.status);
+    if (params.plan) search.set("plan", params.plan);
+    if (params.page) search.set("page", String(params.page));
+    return request(`/admin/overview${search.size ? `?${search}` : ""}`, {
+      token,
+      cache: "no-store",
+    });
+  },
+
+  async getAdminOrders(
+    token: string,
+    params: { q?: string; status?: string; payment?: string; page?: number }
+  ): Promise<{
+    items: Array<{
+      id: string;
+      reference: string;
+      customerName: string;
+      customerPhone: string;
+      total: number;
+      status: string;
+      paymentMethod: string;
+      paymentStatus: string;
+      createdAt: string;
+      shop: { name: string; slug: string };
+      _count: { items: number };
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.status) search.set("status", params.status);
+    if (params.payment) search.set("payment", params.payment);
+    if (params.page) search.set("page", String(params.page));
+    return request(`/admin/orders${search.size ? `?${search}` : ""}`, {
+      token,
+      cache: "no-store",
+    });
+  },
+
+  async adminUpdateShopPlan(
+    token: string,
+    id: string,
+    plan: "free" | "pro",
+    durationDays = 30
+  ) {
+    return request(`/admin/shops/${encodeURIComponent(id)}/plan`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ plan, durationDays }),
+    });
+  },
+
+  async adminUpdateShopStatus(token: string, id: string, status: "ACTIVE" | "SUSPENDED" | "DRAFT") {
+    return request(`/admin/shops/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async getAdminAccounts(token: string, params: { q?: string; hasShop?: string; page?: number }) {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.hasShop) search.set("hasShop", params.hasShop);
+    if (params.page) search.set("page", String(params.page));
+    return request<{
+      items: Array<{
+        id: string;
+        name: string;
+        phone: string;
+        createdAt: string;
+        shopCount: number;
+        orderCount: number;
+        shops: Array<{ id: string; name: string; slug: string; plan: string; status: string }>;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>(`/admin/accounts${search.size ? `?${search}` : ""}`, { token, cache: "no-store" });
+  },
+
+  async getAdminSettings(token: string) {
+    return request<{
+      admins: string[];
+      pushSubscriptions: number;
+      push: { configured: boolean; subject: string | null };
+      databaseConnected: boolean;
+    }>("/admin/settings", { token, cache: "no-store" });
+  },
+
+  async getAdminNotificationHistory(token: string, page = 1) {
+    return request<{
+      items: Array<{
+        id: string;
+        title: string;
+        body: string;
+        url: string;
+        targetCount: number;
+        deliveredCount: number;
+        failedCount: number;
+        sentByPhone: string | null;
+        createdAt: string;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>(`/admin/notifications?page=${page}`, { token, cache: "no-store" });
+  },
+
+  async sendAdminNotification(token: string, data: { title: string; body: string; url: string }) {
+    return request<{
+      success: boolean;
+      targetCount: number;
+      deliveredCount: number;
+      failedCount: number;
+    }>("/admin/notifications", {
+      method: "POST",
+      token,
+      body: JSON.stringify(data),
+    });
+  },
+
   // ─── PUSH NOTIFICATIONS ───
   async getVapidPublicKey(): Promise<{ publicKey: string | null }> {
     return request<{ publicKey: string | null }>("/notifications/vapid-public-key");

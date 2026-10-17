@@ -1,0 +1,73 @@
+import { ArrowUpRight, Search, ShoppingBag } from "lucide-react";
+import { getSessionToken } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { formatFcfa } from "@/lib/money";
+import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
+
+export const metadata = { title: "Commandes · Administration Jaayma" };
+type SearchParams = Promise<{ q?: string; status?: string; payment?: string; page?: string }>;
+
+export default async function AdminOrdersPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const token = await getSessionToken();
+  if (!token) return <AdminError message="Votre session a expiré. Reconnectez-vous." />;
+  const query = params.q?.trim() || "";
+  const status = params.status || "";
+  const payment = params.payment || "";
+  const page = Math.max(1, Number.parseInt(params.page || "1", 10) || 1);
+  try {
+    const result = await api.getAdminOrders(token, { q: query, status, payment, page });
+    const hrefForPage = (nextPage: number) => {
+      const search = new URLSearchParams();
+      if (query) search.set("q", query);
+      if (status) search.set("status", status);
+      if (payment) search.set("payment", payment);
+      search.set("page", String(nextPage));
+      return `/admin/commandes?${search}`;
+    };
+    return (
+      <>
+        <AdminPageTitle eyebrow="Suivi des ventes" title="Commandes" description="Consultez les commandes de toutes les boutiques et repérez rapidement les paiements en attente ou les commandes à traiter." action={<span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-ghost"><ShoppingBag size={14} className="mr-1.5 inline text-sun" />{result.total} commande{result.total !== 1 ? "s" : ""}</span>} />
+
+        <form method="GET" action="/admin/commandes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(220px,1fr)_190px_170px_auto] sm:items-center sm:p-5`}>
+          <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input type="search" name="q" defaultValue={query} placeholder="Référence, client, téléphone, boutique…" className="w-full rounded-xl border border-ink/15 bg-papier py-3 pl-10 pr-3 text-sm font-semibold text-ink outline-none focus:border-sun" /></label>
+          <select name="status" defaultValue={status} aria-label="Statut de commande" className="rounded-xl border border-white/10 bg-[#0F1E3D] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-sun"><option value="">Tous les statuts</option><option value="NEW">Nouvelle</option><option value="CONFIRMED">Confirmée</option><option value="PAID">Payée</option><option value="PREPARING">En préparation</option><option value="OUT_FOR_DELIVERY">En livraison</option><option value="DELIVERED">Livrée</option><option value="CANCELLED">Annulée</option></select>
+          <select name="payment" defaultValue={payment} aria-label="Statut de paiement" className="rounded-xl border border-white/10 bg-[#0F1E3D] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-sun"><option value="">Tous les paiements</option><option value="paid">Payée</option><option value="pending">En attente</option></select>
+          <button className="rounded-xl border-2 border-ink bg-sun px-5 py-3 text-sm font-black text-ink shadow-[3px_3px_0_#000]">Filtrer</button>
+        </form>
+
+        <section className={`${adminPanelClass()} mt-5 overflow-hidden`}>
+          <div className="overflow-x-auto"><table className="w-full min-w-[830px] border-collapse text-left">
+            <thead><tr className="bg-[#0F1E3D]/60 text-[10px] font-black uppercase tracking-[0.13em] text-ghost"><th className="px-4 py-3.5 sm:px-5">Référence</th><th className="px-4 py-3.5">Client</th><th className="px-4 py-3.5">Boutique</th><th className="px-4 py-3.5">Montant & paiement</th><th className="px-4 py-3.5">Statut</th></tr></thead>
+            <tbody>{result.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-ghost">Aucune commande ne correspond à ces filtres.</td></tr> : result.items.map((order) => (
+              <tr key={order.id} className="border-t border-white/10 text-sm transition-colors hover:bg-white/[0.03]">
+                <td className="px-4 py-4 sm:px-5"><p className="font-mono text-xs font-black text-sun">{order.reference}</p><p className="mt-1 text-[11px] text-ghost">{formatDate(order.createdAt)}</p></td>
+                <td className="px-4 py-4"><p className="font-bold text-white">{order.customerName}</p><a href={`tel:${order.customerPhone}`} className="mt-1 block text-xs text-ghost hover:text-sun">{order.customerPhone}</a></td>
+                <td className="px-4 py-4"><a href={`/${order.shop.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-white hover:text-sun">{order.shop.name}<ArrowUpRight size={12} /></a><p className="mt-1 text-[11px] text-ghost">{order._count.items} article{order._count.items !== 1 ? "s" : ""}</p></td>
+                <td className="px-4 py-4"><p className="font-bricolage font-black text-white">{formatFcfa(order.total)}</p><p className={`mt-1 text-[10px] font-black uppercase ${order.paymentStatus.toLowerCase() === "paid" ? "text-[#64D2B0]" : "text-[#F3C65E]"}`}>{order.paymentStatus.toLowerCase() === "paid" ? "Payée" : "En attente"} · {paymentLabel(order.paymentMethod)}</p></td>
+                <td className="px-4 py-4"><span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-black text-ghost">{statusLabel(order.status)}</span></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+          <AdminPagination page={result.page} totalPages={result.totalPages} total={result.total} pageSize={result.pageSize} noun="commandes" hrefForPage={hrefForPage} />
+        </section>
+      </>
+    );
+  } catch (error) {
+    return <AdminError message={error instanceof Error ? error.message : "Impossible de charger les commandes."} />;
+  }
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Dakar" }).format(new Date(value));
+}
+
+function statusLabel(value: string) {
+  const labels: Record<string, string> = { NEW: "Nouvelle", CONFIRMED: "Confirmée", PAID: "Payée", PREPARING: "En préparation", OUT_FOR_DELIVERY: "En livraison", DELIVERED: "Livrée", CANCELLED: "Annulée" };
+  return labels[value] || value;
+}
+
+function paymentLabel(value: string) {
+  const labels: Record<string, string> = { cash: "espèces", wave: "Wave", orange_money: "Orange Money", orange: "Orange Money" };
+  return labels[value.toLowerCase()] || value;
+}

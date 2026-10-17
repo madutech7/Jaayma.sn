@@ -22,13 +22,11 @@ export class AuthController {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, '');
-    // token format is usr_<userId>_<timestamp>
-    const match = token.match(/^usr_([^_]+)_/);
-    if (!match) {
+    const userId = this.authService.verifySessionToken(token);
+    if (!userId) {
       throw new UnauthorizedException('Token invalide');
     }
 
-    const userId = match[1];
     return this.authService.getMe(userId);
   }
 }

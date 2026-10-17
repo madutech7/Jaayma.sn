@@ -28,7 +28,8 @@ const shopSchema = z.object({
   status: z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED']).optional().default('ACTIVE'),
 });
 
-const updateShopSchema = shopSchema.partial().omit({ slug: true });
+// Publication status and ownership are managed through protected admin flows.
+const updateShopSchema = shopSchema.partial().omit({ slug: true, ownerId: true, status: true });
 
 @Injectable()
 export class ShopsService {

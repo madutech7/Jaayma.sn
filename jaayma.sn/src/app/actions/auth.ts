@@ -3,6 +3,7 @@
 import { normalizePhone } from "@/lib/phone";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { redirect } from "next/navigation";
 
 export type AuthResult = {
   error?: string;
@@ -74,4 +75,9 @@ export async function loginSeller(
 
 export async function logoutSeller(): Promise<void> {
   await clearSessionCookie();
+}
+
+export async function logoutAndRedirectToLogin(): Promise<never> {
+  await clearSessionCookie();
+  redirect("/connexion");
 }

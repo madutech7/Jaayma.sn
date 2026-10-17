@@ -1,5 +1,12 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -16,7 +23,48 @@ const loginSchema = z.object({
 
 @Injectable()
 export class AuthService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ConfigService) private readonly config: ConfigService,
+  ) {}
+
+  createSessionToken(userId: string): string {
+    const timestamp = Date.now();
+    const signature = createHmac('sha256', this.getSessionSecret())
+      .update(`${userId}.${timestamp}`)
+      .digest('hex');
+    return `usr_${userId}_${timestamp}_${signature}`;
+  }
+
+  verifySessionToken(token: string, requireSignature = false): string | null {
+    const match = token.match(/^usr_([^_]+)_(\d+)(?:_([a-f0-9]{64}))?$/i);
+    if (!match) return null;
+
+    const [, userId, timestampRaw, signature] = match;
+    const timestamp = Number(timestampRaw);
+    const now = Date.now();
+    const maxAge = 30 * 24 * 60 * 60 * 1000;
+    if (!Number.isSafeInteger(timestamp) || timestamp > now + 5 * 60 * 1000 || now - timestamp > maxAge) {
+      return null;
+    }
+
+    if (!signature) return requireSignature ? null : userId;
+
+    const expected = createHmac('sha256', this.getSessionSecret())
+      .update(`${userId}.${timestamp}`)
+      .digest();
+    const received = Buffer.from(signature, 'hex');
+    return received.length === expected.length && timingSafeEqual(received, expected)
+      ? userId
+      : null;
+  }
+
+  private getSessionSecret(): string {
+    const secret = this.config.get<string>('JWT_SECRET') ?? process.env.JWT_SECRET;
+    if (secret) return secret;
+    if (process.env.NODE_ENV !== 'production') return 'jaayma-local-session-secret';
+    throw new InternalServerErrorException('JWT_SECRET doit être configuré pour les sessions.');
+  }
 
   private hashPassword(password: string): string {
     const salt = randomBytes(16).toString('hex');
@@ -66,7 +114,7 @@ export class AuthService {
     return {
       user,
       shop: null,
-      token: `usr_${user.id}_${Date.now()}`,
+      token: this.createSessionToken(user.id),
     };
   }
 
@@ -104,7 +152,7 @@ export class AuthService {
         name: user.name,
       },
       shop,
-      token: `usr_${user.id}_${Date.now()}`,
+      token: this.createSessionToken(user.id),
     };
   }
 

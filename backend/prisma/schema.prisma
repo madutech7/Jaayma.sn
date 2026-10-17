@@ -54,6 +54,20 @@ model PushSubscription {
   @@index([userId])
 }
 
+model AdminBroadcast {
+  id            String   @id @default(cuid())
+  title         String
+  body          String
+  url           String
+  targetCount   Int      @default(0)
+  deliveredCount Int     @default(0)
+  failedCount   Int      @default(0)
+  sentByPhone   String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model Shop {
   id                String       @id @default(cuid())
   ownerId           String?

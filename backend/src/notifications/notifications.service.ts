@@ -23,6 +23,12 @@ const endpointSchema = z.object({
   endpoint: z.string().url().max(2048).refine(isSupportedPushEndpoint, 'Endpoint push non pris en charge'),
 });
 
+const broadcastSchema = z.object({
+  title: z.string().trim().min(3).max(60),
+  body: z.string().trim().min(3).max(180),
+  url: z.string().trim().regex(/^\/(?!\/)[^\s]*$/, 'Le lien doit rester sur Jaayma'),
+});
+
 type NewOrder = {
   id: string;
   reference: string;
@@ -42,6 +48,54 @@ export class NotificationsService {
 
   getVapidPublicKey(): string | null {
     return this.getVapidConfiguration()?.publicKey ?? null;
+  }
+
+  getAdminPushSettings() {
+    const vapid = this.getVapidConfiguration();
+    return {
+      configured: Boolean(vapid),
+      subject: vapid?.subject ?? null,
+    };
+  }
+
+  async sendBroadcast(input: unknown) {
+    const parsed = broadcastSchema.safeParse(input);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    if (!this.getVapidConfiguration()) {
+      throw new BadRequestException('Configurez les clés VAPID avant d’envoyer une notification.');
+    }
+
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      select: { id: true, endpoint: true, p256dh: true, auth: true },
+    });
+    let deliveredCount = 0;
+    let failedCount = 0;
+    const tag = `jaay-announcement-${Date.now()}`;
+
+    for (let index = 0; index < subscriptions.length; index += 25) {
+      const batch = subscriptions.slice(index, index + 25);
+      const results = await Promise.allSettled(
+        batch.map((subscription) =>
+          this.sendToSubscription(subscription, {
+            ...parsed.data,
+            tag,
+          }),
+        ),
+      );
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) deliveredCount += 1;
+        else failedCount += 1;
+      }
+    }
+
+    return {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      url: parsed.data.url,
+      targetCount: subscriptions.length,
+      deliveredCount,
+      failedCount,
+    };
   }
 
   async saveSubscription(userId: string, input: unknown) {

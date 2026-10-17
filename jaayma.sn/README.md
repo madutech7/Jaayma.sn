@@ -54,6 +54,8 @@ BILLING_WAVE_NUMBER=+221771234567
 ADMIN_PHONES=+221771234567,+221781234567
 ```
 
+Pour une installation locale avec l’API NestJS, renseignez aussi `JWT_SECRET` et `ADMIN_PHONES` dans `backend/.env`. Le numéro administrateur doit correspondre à celui du compte vendeur avec lequel vous vous connectez.
+
 ### 3. Initialiser la base de données locale (Cloudflare D1)
 `npm run dev` applique automatiquement la migration locale avant de démarrer Next.js.
 Pour l'appliquer manuellement :
@@ -77,7 +79,8 @@ Rendez-vous sur [http://localhost:3000](http://localhost:3000).
 - **Explorer :** `http://localhost:3000/explorer`
 - **Espace Vendeur :** `http://localhost:3000/espace`
 - **Connexion :** `http://localhost:3000/connexion` (Numéro démo : `+221771234567`)
-- **Administration :** `http://localhost:3000/admin` (Accessible si le numéro est dans `ADMIN_PHONES`)
+- **Administration :** `http://localhost:3000/admin` (vue d’ensemble)
+- **Back-office :** boutiques, comptes vendeurs, abonnements Pro, commandes, notifications push et réglages dans la navigation admin.
 
 ---
 
@@ -139,8 +142,9 @@ npx wrangler d1 execute jaay-db --remote --file=./db/migrations/0000_initial.sql
 ```bash
 npx wrangler secret put SUPPORT_WHATSAPP
 npx wrangler secret put BILLING_WAVE_NUMBER
-npx wrangler secret put ADMIN_PHONES
 ```
+
+Dans Render → `jaayma-api` → Environment, configurez `ADMIN_PHONES` (numéros séparés par des virgules) et vérifiez que `JWT_SECRET` est renseigné. L’API vérifie ces valeurs avant chaque lecture ou action d’administration. Les clés VAPID restent côté API et ne sont jamais affichées dans le back-office. Après l’activation des sessions signées, les administrateurs doivent se déconnecter puis se reconnecter une fois.
 
 ### 6. Compiler et Déployer
 ```bash

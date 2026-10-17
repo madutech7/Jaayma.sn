@@ -8,12 +8,14 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')
 export class NotificationsController {
   constructor(
     @Inject(NotificationsService) private readonly notifications: NotificationsService,
+    @Inject(AuthService) private readonly auth: AuthService,
   ) {}
 
   @Get('vapid-public-key')
@@ -23,26 +25,25 @@ export class NotificationsController {
 
   @Post('push-subscriptions')
   saveSubscription(@Headers('authorization') authHeader: string | undefined, @Body() body: unknown) {
-    return this.notifications.saveSubscription(getUserId(authHeader), body);
+    return this.notifications.saveSubscription(this.getUserId(authHeader), body);
   }
 
   @Delete('push-subscriptions')
   removeSubscription(@Headers('authorization') authHeader: string | undefined, @Body() body: unknown) {
-    return this.notifications.removeSubscription(getUserId(authHeader), body);
+    return this.notifications.removeSubscription(this.getUserId(authHeader), body);
   }
 
   @Post('test')
   sendTest(@Headers('authorization') authHeader: string | undefined, @Body() body: unknown) {
-    return this.notifications.sendTestNotification(getUserId(authHeader), body);
+    return this.notifications.sendTestNotification(this.getUserId(authHeader), body);
   }
-}
 
-function getUserId(authHeader?: string): string {
-  const token = authHeader?.replace(/^Bearer\s+/i, '');
-  // Match the existing seller session format: usr_<userId>_<created-at>.
-  const match = token?.match(/^usr_([^_]+)_\d+$/);
-  if (!match) {
-    throw new UnauthorizedException('Non autorisé');
+  private getUserId(authHeader?: string): string {
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+    const userId = token ? this.auth.verifySessionToken(token, true) : null;
+    if (!userId) {
+      throw new UnauthorizedException('Session expirée. Reconnectez-vous.');
+    }
+    return userId;
   }
-  return match[1];
 }

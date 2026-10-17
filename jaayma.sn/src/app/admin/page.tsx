@@ -1,186 +1,85 @@
-import { checkIsAdmin } from "@/app/actions/admin";
-import { api } from "@/lib/api";
 import Link from "next/link";
-import { Search, AlertOctagon, ArrowLeft } from "lucide-react";
-import AdminShopRow from "./AdminShopRow";
+import { Activity, AlertTriangle, ArrowRight, BadgeCheck, Bell, Boxes, CircleDollarSign, CreditCard, ShoppingBag, Store, Users } from "lucide-react";
+import { getSessionToken } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { formatFcfa } from "@/lib/money";
+import { AdminError, AdminPageTitle, adminPanelClass } from "./AdminUI";
 
-export const metadata = {
-  title: "Administration | Jaay",
-};
+export const metadata = { title: "Vue d’ensemble · Administration Jaayma" };
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const { isAdmin, phone } = await checkIsAdmin();
+export default async function AdminDashboardPage() {
+  const token = await getSessionToken();
+  if (!token) return <AdminError message="Votre session a expiré. Reconnectez-vous." />;
 
-  if (!isAdmin) {
+  try {
+    const { metrics, recentOrders } = await api.getAdminOverview(token, { page: 1 });
     return (
-      <div className="min-h-screen bg-nuit flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-16 h-16 rounded-2xl border-[2.5px] border-hibiscus/50 bg-hibiscus/10 text-hibiscus flex items-center justify-center mb-4">
-          <AlertOctagon className="w-8 h-8" />
-        </div>
-        <h1 className="text-2xl font-bricolage font-black text-white mb-2">
-          Accès Réservé
-        </h1>
-        <p className="text-ghost text-sm max-w-sm mb-6">
-          Votre compte {phone ? `(${phone})` : ""} n'est pas autorisé à accéder au panneau d'administration.
-        </p>
-        <Link
-          href="/espace"
-          className="bg-sun text-ink text-xs font-bold px-5 py-2.5 rounded-full border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D] hover:-translate-y-0.5 transition-transform"
-        >
-          Retour à mon espace vendeur
-        </Link>
-      </div>
-    );
-  }
+      <>
+        <AdminPageTitle eyebrow="Centre de pilotage" title="Vue d’ensemble" description="Les indicateurs clés et les dernières activités de la plateforme Jaayma." action={<span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-ghost"><Activity size={15} className="text-[#64D2B0]" /> Données en direct</span>} />
 
-  const params = await searchParams;
-  const query = params.q?.trim() || "";
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Indicateurs globaux">
+          <MetricCard label="Boutiques" value={metrics.totalShops} caption={`${metrics.activeShops} en ligne · ${metrics.suspendedShops} suspendue${metrics.suspendedShops !== 1 ? "s" : ""}`} icon={<Store size={18} />} tone="sun" />
+          <MetricCard label="Comptes vendeurs" value={metrics.sellers} caption={`${metrics.activeProducts} produits actuellement en ligne`} icon={<Users size={18} />} tone="pink" />
+          <MetricCard label="Commandes" value={metrics.totalOrders} caption={`${metrics.newOrders} nouvelles · ${metrics.todayOrders} aujourd’hui`} icon={<ShoppingBag size={18} />} tone="mint" />
+          <MetricCard label="Ventes encaissées" value={formatFcfa(metrics.revenue)} caption={`${formatFcfa(metrics.revenueToday)} aujourd’hui · ${metrics.paidOrders} commandes payées`} icon={<CircleDollarSign size={18} />} tone="blue" />
+        </section>
 
-  const allShops = await api.getShops({ q: query });
+        <section className={`${adminPanelClass()} mt-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:p-5`} aria-label="État de la plateforme">
+          <QuickStat label="Boutiques actives" value={metrics.activeShops} icon={<BadgeCheck size={17} className="text-[#64D2B0]" />} />
+          <QuickStat label="Brouillons" value={metrics.draftShops} icon={<Boxes size={17} className="text-ghost" />} />
+          <QuickStat label="Pro actif" value={metrics.proShops} icon={<CreditCard size={17} className="text-sun" />} />
+          <QuickStat label="Pro expiré" value={metrics.expiredProShops} icon={<AlertTriangle size={17} className="text-[#F3C65E]" />} />
+        </section>
 
-  const enrichedShops = allShops.map((s) => ({
-    id: s.id,
-    name: s.name,
-    slug: s.slug,
-    plan: (s.plan === "pro" ? "pro" : "free") as "free" | "pro",
-    planExpiresAt: s.planExpiresAt
-      ? typeof s.planExpiresAt === "number"
-        ? s.planExpiresAt
-        : Math.floor(new Date(s.planExpiresAt).getTime() / 1000)
-      : null,
-    isPublished: s.isPublished ?? true,
-    isSuspended: s.isSuspended ?? false,
-    createdAt: s.createdAt
-      ? typeof s.createdAt === "number"
-        ? s.createdAt
-        : Math.floor(new Date(s.createdAt).getTime() / 1000)
-      : Math.floor(Date.now() / 1000),
-    sellerPhone: s.whatsapp || "",
-    productCount: s.products?.length || 0,
-    orderCount: 0,
-  }));
-
-  const totalShops = allShops.length;
-  const proShops = allShops.filter((s) => s.plan === "pro").length;
-  const suspendedShops = allShops.filter((s) => s.isSuspended).length;
-  const publishedShops = allShops.filter((s) => s.isPublished).length;
-
-  return (
-    <div className="min-h-screen bg-nuit pb-16">
-      {/* Top Header */}
-      <header className="bg-ink text-white border-b-[2px] border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/espace"
-              className="p-2 rounded-xl border-[2px] border-white/15 bg-white/5 hover:bg-white/10 text-ghost transition-colors"
-              title="Retour à l'espace vendeur"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <img src="/logo-sombre.svg" alt="Jaay" className="h-6 w-auto" />
-              <span className="font-bricolage font-black text-lg text-sun">Admin</span>
+        <div className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className={`${adminPanelClass()} overflow-hidden`}>
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5">
+              <div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-sun">Activité récente</p><h2 className="mt-1 font-bricolage text-lg font-black">Nouvelles commandes</h2></div>
+              <Link href="/admin/commandes?status=NEW" className="inline-flex items-center gap-1.5 text-xs font-bold text-ghost hover:text-white">Tout voir <ArrowRight size={14} /></Link>
             </div>
-          </div>
-          <div className="text-xs text-ghost">
-            Connecté en tant que <span className="font-mono text-white">{phone}</span>
-          </div>
-        </div>
-      </header>
+            {recentOrders.length === 0 ? (
+              <div className="p-8 text-center text-sm text-ghost">Aucune commande pour le moment.</div>
+            ) : (
+              <div className="divide-y divide-white/10">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sun/25 bg-sun/10 text-sun"><ShoppingBag size={17} /></span>
+                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{order.customerName}</p><p className="mt-0.5 truncate text-[11px] text-ghost">{order.shop.name} · {order.reference}</p></div>
+                    <p className="shrink-0 font-bricolage text-sm font-black text-sun">{formatFcfa(order.total)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5 sm:space-y-6">
-        {/* STATS OVERVIEW */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-papier p-4 rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D]">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider block">
-              Boutiques totales
-            </span>
-            <span className="text-2xl font-bricolage font-black text-ink">
-              {totalShops}
-            </span>
-          </div>
-
-          <div className="bg-papier p-4 rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D]">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider block">
-              Boutiques Pro
-            </span>
-            <span className="text-2xl font-bricolage font-black text-hibiscus">
-              {proShops}
-            </span>
-          </div>
-
-          <div className="bg-papier p-4 rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D]">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider block">
-              En ligne
-            </span>
-            <span className="text-2xl font-bricolage font-black text-baobab">
-              {publishedShops}
-            </span>
-          </div>
-
-          <div className="bg-papier p-4 rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D]">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider block">
-              Suspendues
-            </span>
-            <span className="text-2xl font-bricolage font-black text-hibiscus">
-              {suspendedShops}
-            </span>
-          </div>
+          <section className={`${adminPanelClass()} p-4 sm:p-5`}>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-sun">Accès rapide</p>
+            <h2 className="mt-1 font-bricolage text-lg font-black">Gestion de la plateforme</h2>
+            <div className="mt-4 grid gap-2">
+              <QuickLink href="/admin/boutiques" title="Gérer les boutiques" description="Publication, suspension et catalogue" icon={<Store size={17} />} />
+              <QuickLink href="/admin/abonnements" title="Abonnements Pro" description={`${metrics.proShops} actifs · ${metrics.expiredProShops} expirés`} icon={<CreditCard size={17} />} />
+              <QuickLink href="/admin/notifications" title="Envoyer une notification" description="Informer les vendeurs abonnés au push" icon={<Bell size={17} />} />
+            </div>
+          </section>
         </div>
 
-        {/* SEARCH & FILTERS */}
-        <div className="bg-[#16264D] p-4 rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <form method="GET" action="/admin" className="relative w-full sm:max-w-md">
-            <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Rechercher par nom, slug, téléphone..."
-              className="w-full bg-papier border-[2px] border-ink rounded-xl pl-10 pr-4 py-3 text-sm font-medium outline-none focus:border-sun text-ink placeholder:text-muted"
-            />
-          </form>
+        <p className="mt-6 text-center text-[11px] text-ghost/60">Les ventes encaissées totalisent les commandes marquées comme payées.</p>
+      </>
+    );
+  } catch (error) {
+    return <AdminError message={error instanceof Error ? error.message : "Impossible de charger les indicateurs."} />;
+  }
+}
 
-          <span className="text-xs font-semibold text-ghost">
-            {enrichedShops.length} boutique{enrichedShops.length > 1 ? "s" : ""} affichée(s)
-          </span>
-        </div>
+function MetricCard({ label, value, caption, icon, tone }: { label: string; value: string | number; caption: string; icon: React.ReactNode; tone: "sun" | "pink" | "mint" | "blue" }) {
+  const toneClasses = { sun: "bg-sun", pink: "bg-[#F6C3D2]", mint: "bg-[#CFEFE6]", blue: "bg-[#DCE5FF]" };
+  return <article className="flex min-h-[145px] flex-col justify-between rounded-[20px] border-2 border-ink bg-papier p-4 text-ink shadow-[4px_4px_0_#000] sm:p-5"><div className="flex items-start justify-between gap-2"><p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">{label}</p><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink ${toneClasses[tone]}`}>{icon}</span></div><p className="mt-3 break-words font-bricolage text-2xl font-black leading-none tracking-tight sm:text-3xl">{value}</p><p className="mt-2 text-[10px] font-semibold leading-4 text-muted sm:text-[11px]">{caption}</p></article>;
+}
 
-        {/* SHOPS TABLE */}
-        <div className="bg-papier rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_#0F1E3D] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-left border-collapse">
-              <thead>
-                <tr className="bg-ink border-b-[2px] border-ink text-[11px] font-bold uppercase tracking-wider text-ghost">
-                  <th className="py-3 px-4">Boutique</th>
-                  <th className="py-3 px-4">Vendeur</th>
-                  <th className="py-3 px-4">Catalogue</th>
-                  <th className="py-3 px-4">Statut & Plan</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrichedShops.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-sm text-muted">
-                      Aucune boutique ne correspond à votre recherche.
-                    </td>
-                  </tr>
-                ) : (
-                  enrichedShops.map((shop) => (
-                    <AdminShopRow key={shop.id} shop={shop} />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+function QuickStat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+  return <div className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06]">{icon}</span><div><p className="font-bricolage text-lg font-black leading-none">{value}</p><p className="mt-1 text-[10px] font-semibold text-ghost">{label}</p></div></div>;
+}
+
+function QuickLink({ href, title, description, icon }: { href: string; title: string; description: string; icon: React.ReactNode }) {
+  return <Link href={href} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-sun/35 hover:bg-white/[0.06]"><span className="text-sun">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block truncate text-[11px] text-ghost">{description}</span></span><ArrowRight size={14} className="text-ghost" /></Link>;
 }

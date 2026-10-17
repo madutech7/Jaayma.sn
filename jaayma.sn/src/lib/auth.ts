@@ -19,6 +19,7 @@ export const getSessionToken = cache(async (): Promise<string | null> => {
 /** Returns the authenticated seller and their shop from the NestJS backend, deduplicated per request pass. */
 export const getCurrentSellerContext = cache(async (): Promise<{
   sellerId: string;
+  phone: string;
   shop: Shop | null;
 } | null> => {
   const token = await getSessionToken();
@@ -29,6 +30,7 @@ export const getCurrentSellerContext = cache(async (): Promise<{
     if (!res || !res.user) return null;
     return {
       sellerId: res.user.id,
+      phone: res.user.phone,
       shop: res.shop,
     };
   } catch {
