@@ -46,18 +46,37 @@ export class AdminController {
   @Get('overview')
   async overview(
     @Headers('authorization') authHeader: string | undefined,
+  ) {
+    await this.requireAdmin(authHeader);
+    return this.admin.getOverview();
+  }
+
+  @Get('shops')
+  async shops(
+    @Headers('authorization') authHeader: string | undefined,
     @Query('q') q?: string,
     @Query('status') status?: string,
     @Query('plan') plan?: string,
     @Query('page') page?: string,
   ) {
     await this.requireAdmin(authHeader);
-    return this.admin.getOverview({
+    return this.admin.getShops({
       q,
       status: parseStatus(status),
       plan: parsePlan(plan),
       page: parsePage(page),
     });
+  }
+
+  @Get('subscriptions')
+  async subscriptions(
+    @Headers('authorization') authHeader: string | undefined,
+    @Query('q') q?: string,
+    @Query('plan') plan?: string,
+    @Query('page') page?: string,
+  ) {
+    await this.requireAdmin(authHeader);
+    return this.admin.getSubscriptions({ q, plan: parsePlan(plan), page: parsePage(page) });
   }
 
   @Get('orders')

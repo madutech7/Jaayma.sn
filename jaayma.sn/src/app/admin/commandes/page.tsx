@@ -3,6 +3,7 @@ import { getSessionToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { formatFcfa } from "@/lib/money";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
+import AdminFilterForm from "../AdminFilterForm";
 
 export const metadata = { title: "Commandes · Administration Jaayma" };
 type SearchParams = Promise<{ q?: string; status?: string; payment?: string; page?: string }>;
@@ -27,25 +28,25 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     };
     return (
       <>
-        <AdminPageTitle eyebrow="Suivi des ventes" title="Commandes" description="Consultez les commandes de toutes les boutiques et repérez rapidement les paiements en attente ou les commandes à traiter." action={<span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-ghost"><ShoppingBag size={14} className="mr-1.5 inline text-sun" />{result.total} commande{result.total !== 1 ? "s" : ""}</span>} />
+        <AdminPageTitle eyebrow="Suivi des ventes" title="Commandes" description="Consultez les commandes de toutes les boutiques et repérez rapidement les paiements en attente ou les commandes à traiter." action={<span className="rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-bold text-muted"><ShoppingBag size={14} className="mr-1.5 inline text-[#9A6500]" />{result.total} commande{result.total !== 1 ? "s" : ""}</span>} />
 
-        <form method="GET" action="/admin/commandes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(220px,1fr)_190px_170px_auto] sm:items-center sm:p-5`}>
+        <AdminFilterForm action="/admin/commandes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(220px,1fr)_190px_170px_auto] sm:items-center sm:p-5`}>
           <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input type="search" name="q" defaultValue={query} placeholder="Référence, client, téléphone, boutique…" className="w-full rounded-xl border border-ink/15 bg-papier py-3 pl-10 pr-3 text-sm font-semibold text-ink outline-none focus:border-sun" /></label>
-          <select name="status" defaultValue={status} aria-label="Statut de commande" className="rounded-xl border border-white/10 bg-[#0F1E3D] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-sun"><option value="">Tous les statuts</option><option value="NEW">Nouvelle</option><option value="CONFIRMED">Confirmée</option><option value="PAID">Payée</option><option value="PREPARING">En préparation</option><option value="OUT_FOR_DELIVERY">En livraison</option><option value="DELIVERED">Livrée</option><option value="CANCELLED">Annulée</option></select>
-          <select name="payment" defaultValue={payment} aria-label="Statut de paiement" className="rounded-xl border border-white/10 bg-[#0F1E3D] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-sun"><option value="">Tous les paiements</option><option value="paid">Payée</option><option value="pending">En attente</option></select>
+          <select name="status" defaultValue={status} aria-label="Statut de commande" className="rounded-xl border border-ink/10 bg-[#FFFBF2] px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-sun"><option value="">Tous les statuts</option><option value="NEW">Nouvelle</option><option value="CONFIRMED">Confirmée</option><option value="PAID">Payée</option><option value="PREPARING">En préparation</option><option value="OUT_FOR_DELIVERY">En livraison</option><option value="DELIVERED">Livrée</option><option value="CANCELLED">Annulée</option></select>
+          <select name="payment" defaultValue={payment} aria-label="Statut de paiement" className="rounded-xl border border-ink/10 bg-[#FFFBF2] px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-sun"><option value="">Tous les paiements</option><option value="paid">Payée</option><option value="pending">En attente</option></select>
           <button className="rounded-xl border-2 border-ink bg-sun px-5 py-3 text-sm font-black text-ink shadow-[3px_3px_0_#000]">Filtrer</button>
-        </form>
+        </AdminFilterForm>
 
         <section className={`${adminPanelClass()} mt-5 overflow-hidden`}>
           <div className="overflow-x-auto"><table className="w-full min-w-[830px] border-collapse text-left">
-            <thead><tr className="bg-[#0F1E3D]/60 text-[10px] font-black uppercase tracking-[0.13em] text-ghost"><th className="px-4 py-3.5 sm:px-5">Référence</th><th className="px-4 py-3.5">Client</th><th className="px-4 py-3.5">Boutique</th><th className="px-4 py-3.5">Montant & paiement</th><th className="px-4 py-3.5">Statut</th></tr></thead>
-            <tbody>{result.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-ghost">Aucune commande ne correspond à ces filtres.</td></tr> : result.items.map((order) => (
-              <tr key={order.id} className="border-t border-white/10 text-sm transition-colors hover:bg-white/[0.03]">
-                <td className="px-4 py-4 sm:px-5"><p className="font-mono text-xs font-black text-sun">{order.reference}</p><p className="mt-1 text-[11px] text-ghost">{formatDate(order.createdAt)}</p></td>
-                <td className="px-4 py-4"><p className="font-bold text-white">{order.customerName}</p><a href={`tel:${order.customerPhone}`} className="mt-1 block text-xs text-ghost hover:text-sun">{order.customerPhone}</a></td>
-                <td className="px-4 py-4"><a href={`/${order.shop.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-white hover:text-sun">{order.shop.name}<ArrowUpRight size={12} /></a><p className="mt-1 text-[11px] text-ghost">{order._count.items} article{order._count.items !== 1 ? "s" : ""}</p></td>
-                <td className="px-4 py-4"><p className="font-bricolage font-black text-white">{formatFcfa(order.total)}</p><p className={`mt-1 text-[10px] font-black uppercase ${order.paymentStatus.toLowerCase() === "paid" ? "text-[#64D2B0]" : "text-[#F3C65E]"}`}>{order.paymentStatus.toLowerCase() === "paid" ? "Payée" : "En attente"} · {paymentLabel(order.paymentMethod)}</p></td>
-                <td className="px-4 py-4"><span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-black text-ghost">{statusLabel(order.status)}</span></td>
+            <thead><tr className="bg-[#F0EDE8] text-[10px] font-black uppercase tracking-[0.13em] text-muted"><th className="px-4 py-3.5 sm:px-5">Référence</th><th className="px-4 py-3.5">Client</th><th className="px-4 py-3.5">Boutique</th><th className="px-4 py-3.5">Montant & paiement</th><th className="px-4 py-3.5">Statut</th></tr></thead>
+            <tbody>{result.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted">Aucune commande ne correspond à ces filtres.</td></tr> : result.items.map((order) => (
+              <tr key={order.id} className="border-t border-ink/10 text-sm transition-colors hover:bg-ink/[0.03]">
+                <td className="px-4 py-4 sm:px-5"><p className="font-mono text-xs font-black text-[#9A6500]">{order.reference}</p><p className="mt-1 text-[11px] text-muted">{formatDate(order.createdAt)}</p></td>
+                <td className="px-4 py-4"><p className="font-bold text-ink">{order.customerName}</p><a href={`tel:${order.customerPhone}`} className="mt-1 block text-xs text-muted hover:text-[#9A6500]">{order.customerPhone}</a></td>
+                <td className="px-4 py-4"><a href={`/${order.shop.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-ink hover:text-[#9A6500]">{order.shop.name}<ArrowUpRight size={12} /></a><p className="mt-1 text-[11px] text-muted">{order._count.items} article{order._count.items !== 1 ? "s" : ""}</p></td>
+                <td className="px-4 py-4"><p className="font-bricolage font-black text-ink">{formatFcfa(order.total)}</p><p className={`mt-1 text-[10px] font-black uppercase ${order.paymentStatus.toLowerCase() === "paid" ? "text-baobab" : "text-[#8A5A00]"}`}>{order.paymentStatus.toLowerCase() === "paid" ? "Payée" : "En attente"} · {paymentLabel(order.paymentMethod)}</p></td>
+                <td className="px-4 py-4"><span className="rounded-full border border-ink/15 bg-ink/5 px-2.5 py-1 text-[10px] font-black text-muted">{statusLabel(order.status)}</span></td>
               </tr>
             ))}</tbody>
           </table></div>

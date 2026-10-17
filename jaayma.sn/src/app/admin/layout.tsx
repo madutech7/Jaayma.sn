@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AlertOctagon, ArrowLeft } from "lucide-react";
+import { redirect } from "next/navigation";
 import { checkIsAdmin } from "@/app/actions/admin";
 import { logoutAndRedirectToLogin } from "@/app/actions/auth";
 import AdminNavigation from "./AdminNavigation";
@@ -9,6 +10,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const access = await checkIsAdmin();
 
   if (!access.isAdmin) {
+    // Do not tell an ordinary seller that the admin panel exists. Send them
+    // back to their normal workspace; API authorization remains enforced too.
+    if (access.denialReason === "not-admin") redirect("/espace");
+
     const needsLogin = access.error?.includes("Reconnectez") || access.error?.includes("Connectez-vous");
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-nuit p-5 text-center text-white">
@@ -44,12 +49,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </header>
 
       <div className="mx-auto flex max-w-[1500px] items-start gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:gap-8 lg:px-8">
-        <aside className="sticky top-[92px] hidden w-[230px] shrink-0 rounded-2xl border border-white/10 bg-[#101E3A] p-3 lg:block">
-          <p className="mb-3 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.15em] text-ghost/70">Gestion de Jaayma</p>
+        <aside className="sticky top-[92px] hidden w-[230px] shrink-0 rounded-[22px] border-[2.5px] border-ink bg-papier p-3 text-ink shadow-[4px_4px_0_#0F1E3D] lg:block">
+          <p className="mb-3 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.15em] text-hibiscus">Gestion de Jaayma</p>
           <AdminNavigation />
-          <div className="mt-4 border-t border-white/10 px-3 pt-4 text-[11px] leading-5 text-ghost/65">Données privées · accès journalisé par compte</div>
+          <div className="mt-4 border-t border-ink/10 px-3 pt-4 text-[11px] leading-5 text-muted">Données privées · accès réservé</div>
         </aside>
-        <main className="min-w-0 flex-1 pb-10">{children}</main>
+        <main className="min-w-0 flex-1 pb-10 text-ink">
+          <div className="rounded-[26px] border-[2.5px] border-ink bg-[#F0EDE8] p-4 shadow-[5px_5px_0_#0F1E3D] sm:p-6 lg:p-7">{children}</div>
+        </main>
       </div>
     </div>
   );

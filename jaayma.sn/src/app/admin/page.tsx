@@ -12,10 +12,10 @@ export default async function AdminDashboardPage() {
   if (!token) return <AdminError message="Votre session a expiré. Reconnectez-vous." />;
 
   try {
-    const { metrics, recentOrders } = await api.getAdminOverview(token, { page: 1 });
+    const { metrics, recentOrders } = await api.getAdminOverview(token);
     return (
       <>
-        <AdminPageTitle eyebrow="Centre de pilotage" title="Vue d’ensemble" description="Les indicateurs clés et les dernières activités de la plateforme Jaayma." action={<span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-ghost"><Activity size={15} className="text-[#64D2B0]" /> Données en direct</span>} />
+        <AdminPageTitle eyebrow="Centre de pilotage" title="Vue d’ensemble" description="Les indicateurs clés et les dernières activités de la plateforme Jaayma." action={<span className="inline-flex items-center gap-2 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-semibold text-muted"><Activity size={15} className="text-baobab" /> Données en direct</span>} />
 
         <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Indicateurs globaux">
           <MetricCard label="Boutiques" value={metrics.totalShops} caption={`${metrics.activeShops} en ligne · ${metrics.suspendedShops} suspendue${metrics.suspendedShops !== 1 ? "s" : ""}`} icon={<Store size={18} />} tone="sun" />
@@ -25,27 +25,27 @@ export default async function AdminDashboardPage() {
         </section>
 
         <section className={`${adminPanelClass()} mt-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:p-5`} aria-label="État de la plateforme">
-          <QuickStat label="Boutiques actives" value={metrics.activeShops} icon={<BadgeCheck size={17} className="text-[#64D2B0]" />} />
-          <QuickStat label="Brouillons" value={metrics.draftShops} icon={<Boxes size={17} className="text-ghost" />} />
-          <QuickStat label="Pro actif" value={metrics.proShops} icon={<CreditCard size={17} className="text-sun" />} />
-          <QuickStat label="Pro expiré" value={metrics.expiredProShops} icon={<AlertTriangle size={17} className="text-[#F3C65E]" />} />
+          <QuickStat label="Boutiques actives" value={metrics.activeShops} icon={<BadgeCheck size={17} className="text-baobab" />} />
+          <QuickStat label="Brouillons" value={metrics.draftShops} icon={<Boxes size={17} className="text-muted" />} />
+          <QuickStat label="Pro actif" value={metrics.proShops} icon={<CreditCard size={17} className="text-[#9A6500]" />} />
+          <QuickStat label="Pro expiré" value={metrics.expiredProShops} icon={<AlertTriangle size={17} className="text-[#8A5A00]" />} />
         </section>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <section className={`${adminPanelClass()} overflow-hidden`}>
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5">
-              <div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-sun">Activité récente</p><h2 className="mt-1 font-bricolage text-lg font-black">Nouvelles commandes</h2></div>
-              <Link href="/admin/commandes?status=NEW" className="inline-flex items-center gap-1.5 text-xs font-bold text-ghost hover:text-white">Tout voir <ArrowRight size={14} /></Link>
+            <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-4 sm:px-5">
+              <div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9A6500]">Activité récente</p><h2 className="mt-1 font-bricolage text-lg font-black">Nouvelles commandes</h2></div>
+              <Link href="/admin/commandes?status=NEW" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted hover:text-ink">Tout voir <ArrowRight size={14} /></Link>
             </div>
             {recentOrders.length === 0 ? (
-              <div className="p-8 text-center text-sm text-ghost">Aucune commande pour le moment.</div>
+              <div className="p-8 text-center text-sm text-muted">Aucune commande pour le moment.</div>
             ) : (
               <div className="divide-y divide-white/10">
                 {recentOrders.map((order) => (
                   <div key={order.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sun/25 bg-sun/10 text-sun"><ShoppingBag size={17} /></span>
-                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{order.customerName}</p><p className="mt-0.5 truncate text-[11px] text-ghost">{order.shop.name} · {order.reference}</p></div>
-                    <p className="shrink-0 font-bricolage text-sm font-black text-sun">{formatFcfa(order.total)}</p>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sun/25 bg-sun/10 text-[#9A6500]"><ShoppingBag size={17} /></span>
+                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{order.customerName}</p><p className="mt-0.5 truncate text-[11px] text-muted">{order.shop.name} · {order.reference}</p></div>
+                    <p className="shrink-0 font-bricolage text-sm font-black text-[#9A6500]">{formatFcfa(order.total)}</p>
                   </div>
                 ))}
               </div>
@@ -53,7 +53,7 @@ export default async function AdminDashboardPage() {
           </section>
 
           <section className={`${adminPanelClass()} p-4 sm:p-5`}>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-sun">Accès rapide</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9A6500]">Accès rapide</p>
             <h2 className="mt-1 font-bricolage text-lg font-black">Gestion de la plateforme</h2>
             <div className="mt-4 grid gap-2">
               <QuickLink href="/admin/boutiques" title="Gérer les boutiques" description="Publication, suspension et catalogue" icon={<Store size={17} />} />
@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
           </section>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-ghost/60">Les ventes encaissées totalisent les commandes marquées comme payées.</p>
+        <p className="mt-6 text-center text-[11px] text-muted/60">Les ventes encaissées totalisent les commandes marquées comme payées.</p>
       </>
     );
   } catch (error) {
@@ -73,13 +73,13 @@ export default async function AdminDashboardPage() {
 
 function MetricCard({ label, value, caption, icon, tone }: { label: string; value: string | number; caption: string; icon: React.ReactNode; tone: "sun" | "pink" | "mint" | "blue" }) {
   const toneClasses = { sun: "bg-sun", pink: "bg-[#F6C3D2]", mint: "bg-[#CFEFE6]", blue: "bg-[#DCE5FF]" };
-  return <article className="flex min-h-[145px] flex-col justify-between rounded-[20px] border-2 border-ink bg-papier p-4 text-ink shadow-[4px_4px_0_#000] sm:p-5"><div className="flex items-start justify-between gap-2"><p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">{label}</p><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink ${toneClasses[tone]}`}>{icon}</span></div><p className="mt-3 break-words font-bricolage text-2xl font-black leading-none tracking-tight sm:text-3xl">{value}</p><p className="mt-2 text-[10px] font-semibold leading-4 text-muted sm:text-[11px]">{caption}</p></article>;
+  return <article className="flex min-h-[145px] flex-col justify-between rounded-[20px] border-2 border-ink bg-papier p-4 text-ink shadow-[4px_4px_0_#0F1E3D] sm:p-5"><div className="flex items-start justify-between gap-2"><p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">{label}</p><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink ${toneClasses[tone]}`}>{icon}</span></div><p className="mt-3 break-words font-bricolage text-2xl font-black leading-none tracking-tight sm:text-3xl">{value}</p><p className="mt-2 text-[10px] font-semibold leading-4 text-muted sm:text-[11px]">{caption}</p></article>;
 }
 
 function QuickStat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  return <div className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06]">{icon}</span><div><p className="font-bricolage text-lg font-black leading-none">{value}</p><p className="mt-1 text-[10px] font-semibold text-ghost">{label}</p></div></div>;
+  return <div className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink/[0.06]">{icon}</span><div><p className="font-bricolage text-lg font-black leading-none">{value}</p><p className="mt-1 text-[10px] font-semibold text-muted">{label}</p></div></div>;
 }
 
 function QuickLink({ href, title, description, icon }: { href: string; title: string; description: string; icon: React.ReactNode }) {
-  return <Link href={href} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-sun/35 hover:bg-white/[0.06]"><span className="text-sun">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block truncate text-[11px] text-ghost">{description}</span></span><ArrowRight size={14} className="text-ghost" /></Link>;
+  return <Link href={href} className="flex items-center gap-3 rounded-xl border border-ink/10 bg-ink/[0.03] p-3 transition-colors hover:border-sun/35 hover:bg-ink/[0.06]"><span className="text-[#9A6500]">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block truncate text-[11px] text-muted">{description}</span></span><ArrowRight size={14} className="text-muted" /></Link>;
 }

@@ -3,6 +3,7 @@ import { Search, Users } from "lucide-react";
 import { getSessionToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
+import AdminFilterForm from "../AdminFilterForm";
 
 export const metadata = { title: "Comptes vendeurs · Administration Jaayma" };
 type SearchParams = Promise<{ q?: string; hasShop?: string; page?: string }>;
@@ -25,23 +26,23 @@ export default async function AdminAccountsPage({ searchParams }: { searchParams
     };
     return (
       <>
-        <AdminPageTitle eyebrow="Commerçants Jaayma" title="Comptes vendeurs" description="Recherchez les comptes, vérifiez leur activité et accédez rapidement à leur boutique. Les mots de passe et données d’authentification ne sont jamais affichés." action={<span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-ghost"><Users size={14} className="mr-1.5 inline text-sun" />{result.total} compte{result.total !== 1 ? "s" : ""}</span>} />
-        <form method="GET" action="/admin/comptes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(240px,1fr)_190px_auto] sm:items-center sm:p-5`}>
+        <AdminPageTitle eyebrow="Commerçants Jaayma" title="Comptes vendeurs" description="Recherchez les comptes, vérifiez leur activité et accédez rapidement à leur boutique. Les mots de passe et données d’authentification ne sont jamais affichés." action={<span className="rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-bold text-muted"><Users size={14} className="mr-1.5 inline text-[#9A6500]" />{result.total} compte{result.total !== 1 ? "s" : ""}</span>} />
+        <AdminFilterForm action="/admin/comptes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(240px,1fr)_190px_auto] sm:items-center sm:p-5`}>
           <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input type="search" name="q" defaultValue={query} placeholder="Nom ou numéro de téléphone…" className="w-full rounded-xl border border-ink/15 bg-papier py-3 pl-10 pr-3 text-sm font-semibold text-ink outline-none focus:border-sun" /></label>
-          <select name="hasShop" defaultValue={hasShop} aria-label="Filtrer par boutique" className="rounded-xl border border-white/10 bg-[#0F1E3D] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-sun"><option value="">Tous les comptes</option><option value="true">Avec boutique</option><option value="false">Sans boutique</option></select>
+          <select name="hasShop" defaultValue={hasShop} aria-label="Filtrer par boutique" className="rounded-xl border border-ink/10 bg-[#FFFBF2] px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-sun"><option value="">Tous les comptes</option><option value="true">Avec boutique</option><option value="false">Sans boutique</option></select>
           <button className="rounded-xl border-2 border-ink bg-sun px-5 py-3 text-sm font-black text-ink shadow-[3px_3px_0_#000]">Rechercher</button>
-        </form>
+        </AdminFilterForm>
 
         <section className={`${adminPanelClass()} mt-5 overflow-hidden`}>
           <div className="overflow-x-auto"><table className="w-full min-w-[780px] border-collapse text-left">
-            <thead><tr className="bg-[#0F1E3D]/60 text-[10px] font-black uppercase tracking-[0.13em] text-ghost"><th className="px-4 py-3.5 sm:px-5">Vendeur</th><th className="px-4 py-3.5">Inscription</th><th className="px-4 py-3.5">Boutiques</th><th className="px-4 py-3.5">Commandes</th><th className="px-4 py-3.5">Accès</th></tr></thead>
-            <tbody>{result.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-ghost">Aucun compte ne correspond à cette recherche.</td></tr> : result.items.map((user) => (
-              <tr key={user.id} className="border-t border-white/10 transition-colors hover:bg-white/[0.03]">
-                <td className="px-4 py-4 sm:px-5"><p className="font-bold text-white">{user.name || "Vendeur"}</p><a href={`tel:${user.phone}`} className="mt-1 block font-mono text-xs text-ghost hover:text-sun">{user.phone}</a></td>
-                <td className="px-4 py-4 text-xs text-ghost">{formatDate(user.createdAt)}</td>
+            <thead><tr className="bg-[#F0EDE8] text-[10px] font-black uppercase tracking-[0.13em] text-muted"><th className="px-4 py-3.5 sm:px-5">Vendeur</th><th className="px-4 py-3.5">Inscription</th><th className="px-4 py-3.5">Boutiques</th><th className="px-4 py-3.5">Commandes</th><th className="px-4 py-3.5">Accès</th></tr></thead>
+            <tbody>{result.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted">Aucun compte ne correspond à cette recherche.</td></tr> : result.items.map((user) => (
+              <tr key={user.id} className="border-t border-ink/10 transition-colors hover:bg-ink/[0.03]">
+                <td className="px-4 py-4 sm:px-5"><p className="font-bold text-ink">{user.name || "Vendeur"}</p><a href={`tel:${user.phone}`} className="mt-1 block font-mono text-xs text-muted hover:text-[#9A6500]">{user.phone}</a></td>
+                <td className="px-4 py-4 text-xs text-muted">{formatDate(user.createdAt)}</td>
                 <td className="px-4 py-4"><span className="font-bricolage text-lg font-black">{user.shopCount}</span></td>
                 <td className="px-4 py-4"><span className="font-bricolage text-lg font-black">{user.orderCount}</span></td>
-                <td className="px-4 py-4"><div className="flex flex-wrap gap-1.5">{user.shops.length ? user.shops.map((shop) => <Link key={shop.id} href={`/admin/boutiques?q=${encodeURIComponent(shop.slug)}`} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-ghost hover:border-sun/40 hover:text-white">{shop.name}</Link>) : <span className="text-xs text-ghost/60">Pas encore de boutique</span>}</div></td>
+                <td className="px-4 py-4"><div className="flex flex-wrap gap-1.5">{user.shops.length ? user.shops.map((shop) => <Link key={shop.id} href={`/admin/boutiques?q=${encodeURIComponent(shop.slug)}`} className="rounded-full border border-ink/10 bg-ink/5 px-2.5 py-1 text-[10px] font-bold text-muted hover:border-sun/40 hover:text-ink">{shop.name}</Link>) : <span className="text-xs text-muted/60">Pas encore de boutique</span>}</div></td>
               </tr>
             ))}</tbody>
           </table></div>

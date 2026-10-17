@@ -110,14 +110,142 @@ export class AdminService {
     return { ...record, success: true };
   }
 
-  async getOverview(filters: {
+  async getOverview() {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const [shopMetricsRows, orderMetricsRows, sellers, activeProducts, recentOrders] = await Promise.all([
+      this.prisma.$queryRaw<Array<{
+        totalShops: number;
+        activeShops: number;
+        draftShops: number;
+        suspendedShops: number;
+        proShops: number;
+        expiredProShops: number;
+      }>>`
+        SELECT
+          COUNT(*)::int AS "totalShops",
+          COUNT(*) FILTER (WHERE "status" = 'ACTIVE')::int AS "activeShops",
+          COUNT(*) FILTER (WHERE "status" = 'DRAFT')::int AS "draftShops",
+          COUNT(*) FILTER (WHERE "status" = 'SUSPENDED')::int AS "suspendedShops",
+          COUNT(*) FILTER (WHERE "plan" = 'pro' AND ("planExpiresAt" IS NULL OR "planExpiresAt" >= NOW()))::int AS "proShops",
+          COUNT(*) FILTER (WHERE "plan" = 'pro' AND "planExpiresAt" < NOW())::int AS "expiredProShops"
+        FROM "Shop"
+      `,
+      this.prisma.$queryRaw<Array<{
+        totalOrders: number;
+        newOrders: number;
+        paidOrders: number;
+        revenue: string;
+        todayOrders: number;
+        revenueToday: string;
+      }>>`
+        SELECT
+          COUNT(*)::int AS "totalOrders",
+          COUNT(*) FILTER (WHERE "status" = 'NEW')::int AS "newOrders",
+          COUNT(*) FILTER (WHERE "paymentStatus" = 'paid')::int AS "paidOrders",
+          COALESCE(SUM("total") FILTER (WHERE "paymentStatus" = 'paid'), 0)::text AS "revenue",
+          COUNT(*) FILTER (WHERE "createdAt" >= ${today})::int AS "todayOrders",
+          COALESCE(SUM("total") FILTER (WHERE "paymentStatus" = 'paid' AND "createdAt" >= ${today}), 0)::text AS "revenueToday"
+        FROM "Order"
+      `,
+      this.prisma.user.count(),
+      this.prisma.product.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.order.findMany({
+        where: { status: 'NEW' },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          reference: true,
+          customerName: true,
+          total: true,
+          createdAt: true,
+          shop: { select: { name: true, slug: true } },
+        },
+      }),
+    ]);
+    const shops = shopMetricsRows[0];
+    const orders = orderMetricsRows[0];
+
+    return {
+      metrics: {
+        totalShops: shops.totalShops,
+        activeShops: shops.activeShops,
+        draftShops: shops.draftShops,
+        suspendedShops: shops.suspendedShops,
+        proShops: shops.proShops,
+        expiredProShops: shops.expiredProShops,
+        sellers,
+        activeProducts,
+        totalOrders: orders.totalOrders,
+        newOrders: orders.newOrders,
+        paidOrders: orders.paidOrders,
+        revenue: Number(orders.revenue),
+        todayOrders: orders.todayOrders,
+        revenueToday: Number(orders.revenueToday),
+      },
+      recentOrders,
+    };
+  }
+
+  async getShops(filters: {
     q?: string;
     status?: ShopStatus;
     plan?: 'free' | 'pro' | 'expired';
     page: number;
   }) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    const where = this.buildShopWhere(filters);
+    const [total, items] = await Promise.all([
+      this.prisma.shop.count({ where }),
+      this.prisma.shop.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (filters.page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          plan: true,
+          planExpiresAt: true,
+          status: true,
+          createdAt: true,
+          whatsapp: true,
+          owner: { select: { name: true, phone: true } },
+          _count: { select: { products: true, orders: true } },
+        },
+      }),
+    ]);
+    return {
+      items,
+      total,
+      page: filters.page,
+      pageSize: PAGE_SIZE,
+      totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    };
+  }
+
+  async getSubscriptions(filters: {
+    q?: string;
+    plan?: 'free' | 'pro' | 'expired';
+    page: number;
+  }) {
+    const [totalShops, proShops, expiredProShops, shops] = await Promise.all([
+      this.prisma.shop.count(),
+      this.prisma.shop.count({
+        where: { plan: 'pro', OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: new Date() } }] },
+      }),
+      this.prisma.shop.count({ where: { plan: 'pro', planExpiresAt: { lt: new Date() } } }),
+      this.getShops({ ...filters, status: undefined }),
+    ]);
+    return { metrics: { totalShops, proShops, expiredProShops }, shops };
+  }
+
+  private buildShopWhere(filters: {
+    q?: string;
+    status?: ShopStatus;
+    plan?: 'free' | 'pro' | 'expired';
+  }): Prisma.ShopWhereInput {
     const query = filters.q?.trim().slice(0, 100);
     const shopFilters: Prisma.ShopWhereInput[] = [];
     if (filters.status) shopFilters.push({ status: filters.status });
@@ -146,109 +274,7 @@ export class AdminService {
         ],
       });
     }
-    const where: Prisma.ShopWhereInput = shopFilters.length ? { AND: shopFilters } : {};
-
-    const [
-      totalShops,
-      activeShops,
-      draftShops,
-      suspendedShops,
-      proShops,
-      expiredProShops,
-      sellers,
-      products,
-      totalOrders,
-      newOrders,
-      paidOrders,
-      revenue,
-      todayOrders,
-      revenueToday,
-      shopsTotal,
-      shops,
-      recentOrders,
-    ] = await Promise.all([
-      this.prisma.shop.count(),
-      this.prisma.shop.count({ where: { status: 'ACTIVE' } }),
-      this.prisma.shop.count({ where: { status: 'DRAFT' } }),
-      this.prisma.shop.count({ where: { status: 'SUSPENDED' } }),
-      this.prisma.shop.count({
-        where: { plan: 'pro', OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: new Date() } }] },
-      }),
-      this.prisma.shop.count({ where: { plan: 'pro', planExpiresAt: { lt: new Date() } } }),
-      this.prisma.user.count(),
-      this.prisma.product.count({ where: { status: 'ACTIVE' } }),
-      this.prisma.order.count(),
-      this.prisma.order.count({ where: { status: 'NEW' } }),
-      this.prisma.order.count({ where: { paymentStatus: 'paid' } }),
-      this.prisma.order.aggregate({
-        where: { paymentStatus: 'paid' },
-        _sum: { total: true },
-      }),
-      this.prisma.order.count({ where: { createdAt: { gte: today } } }),
-      this.prisma.order.aggregate({
-        where: { paymentStatus: 'paid', createdAt: { gte: today } },
-        _sum: { total: true },
-      }),
-      this.prisma.shop.count({ where }),
-      this.prisma.shop.findMany({
-        where,
-        orderBy: [{ createdAt: 'desc' }],
-        skip: (filters.page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          plan: true,
-          planExpiresAt: true,
-          status: true,
-          createdAt: true,
-          whatsapp: true,
-          owner: { select: { name: true, phone: true } },
-          _count: { select: { products: true, orders: true } },
-        },
-      }),
-      this.prisma.order.findMany({
-        where: { status: 'NEW' },
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          reference: true,
-          customerName: true,
-          total: true,
-          createdAt: true,
-          shop: { select: { name: true, slug: true } },
-        },
-      }),
-    ]);
-
-    return {
-      metrics: {
-        totalShops,
-        activeShops,
-        draftShops,
-        suspendedShops,
-        proShops,
-        expiredProShops,
-        sellers,
-        activeProducts: products,
-        totalOrders,
-        newOrders,
-        paidOrders,
-        revenue: revenue._sum.total ?? 0,
-        todayOrders,
-        revenueToday: revenueToday._sum.total ?? 0,
-      },
-      shops: {
-        items: shops,
-        total: shopsTotal,
-        page: filters.page,
-        pageSize: PAGE_SIZE,
-        totalPages: Math.max(1, Math.ceil(shopsTotal / PAGE_SIZE)),
-      },
-      recentOrders,
-    };
+    return shopFilters.length ? { AND: shopFilters } : {};
   }
 
   async getOrders(filters: {

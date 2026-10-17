@@ -54,16 +54,32 @@ async function request<T>(
   return res.json();
 }
 
+type AdminShopPage = {
+  items: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    plan: string;
+    planExpiresAt: string | null;
+    status: string;
+    createdAt: string;
+    whatsapp: string | null;
+    owner: { name: string; phone: string } | null;
+    _count: { products: number; orders: number };
+  }>;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export const api = {
   // ─── ADMINISTRATION ───
   async getAdminAccess(token: string): Promise<{ isAdmin: true; phone: string; name: string }> {
     return request("/admin/access", { token, cache: "no-store" });
   },
 
-  async getAdminOverview(
-    token: string,
-    params: { q?: string; status?: string; plan?: string; page?: number }
-  ): Promise<{
+  async getAdminOverview(token: string): Promise<{
     metrics: {
       totalShops: number;
       activeShops: number;
@@ -80,24 +96,6 @@ export const api = {
       todayOrders: number;
       revenueToday: number;
     };
-    shops: {
-      items: Array<{
-        id: string;
-        name: string;
-        slug: string;
-        plan: string;
-        planExpiresAt: string | null;
-        status: string;
-        createdAt: string;
-        whatsapp: string | null;
-        owner: { name: string; phone: string } | null;
-        _count: { products: number; orders: number };
-      }>;
-      total: number;
-      page: number;
-      pageSize: number;
-      totalPages: number;
-    };
     recentOrders: Array<{
       id: string;
       reference: string;
@@ -107,12 +105,36 @@ export const api = {
       shop: { name: string; slug: string };
     }>;
   }> {
+    return request("/admin/overview", { token, cache: "no-store" });
+  },
+
+  async getAdminShops(
+    token: string,
+    params: { q?: string; status?: string; plan?: string; page?: number },
+  ): Promise<AdminShopPage> {
     const search = new URLSearchParams();
     if (params.q) search.set("q", params.q);
     if (params.status) search.set("status", params.status);
     if (params.plan) search.set("plan", params.plan);
     if (params.page) search.set("page", String(params.page));
-    return request(`/admin/overview${search.size ? `?${search}` : ""}`, {
+    return request(`/admin/shops${search.size ? `?${search}` : ""}`, {
+      token,
+      cache: "no-store",
+    });
+  },
+
+  async getAdminSubscriptions(
+    token: string,
+    params: { q?: string; plan?: string; page?: number },
+  ): Promise<{
+    metrics: { totalShops: number; proShops: number; expiredProShops: number };
+    shops: AdminShopPage;
+  }> {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.plan) search.set("plan", params.plan);
+    if (params.page) search.set("page", String(params.page));
+    return request(`/admin/subscriptions${search.size ? `?${search}` : ""}`, {
       token,
       cache: "no-store",
     });
