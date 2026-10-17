@@ -10,72 +10,153 @@ import {
 } from "@/app/actions/notifications";
 
 type SupportState = "checking" | "ready" | "unsupported" | "ios-install";
+type Feedback = { kind: "success" | "error"; text: string };
 
-export default function OrderNotifications() {
-  const [support, setSupport] = useState<SupportState>("checking");
-  const [permission, setPermission] = useState<NotificationPermission | null>(null);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [endpoint, setEndpoint] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"enable" | "disable" | "test" | null>(null);
-  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+type PushInitialization = {
+  support: SupportState;
+  permission: NotificationPermission | null;
+  publicKey: string | null;
+  isConfigured: boolean;
+  isEnabled: boolean;
+  endpoint: string | null;
+  feedback: Feedback | null;
+};
 
-  useEffect(() => {
-    let active = true;
+let cachedInitialization: { sellerId: string; state: PushInitialization } | null = null;
+let pendingInitialization: { sellerId: string; promise: Promise<PushInitialization> } | null = null;
 
-    async function initialize() {
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (navigator as Navigator & { standalone?: boolean }).standalone === true;
-      const supportsPush =
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window;
+function getCachedInitialization(sellerId: string) {
+  return cachedInitialization?.sellerId === sellerId ? cachedInitialization.state : null;
+}
 
-      if (isIOS && !isStandalone) {
-        if (active) setSupport("ios-install");
-        return;
-      }
+function updateCachedInitialization(
+  sellerId: string,
+  update: (state: PushInitialization) => PushInitialization,
+) {
+  if (cachedInitialization?.sellerId === sellerId) {
+    cachedInitialization = { sellerId, state: update(cachedInitialization.state) };
+  }
+}
 
-      if (!supportsPush) {
-        if (active) setSupport("unsupported");
-        return;
-      }
+function getPushInitialization(sellerId: string): Promise<PushInitialization> {
+  const cached = getCachedInitialization(sellerId);
+  if (cached) return Promise.resolve(cached);
+  if (pendingInitialization?.sellerId === sellerId) return pendingInitialization.promise;
 
-      try {
-        const [keyResult, registration] = await Promise.all([
-          getPushVapidPublicKey(),
-          navigator.serviceWorker.register("/sw.js"),
-        ]);
-        if (!active) return;
+  const promise = initializePush().then((state) => {
+    if (pendingInitialization?.sellerId === sellerId) {
+      cachedInitialization = { sellerId, state };
+    }
+    return state;
+  }).finally(() => {
+    if (pendingInitialization?.sellerId === sellerId) pendingInitialization = null;
+  });
+  pendingInitialization = { sellerId, promise };
+  return promise;
+}
 
-        setPublicKey(keyResult.publicKey);
-        setIsConfigured(Boolean(keyResult.publicKey));
-        setPermission(Notification.permission);
-        setSupport("ready");
+async function initializePush(): Promise<PushInitialization> {
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const supportsPush =
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
 
-        const currentSubscription = await registration.pushManager.getSubscription();
-        if (!active || !currentSubscription) return;
+  if (isIOS && !isStandalone) {
+    return {
+      support: "ios-install",
+      permission: null,
+      publicKey: null,
+      isConfigured: false,
+      isEnabled: false,
+      endpoint: null,
+      feedback: null,
+    };
+  }
 
-        setEndpoint(currentSubscription.endpoint);
-        setIsEnabled(true);
-        const result = await savePushSubscription(serializeSubscription(currentSubscription));
-        if (active && result.error) {
-          setFeedback({ kind: "error", text: result.error });
-        }
-      } catch {
-        if (active) setSupport("unsupported");
+  if (!supportsPush) {
+    return {
+      support: "unsupported",
+      permission: null,
+      publicKey: null,
+      isConfigured: false,
+      isEnabled: false,
+      endpoint: null,
+      feedback: null,
+    };
+  }
+
+  try {
+    const [keyResult, registration] = await Promise.all([
+      getPushVapidPublicKey(),
+      navigator.serviceWorker.register("/sw.js"),
+    ]);
+    const currentSubscription = await registration.pushManager.getSubscription();
+    const state: PushInitialization = {
+      support: "ready",
+      permission: Notification.permission,
+      publicKey: keyResult.publicKey,
+      isConfigured: Boolean(keyResult.publicKey),
+      isEnabled: false,
+      endpoint: currentSubscription?.endpoint ?? null,
+      feedback: null,
+    };
+
+    if (currentSubscription) {
+      const result = await savePushSubscription(serializeSubscription(currentSubscription));
+      if (result.error) {
+        state.feedback = { kind: "error", text: result.error };
+      } else {
+        state.isEnabled = true;
       }
     }
 
-    void initialize();
+    return state;
+  } catch {
+    return {
+      support: "unsupported",
+      permission: null,
+      publicKey: null,
+      isConfigured: false,
+      isEnabled: false,
+      endpoint: null,
+      feedback: null,
+    };
+  }
+}
+
+export default function OrderNotifications({ sellerId }: { sellerId: string }) {
+  const initialState = getCachedInitialization(sellerId);
+  const [support, setSupport] = useState<SupportState>(initialState?.support ?? "checking");
+  const [permission, setPermission] = useState<NotificationPermission | null>(initialState?.permission ?? null);
+  const [publicKey, setPublicKey] = useState<string | null>(initialState?.publicKey ?? null);
+  const [isConfigured, setIsConfigured] = useState(initialState?.isConfigured ?? false);
+  const [isEnabled, setIsEnabled] = useState(initialState?.isEnabled ?? false);
+  const [endpoint, setEndpoint] = useState<string | null>(initialState?.endpoint ?? null);
+  const [busy, setBusy] = useState<"enable" | "disable" | "test" | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const hasCachedState = Boolean(getCachedInitialization(sellerId));
+    void getPushInitialization(sellerId).then((state) => {
+      if (!active) return;
+      setSupport(state.support);
+      setPermission(state.permission);
+      setPublicKey(state.publicKey);
+      setIsConfigured(state.isConfigured);
+      setIsEnabled(state.isEnabled);
+      setEndpoint(state.endpoint);
+      setFeedback(hasCachedState ? null : state.feedback);
+    });
     return () => {
       active = false;
     };
-  }, []);
+  }, [sellerId]);
 
   async function enableNotifications() {
     if (!publicKey) return;
@@ -86,10 +167,12 @@ export default function OrderNotifications() {
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
       if (permissionResult !== "granted") {
-        setFeedback({
+        const nextFeedback = {
           kind: "error",
           text: "L’autorisation n’a pas été accordée. Vous pourrez la modifier dans les réglages du navigateur.",
-        });
+        } satisfies Feedback;
+        setFeedback(nextFeedback);
+        updateCachedInitialization(sellerId, (state) => ({ ...state, permission: permissionResult, feedback: nextFeedback }));
         return;
       }
 
@@ -103,18 +186,30 @@ export default function OrderNotifications() {
 
       if (result.error) {
         if (!existingSubscription) await subscription.unsubscribe();
-        setFeedback({ kind: "error", text: result.error });
+        const nextFeedback = { kind: "error", text: result.error } satisfies Feedback;
+        setFeedback(nextFeedback);
+        updateCachedInitialization(sellerId, (state) => ({ ...state, permission: permissionResult, feedback: nextFeedback }));
         return;
       }
 
       setEndpoint(subscription.endpoint);
       setIsEnabled(true);
-      setFeedback({ kind: "success", text: "Les alertes de commande sont activées sur cet appareil." });
+      const nextFeedback = { kind: "success", text: "Les alertes de commande sont activées sur cet appareil." } satisfies Feedback;
+      setFeedback(nextFeedback);
+      updateCachedInitialization(sellerId, (state) => ({
+        ...state,
+        permission: permissionResult,
+        endpoint: subscription.endpoint,
+        isEnabled: true,
+        feedback: nextFeedback,
+      }));
     } catch (error) {
-      setFeedback({
+      const nextFeedback = {
         kind: "error",
         text: error instanceof Error ? error.message : "Impossible d’activer les notifications sur cet appareil.",
-      });
+      } satisfies Feedback;
+      setFeedback(nextFeedback);
+      updateCachedInitialization(sellerId, (state) => ({ ...state, feedback: nextFeedback }));
     } finally {
       setBusy(null);
     }
@@ -132,7 +227,9 @@ export default function OrderNotifications() {
       if (currentEndpoint) {
         const result = await removePushSubscription(currentEndpoint);
         if (result.error) {
-          setFeedback({ kind: "error", text: result.error });
+          const nextFeedback = { kind: "error", text: result.error } satisfies Feedback;
+          setFeedback(nextFeedback);
+          updateCachedInitialization(sellerId, (state) => ({ ...state, feedback: nextFeedback }));
           return;
         }
       }
@@ -140,9 +237,13 @@ export default function OrderNotifications() {
       await subscription?.unsubscribe();
       setEndpoint(null);
       setIsEnabled(false);
-      setFeedback({ kind: "success", text: "Les alertes sont désactivées sur cet appareil." });
+      const nextFeedback = { kind: "success", text: "Les alertes sont désactivées sur cet appareil." } satisfies Feedback;
+      setFeedback(nextFeedback);
+      updateCachedInitialization(sellerId, (state) => ({ ...state, endpoint: null, isEnabled: false, feedback: nextFeedback }));
     } catch {
-      setFeedback({ kind: "error", text: "Impossible de désactiver les notifications sur cet appareil." });
+      const nextFeedback = { kind: "error", text: "Impossible de désactiver les notifications sur cet appareil." } satisfies Feedback;
+      setFeedback(nextFeedback);
+      updateCachedInitialization(sellerId, (state) => ({ ...state, feedback: nextFeedback }));
     } finally {
       setBusy(null);
     }
@@ -154,11 +255,11 @@ export default function OrderNotifications() {
     setFeedback(null);
 
     const result = await sendTestPushNotification(endpoint);
-    setFeedback(
-      result.error
-        ? { kind: "error", text: result.error }
-        : { kind: "success", text: "Notification test envoyée. Vérifiez les alertes de votre téléphone." },
-    );
+    const nextFeedback = result.error
+      ? { kind: "error", text: result.error } satisfies Feedback
+      : { kind: "success", text: "Notification test envoyée. Vérifiez les alertes de votre téléphone." } satisfies Feedback;
+    setFeedback(nextFeedback);
+    updateCachedInitialization(sellerId, (state) => ({ ...state, feedback: nextFeedback }));
     setBusy(null);
   }
 

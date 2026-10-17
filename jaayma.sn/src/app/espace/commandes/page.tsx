@@ -70,7 +70,7 @@ export default async function CommandesPage({
         </h1>
       </div>
 
-      <OrderNotifications />
+      <OrderNotifications sellerId={sellerContext.sellerId} />
 
       {/*  FILTRES (chips)  */}
       <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
