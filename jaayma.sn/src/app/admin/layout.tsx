@@ -45,7 +45,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <p className="text-[10px] text-ghost">Compte administrateur</p>
           </div>
         </div>
-        <div className="overflow-x-auto border-t border-white/5 lg:hidden"><AdminNavigation mobile /></div>
       </header>
 
       <div className="mx-auto flex max-w-[1500px] items-start gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:gap-8 lg:px-8">
@@ -54,10 +53,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminNavigation />
           <div className="mt-4 border-t border-ink/10 px-3 pt-4 text-[11px] leading-5 text-muted">Données privées · accès réservé</div>
         </aside>
-        <main className="min-w-0 flex-1 pb-10 text-ink">
+        <main className="min-w-0 flex-1 pb-28 text-ink lg:pb-10">
           <div className="rounded-[26px] border-[2.5px] border-ink bg-[#F0EDE8] p-4 shadow-[5px_5px_0_#0F1E3D] sm:p-6 lg:p-7">{children}</div>
         </main>
       </div>
+      <AdminNavigation mobile />
     </div>
   );
 }
