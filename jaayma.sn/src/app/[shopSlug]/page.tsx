@@ -96,7 +96,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
               fill
               priority
               sizes="100vw"
-              className="object-contain"
+              className="object-cover"
               unoptimized
             />
             <div

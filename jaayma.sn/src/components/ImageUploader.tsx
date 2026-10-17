@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
-import { Upload, X, Loader2, ImageIcon, Store } from "lucide-react";
+import { Upload, X, Loader2, ImageIcon, Store, Crop } from "lucide-react";
 import { getImageUrl } from "@/lib/images";
 import { uploadImageFile } from "@/lib/upload-client";
+import CoverImageCropper from "@/components/CoverImageCropper";
 
 interface ImageUploaderProps {
   currentKey?: string | null;
@@ -30,12 +31,29 @@ export default function ImageUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(getImageUrl(currentKey));
   const [newKey, setNewKey] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPreparingCrop, setIsPreparingCrop] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cropSource, setCropSource] = useState<{ file: File; url: string } | null>(null);
+  const previewObjectUrl = useRef<string | null>(null);
 
   useEffect(() => {
     setPreviewUrl(getImageUrl(currentKey));
     setNewKey(null);
+    if (previewObjectUrl.current) {
+      URL.revokeObjectURL(previewObjectUrl.current);
+      previewObjectUrl.current = null;
+    }
   }, [currentKey]);
+
+  useEffect(() => {
+    if (!cropSource) return;
+    const url = cropSource.url;
+    return () => URL.revokeObjectURL(url);
+  }, [cropSource]);
+
+  useEffect(() => () => {
+    if (previewObjectUrl.current) URL.revokeObjectURL(previewObjectUrl.current);
+  }, []);
 
   const labelClass =
     tone === "dark"
@@ -43,33 +61,90 @@ export default function ImageUploader({
       : "block text-xs font-bold text-muted mb-2";
   const labelStyle = tone === "dark" ? { color: "#C3CCE6" } : undefined;
 
+  async function uploadFile(file: File, localUrl: string) {
+    if (previewObjectUrl.current) URL.revokeObjectURL(previewObjectUrl.current);
+    previewObjectUrl.current = localUrl;
+    setPreviewUrl(localUrl);
+    setError(null);
+    setIsUploading(true);
+
+    try {
+      const result = await uploadImageFile(file, folder);
+
+      if (result.error || !result.key) {
+        setError(result.error || "Erreur lors de l'upload.");
+        if (previewObjectUrl.current === localUrl) {
+          URL.revokeObjectURL(localUrl);
+          previewObjectUrl.current = null;
+        }
+        setPreviewUrl(getImageUrl(currentKey));
+        setNewKey(null);
+        return false;
+      }
+
+      setNewKey(result.key);
+      return true;
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Erreur lors de l'upload.");
+      if (previewObjectUrl.current === localUrl) {
+        URL.revokeObjectURL(localUrl);
+        previewObjectUrl.current = null;
+      }
+      setPreviewUrl(getImageUrl(currentKey));
+      setNewKey(null);
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
 
     const localUrl = URL.createObjectURL(file);
-    setPreviewUrl(localUrl);
-    setError(null);
-    setIsUploading(true);
-
-    const result = await uploadImageFile(file, folder);
-
-    if (result.error || !result.key) {
-      setError(result.error || "Erreur lors de l'upload.");
-      setPreviewUrl(getImageUrl(currentKey));
-      setNewKey(null);
+    if (isWide) {
+      setError(null);
+      setCropSource({ file, url: localUrl });
     } else {
-      setNewKey(result.key);
+      await uploadFile(file, localUrl);
     }
-    setIsUploading(false);
   }
 
   function handleRemove(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (previewObjectUrl.current) {
+      URL.revokeObjectURL(previewObjectUrl.current);
+      previewObjectUrl.current = null;
+    }
     setPreviewUrl(null);
     setNewKey("");
+  }
+
+  async function handleRecrop() {
+    if (!previewUrl) return;
+    setIsPreparingCrop(true);
+    setError(null);
+    try {
+      const response = await fetch(previewUrl);
+      if (!response.ok) throw new Error("Impossible de charger cette photo pour la recadrer.");
+      const blob = await response.blob();
+      const file = new File([blob], "couverture.jpg", { type: blob.type || "image/jpeg" });
+      setCropSource({ file, url: URL.createObjectURL(blob) });
+    } catch (cropError) {
+      setError(cropError instanceof Error ? cropError.message : "Impossible de charger cette photo pour la recadrer.");
+    } finally {
+      setIsPreparingCrop(false);
+    }
+  }
+
+  async function handleCropApply(file: File) {
+    const localUrl = URL.createObjectURL(file);
+    const uploaded = await uploadFile(file, localUrl);
+    if (uploaded) setCropSource(null);
+    return uploaded;
   }
 
   const hiddenKey = (
@@ -138,7 +213,7 @@ export default function ImageUploader({
       )}
 
       <label
-        className={`relative block ${isWide ? "w-full aspect-[2.4/1] sm:aspect-[3/1]" : "w-full max-w-xs aspect-square"} rounded-[22px] overflow-hidden cursor-pointer transition-all duration-200 group border-[2.5px] border-ink ${
+        className={`relative block ${isWide ? "w-full aspect-[3/1]" : "w-full max-w-xs aspect-square"} rounded-[22px] overflow-hidden cursor-pointer transition-all duration-200 group border-[2.5px] border-ink ${
           previewUrl
             ? "bg-white shadow-[3px_3px_0_#0F1E3D]"
             : tone === "dark"
@@ -176,7 +251,7 @@ export default function ImageUploader({
             </p>
             <p className="text-[11px] font-medium text-[#C3CCE6] mt-1 max-w-xs">
               {isWide
-                ? "Format 16:9 recommandé • Met en valeur ta boutique"
+                ? "Ajuste le cadrage et le zoom après avoir choisi ta photo"
                 : "PNG, JPG ou WebP • Touchez pour choisir"}
             </p>
 
@@ -189,17 +264,38 @@ export default function ImageUploader({
       </label>
 
       {previewUrl && !isUploading && (
-        <button
-          type="button"
-          onClick={handleRemove}
-          className="mt-2.5 text-xs text-hibiscus hover:text-[#e03a6f] font-bold flex items-center gap-1.5 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" strokeWidth={2.5} /> Supprimer cette photo
-        </button>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2">
+          {isWide && (
+            <button
+              type="button"
+              onClick={handleRecrop}
+              disabled={isPreparingCrop}
+              className="text-xs font-bold text-[#FFC83D] hover:text-white disabled:opacity-60 flex items-center gap-1.5 transition-colors"
+            >
+              {isPreparingCrop ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crop className="h-3.5 w-3.5" />}
+              {isPreparingCrop ? "Préparation…" : "Recadrer / zoomer"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="text-xs text-hibiscus hover:text-[#e03a6f] font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" strokeWidth={2.5} /> Supprimer cette photo
+          </button>
+        </div>
       )}
 
       {error && <p className="mt-2 text-xs font-bold text-hibiscus">{error}</p>}
       {hiddenKey}
+      {isWide && cropSource && (
+        <CoverImageCropper
+          imageUrl={cropSource.url}
+          fileName={cropSource.file.name}
+          onCancel={() => setCropSource(null)}
+          onApply={handleCropApply}
+        />
+      )}
     </div>
   );
 }
