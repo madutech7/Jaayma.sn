@@ -158,7 +158,7 @@ export class NotificationsService {
     const subject =
       this.config.get<string>('VAPID_SUBJECT') ??
       process.env.VAPID_SUBJECT ??
-      'mailto:support@jaayma.sn';
+      'mailto:jaaymasn1@gmail.com';
     return { publicKey, privateKey, subject };
   }
 

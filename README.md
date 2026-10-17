@@ -241,7 +241,7 @@ cd backend
 npx web-push generate-vapid-keys
 ```
 
-Ajoutez `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT=mailto:support@jaayma.sn` dans les variables d'environnement du backend Render. Ne partagez jamais la clé privée et ne la remplacez pas après activation des abonnements. Le backend expose la clé publique au PWA. Render applique le schéma avec `prisma db push` pendant son déploiement.
+Ajoutez `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT=mailto:jaaymasn1@gmail.com` dans les variables d'environnement du backend Render. Ne partagez jamais la clé privée et ne la remplacez pas après activation des abonnements. Le backend expose la clé publique au PWA. Render applique le schéma avec `prisma db push` pendant son déploiement.
 
 ---
 
