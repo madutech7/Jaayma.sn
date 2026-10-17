@@ -36,6 +36,17 @@ function ExploreProductSheet({
   onOpenShop: () => void;
 }) {
   const { product, shop, imageUrl } = item;
+  const dragStartYRef = useRef<number | null>(null);
+
+  const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragStartYRef.current = event.clientY;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartYRef.current !== null && event.clientY - dragStartYRef.current > 72) onClose();
+    dragStartYRef.current = null;
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -63,6 +74,16 @@ function ExploreProductSheet({
         className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-[30px] border-[2.5px] border-ink bg-[#FFFBF2] pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(15,30,61,0.25)] animate-slide-up sm:rounded-[30px]"
         onClick={(event) => event.stopPropagation()}
       >
+        <div
+          className="flex justify-center pt-3 sm:hidden"
+          onPointerDown={handleDragStart}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={() => { dragStartYRef.current = null; }}
+          style={{ touchAction: "none" }}
+          aria-hidden="true"
+        >
+          <div className="h-1.5 w-12 rounded-full bg-[#D8DCE8]" />
+        </div>
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink/10 bg-[#FFFBF2]/95 px-5 py-3 backdrop-blur">
           <span className="text-xs font-black uppercase tracking-[0.16em] text-[#3F4B69]">Fiche produit</span>
           <button
@@ -230,6 +251,11 @@ export default function ExplorerFeed({
   };
   const handlePageChange = (targetPage: number) =>
     loadResults({ view, category: selectedCat, query, page: targetPage });
+
+  const openProduct = (item: ExploreItem) => {
+    setSelectedProduct(item);
+    void router.prefetch(`/${item.shop.slug}?product=${encodeURIComponent(item.product.id)}`);
+  };
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: "#FFC83D" }}>
@@ -404,7 +430,7 @@ export default function ExplorerFeed({
               <button
                 key={product.id}
                 type="button"
-                onClick={() => setSelectedProduct({ product, shop, imageUrl })}
+                onClick={() => openProduct({ product, shop, imageUrl })}
                 className="min-w-0 overflow-hidden rounded-2xl border-[2.5px] border-ink text-left active:scale-[0.98] transition-transform hover:-translate-y-0.5"
                 style={{ backgroundColor: "#FFFBF2", boxShadow: "4px 4px 0 #0F1E3D" }}
               >
@@ -460,6 +486,9 @@ export default function ExplorerFeed({
                 key={shop.id}
                 href={`/${shop.slug}`}
                 prefetch={false}
+                onPointerEnter={() => { void router.prefetch(`/${shop.slug}`); }}
+                onFocus={() => { void router.prefetch(`/${shop.slug}`); }}
+                onTouchStart={() => { void router.prefetch(`/${shop.slug}`); }}
                 onClick={() => sessionStorage.setItem("jaayma:explorer-return", String(Date.now()))}
                 className="group min-w-0 rounded-2xl border-[2.5px] border-ink p-4 active:scale-[0.99] transition-transform hover:-translate-y-0.5"
                 style={{ backgroundColor: "#FFFBF2", boxShadow: "4px 4px 0 #0F1E3D" }}
@@ -533,7 +562,7 @@ export default function ExplorerFeed({
             onClose={() => setSelectedProduct(null)}
             onOpenShop={() => {
               sessionStorage.setItem("jaayma:explorer-return", String(Date.now()));
-              router.push(`/${selectedProduct.shop.slug}?product=${encodeURIComponent(selectedProduct.product.id)}`);
+              router.push(`/${selectedProduct.shop.slug}?product=${encodeURIComponent(selectedProduct.product.id)}`, { scroll: true });
             }}
           />
         )}

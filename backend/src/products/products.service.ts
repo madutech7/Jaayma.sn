@@ -120,6 +120,17 @@ export class ProductsService {
     return product;
   }
 
+  async findPublicByShopSlug(shopSlug: string, productId: string) {
+    return this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        status: 'ACTIVE',
+        shop: { is: { slug: shopSlug, status: 'ACTIVE' } },
+      },
+      include: { images: { orderBy: { position: 'asc' } } },
+    });
+  }
+
   async create(shopId: string, input: unknown) {
     const parsed = productSchema.safeParse(input);
 

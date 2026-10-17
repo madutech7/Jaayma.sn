@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ShopBackButton() {
   const router = useRouter();
+
+  useEffect(() => {
+    void router.prefetch("/explorer");
+  }, [router]);
 
   const handleBack = () => {
     const openedFromExplorerAt = Number(sessionStorage.getItem("jaayma:explorer-return") || 0);
@@ -12,7 +17,7 @@ export default function ShopBackButton() {
     if (hasExplorerHistory && window.history.length > 1) {
       router.back();
     } else {
-      router.push("/explorer");
+      router.push("/explorer", { scroll: true });
     }
   };
 
@@ -20,6 +25,9 @@ export default function ShopBackButton() {
     <button
       type="button"
       onClick={handleBack}
+      onPointerEnter={() => { void router.prefetch("/explorer"); }}
+      onFocus={() => { void router.prefetch("/explorer"); }}
+      onTouchStart={() => { void router.prefetch("/explorer"); }}
       aria-label="Retour à Explorer"
       className="flex h-10 w-10 items-center justify-center rounded-full border-[2px] border-ink bg-white shadow-[2px_2px_0_#0F1E3D] transition-transform active:scale-90"
     >

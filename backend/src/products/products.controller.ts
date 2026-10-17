@@ -10,6 +10,11 @@ export class ProductsController {
     return this.productsService.findByShop(shopId);
   }
 
+  @Get('shops/:shopSlug/products/:productId')
+  findPublicByShopSlug(@Param('shopSlug') shopSlug: string, @Param('productId') productId: string) {
+    return this.productsService.findPublicByShopSlug(shopSlug, productId);
+  }
+
   @Post('shops/:shopId/products')
   create(@Param('shopId') shopId: string, @Body() body: unknown) {
     return this.productsService.create(shopId, body);

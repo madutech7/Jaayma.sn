@@ -209,7 +209,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
             <p className="text-sm mt-1" style={{ color: "#3F4B69" }}>Cette boutique n'a pas encore de produits.</p>
           </div>
         ) : (
-          <ProductList products={productsWithImages} shopId={shop.id} themeColor={themeColor} />
+          <ProductList products={productsWithImages} shopId={shop.id} shopSlug={shop.slug} themeColor={themeColor} />
         )}
       </div>
 

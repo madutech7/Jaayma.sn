@@ -179,7 +179,10 @@ export class ShopsService {
         products: {
           where: { status: 'ACTIVE' },
           orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
-          include: { images: { orderBy: { position: 'asc' } } },
+          include: {
+            images: { orderBy: { position: 'asc' }, take: 1 },
+            _count: { select: { images: true } },
+          },
         },
       },
     });

@@ -7,9 +7,10 @@ import type { Product, ProductOption } from "@/types/schema";
 import { formatFcfa } from "@/lib/money";
 import { useEffect, useRef, useState } from "react";
 import ConfirmModal from "@/components/ConfirmModal";
+import { api } from "@/lib/api";
 
 /* ─── Product modal (fiche produit — design 04) ─── */
-type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[] };
+type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[]; _count?: { images: number } };
 const PRODUCTS_PER_PAGE = 12;
 
 function normalizeSearchText(value: string) {
@@ -29,6 +30,7 @@ function ProductModal({
 }) {
   const [qty, setQty] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const dragStartYRef = useRef<number | null>(null);
   const themeForeground = themeColor.toUpperCase() === "#FFC83D" ? "#0F1E3D" : "#FFFFFF";
 
   const productOptions: ProductOption[] = (() => {
@@ -74,7 +76,20 @@ function ProductModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        <div
+          className="flex justify-center pt-3 pb-1"
+          onPointerDown={(event) => {
+            dragStartYRef.current = event.clientY;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerUp={(event) => {
+            if (dragStartYRef.current !== null && event.clientY - dragStartYRef.current > 72) onClose();
+            dragStartYRef.current = null;
+          }}
+          onPointerCancel={() => { dragStartYRef.current = null; }}
+          style={{ touchAction: "none" }}
+          aria-label="Glisser vers le bas pour fermer"
+        >
           <div className="w-12 h-1.5 rounded-full" style={{ backgroundColor: "#D8DCE8" }} />
         </div>
 
@@ -231,14 +246,17 @@ function ProductModal({
 export default function ProductList({
   products,
   shopId,
+  shopSlug,
   themeColor,
 }: {
   products: ProductCard[];
   shopId: string;
+  shopSlug: string;
   themeColor: string;
 }) {
   const { addItem, items, shopId: cartShopId, clearCart } = useCartStore();
   const [modalProduct, setModalProduct] = useState<ProductCard | null>(null);
+  const skipNextModalScrollRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const hashHandledRef = useRef(false);
@@ -316,17 +334,38 @@ export default function ProductList({
 
     hashHandledRef.current = true;
     const productIndex = products.findIndex((product) => product.id === productId);
+    skipNextModalScrollRef.current = true;
     setPage(Math.floor(productIndex / PRODUCTS_PER_PAGE) + 1);
     setModalProduct(target);
+    window.scrollTo(0, 0);
   }, [products]);
 
   useEffect(() => {
     if (!modalProduct) return;
+    if (skipNextModalScrollRef.current) {
+      skipNextModalScrollRef.current = false;
+      return;
+    }
     const frame = window.requestAnimationFrame(() => {
       document.getElementById(`product-${modalProduct.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [modalProduct, currentPage]);
+
+  useEffect(() => {
+    if (!modalProduct || (modalProduct._count && modalProduct._count.images <= 1) || (modalProduct.imageUrls?.length ?? 0) > 1) return;
+    let cancelled = false;
+    void api.getPublicProductByShopSlug(shopSlug, modalProduct.id).then((fullProduct) => {
+      const imageUrls = fullProduct?.imageUrls ?? [];
+      if (cancelled || imageUrls.length === 0) return;
+      setModalProduct((current) => current?.id === modalProduct.id
+        ? { ...current, ...fullProduct, imageUrls, imageUrl: imageUrls[0] }
+        : current);
+    }).catch(() => {
+      // Keep the cover photo visible if the optional gallery request fails.
+    });
+    return () => { cancelled = true; };
+  }, [modalProduct, shopSlug]);
 
   const closeProductModal = () => {
     setModalProduct(null);

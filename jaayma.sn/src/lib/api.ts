@@ -211,6 +211,17 @@ export const api = {
     }
   },
 
+  async getPublicProductByShopSlug(shopSlug: string, productId: string): Promise<Product | null> {
+    try {
+      const data = await request<any>(
+        `/shops/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productId)}`
+      );
+      return data ? normalizeProduct(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
   async createProduct(shopId: string, data: Record<string, unknown>): Promise<Product> {
     const res = await request<any>(`/shops/${encodeURIComponent(shopId)}/products`, {
       method: "POST",
