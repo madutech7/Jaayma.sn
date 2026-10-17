@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { upsertShop } from "../../actions/shop";
 import { formatPhone } from "@/lib/phone";
 import { suggestSlug } from "@/lib/slug";
@@ -38,6 +38,11 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
   const [slugTouched, setSlugTouched] = useState(Boolean(shop?.slug));
   const [copiedFeed, setCopiedFeed] = useState(false);
   const publicHost = new URL(publicOrigin).host;
+  const paymentAndDeliveryReady = Boolean(
+    shop &&
+      (shop.acceptsCash || shop.waveNumber || shop.orangeMoneyNumber) &&
+      shop.deliveryNote?.trim()
+  );
 
   useEffect(() => {
     if (shop) {
@@ -72,13 +77,13 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
         <div className="min-w-0 flex-1">
           <h1 className="font-bricolage font-black text-white text-2xl leading-none mb-1">{shop ? (name || shop.name) : "Créer ta boutique"}</h1>
           <p className="text-sm font-bold leading-snug" style={{ color: "#FFC83D", overflowWrap: "anywhere" }}>
-            {shop ? `${publicHost}/${slug || shop.slug}` : "Choisis son nom, son lien et ses informations."}
+            {shop ? `${publicHost}/${slug || shop.slug}` : "Commence avec l’essentiel, tu pourras compléter ta vitrine après."}
           </p>
         </div>
       </div>
 
         {/*  NOM ET SLUG DE LA BOUTIQUE  */}
-        <div className="space-y-4">
+        <div id="profile-settings" className="space-y-4">
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Nom de la boutique</label>
             <input
@@ -144,6 +149,17 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
             </div>
           </div>
 
+        </div>
+
+        <details id="storefront-settings" className="group rounded-2xl border border-white/10 bg-[#16264D]/45">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-bold text-white">
+            <span>Personnaliser la vitrine</span>
+            <span className="flex items-center gap-2 text-[11px] font-semibold text-[#C3CCE6]">
+              Facultatif <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+            </span>
+          </summary>
+          <div className="space-y-4 border-t border-white/10 p-4">
+
           {/*  ACCROCHE / SLOGAN  */}
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>
@@ -188,7 +204,6 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
               style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
             />
           </div>
-        </div>
 
         <ImageUploader
           currentKey={shop?.coverKey ?? null}
@@ -235,6 +250,8 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
             </div>
           </div>
         </div>
+          </div>
+        </details>
 
         {/*  CONTACTS  */}
         <div className="space-y-4 pt-4">
@@ -250,6 +267,18 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
             />
           </div>
 
+          <details
+            id="payment-settings"
+            className="group rounded-2xl border border-white/10 bg-[#16264D]/45"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-bold text-white">
+              <span>Paiements et livraison</span>
+              <span className="flex items-center gap-2 text-[11px] font-semibold text-[#C3CCE6]">
+                {paymentAndDeliveryReady ? "Configuré" : "À compléter"}
+                <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+              </span>
+            </summary>
+            <div className="space-y-4 border-t border-white/10 p-4">
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Frais de livraison standard (FCFA)</label>
             <input
@@ -298,10 +327,19 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
               style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
             />
           </div>
+            </div>
+          </details>
         </div>
 
         {/*  MARKETING & PIXELS (Meta, TikTok, Catalogue)  */}
-        <div className="space-y-4 pt-6 border-t border-white/10">
+        <details className="group rounded-2xl border border-white/10 bg-[#16264D]/45">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-bold text-white">
+            <span>Outils marketing</span>
+            <span className="flex items-center gap-2 text-[11px] font-semibold text-[#C3CCE6]">
+              Facultatif <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+            </span>
+          </summary>
+          <div className="space-y-4 border-t border-white/10 p-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-bold text-white">Tracking & Pixels Publicitaires</span>
@@ -377,10 +415,11 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </details>
 
         {/*  TOGGLES  */}
-        <div className="pt-6 space-y-5">
+        <div id="publication-settings" className="pt-6 space-y-5">
           <div className="flex items-center justify-between">
             <span className="text-[15px] font-bold text-white">Espèces à la livraison</span>
             <label className="relative inline-block w-11 h-6">

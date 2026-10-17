@@ -6,17 +6,22 @@ import {
   ArrowUpRight,
   BadgeCheck,
   Box,
+  CheckCircle2,
+  Circle,
   ChevronRight,
   Clock3,
+  CreditCard,
   ExternalLink,
   PackagePlus,
   Store,
+  Truck,
   Wallet,
 } from "lucide-react";
 import { formatFcfa } from "@/lib/money";
 import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
 import type { Order } from "@/types/schema";
+import ShareShopButton from "./ShareShopButton";
 
 export const metadata = {
   title: "Accueil - Espace Vendeur Jaayma",
@@ -147,6 +152,46 @@ export default async function DashboardPage() {
     .sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
   const activeProducts = products.filter((product) => product.isActive).length;
 
+  const setupSteps = [
+    {
+      id: "profile",
+      title: "Présente ta boutique",
+      description: "Ajoute une catégorie, un logo et ton WhatsApp.",
+      complete: Boolean(shop.category && (shop.logoUrl || shop.logoKey) && shop.whatsapp),
+      href: "/espace/boutique#profile-settings",
+      icon: <Store size={18} />,
+    },
+    {
+      id: "product",
+      title: "Mets un produit en ligne",
+      description: "Ajoute au moins un article avec un prix clair.",
+      complete: activeProducts > 0,
+      href: "/espace/produits/nouveau",
+      icon: <PackagePlus size={18} />,
+    },
+    {
+      id: "payment-delivery",
+      title: "Règle paiement et livraison",
+      description: "Choisis un paiement et précise comment tu livres.",
+      complete: Boolean(
+        (shop.acceptsCash || shop.waveNumber || shop.orangeMoneyNumber) &&
+          shop.deliveryNote?.trim()
+      ),
+      href: "/espace/boutique#payment-settings",
+      icon: <CreditCard size={18} />,
+    },
+    {
+      id: "publish",
+      title: "Publie ta boutique",
+      description: "Ton lien devient accessible à tes clients.",
+      complete: Boolean(shop.isPublished),
+      href: "/espace/boutique#publication-settings",
+      icon: <Truck size={18} />,
+    },
+  ];
+  const completedSetupSteps = setupSteps.filter((step) => step.complete).length;
+  const setupProgress = Math.round((completedSetupSteps / setupSteps.length) * 100);
+
   const weekDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(startOfToday);
     date.setUTCDate(date.getUTCDate() - (6 - index));
@@ -165,6 +210,18 @@ export default async function DashboardPage() {
   }));
   const maxRevenue = Math.max(1, ...weeklyRevenue.map((day) => day.amount));
   const totalWeekRevenue = weeklyRevenue.reduce((sum, day) => sum + day.amount, 0);
+
+  const last30DaysStart = new Date(startOfToday);
+  last30DaysStart.setUTCDate(last30DaysStart.getUTCDate() - 29);
+  const last30DaysOrders = ordersList.filter(
+    (order) => toDate(order.createdAt).getTime() >= last30DaysStart.getTime()
+  );
+  const deliveredLast30Days = last30DaysOrders.filter(
+    (order) => String(order.status).toLowerCase() === "delivered"
+  ).length;
+  const cancelledLast30Days = last30DaysOrders.filter(
+    (order) => String(order.status).toLowerCase() === "cancelled"
+  ).length;
 
   const recentOrders = pendingOrders.slice(0, 4);
   const shopUrl = `${new URL(siteOrigin).host}/${shop.slug}`;
@@ -216,6 +273,66 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {completedSetupSteps < setupSteps.length && (
+        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="setup-title">
+          <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#C8265A]">Démarrage guidé</p>
+              <h2 id="setup-title" className="mt-1 font-bricolage text-xl font-black sm:text-2xl">
+                Prépare ta boutique à recevoir sa première commande
+              </h2>
+              <p className="mt-2 text-sm font-medium leading-6 text-[#3F4B69]">
+                Quelques réglages aident tes clients à te trouver, choisir et commander en confiance.
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <div
+                  className="h-2 flex-1 overflow-hidden rounded-full bg-[#0F1E3D]/10"
+                  role="progressbar"
+                  aria-label="Progression de la configuration"
+                  aria-valuemin={0}
+                  aria-valuemax={setupSteps.length}
+                  aria-valuenow={completedSetupSteps}
+                >
+                  <div
+                    className="h-full rounded-full bg-[#0E7C66] transition-[width]"
+                    style={{ width: `${setupProgress}%` }}
+                  />
+                </div>
+                <span className="shrink-0 text-xs font-black text-[#3F4B69]">
+                  {completedSetupSteps}/{setupSteps.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {setupSteps.map((step) => (
+                <Link
+                  key={step.id}
+                  href={step.href}
+                  className={`flex min-h-[92px] items-start gap-3 rounded-2xl border-2 p-3 transition-colors ${
+                    step.complete
+                      ? "border-[#0E7C66]/20 bg-[#E8F5EF]"
+                      : "border-ink/10 bg-white hover:border-[#FFC83D]"
+                  }`}
+                >
+                  <span className={`mt-0.5 shrink-0 ${step.complete ? "text-[#0E7C66]" : "text-[#65708A]"}`}>
+                    {step.complete ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2 text-sm font-black">
+                      <span className="text-[#65708A]">{step.icon}</span>
+                      {step.title}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-[#65708A]">{step.description}</span>
+                  </span>
+                  {!step.complete && <ChevronRight size={16} className="mt-1 shrink-0 text-[#65708A]" />}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section aria-label="Indicateurs de la boutique" className="grid grid-cols-2 items-stretch gap-4 xl:grid-cols-4">
         <StatCard
           label="Ventes encaissées"
@@ -245,6 +362,30 @@ export default async function DashboardPage() {
           accent="#DCE5FF"
           icon={<BadgeCheck size={19} />}
         />
+      </section>
+
+      <section className={`${CARD_CLASS} p-5 sm:p-6`} aria-labelledby="last-30-days-title">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#C8265A]">Suivi de l’activité</p>
+            <h2 id="last-30-days-title" className="mt-1 font-bricolage text-xl font-black">30 derniers jours</h2>
+          </div>
+          <Link href="/espace/commandes" className="text-xs font-black text-[#0F1E3D] underline decoration-[#FFC83D] decoration-2 underline-offset-4">
+            Voir toutes les commandes
+          </Link>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {[
+            { label: "Commandes reçues", value: last30DaysOrders.length, tone: "bg-[#DCE5FF]" },
+            { label: "Livrées", value: deliveredLast30Days, tone: "bg-[#CFEFE6]" },
+            { label: "Annulées", value: cancelledLast30Days, tone: "bg-[#F6C3D2]" },
+          ].map((metric) => (
+            <div key={metric.label} className={`rounded-2xl border-2 border-ink/10 p-3 sm:p-4 ${metric.tone}`}>
+              <p className="font-bricolage text-2xl font-black leading-none sm:text-3xl">{metric.value}</p>
+              <p className="mt-2 text-[10px] font-black leading-4 text-[#3F4B69] sm:text-xs">{metric.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
@@ -363,14 +504,17 @@ export default async function DashboardPage() {
               {shopUrl}
             </p>
           </div>
-          <a
-            href={fullUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-[#FFC83D] px-5 py-3 text-sm font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"
-          >
-            Voir la boutique <ExternalLink size={15} />
-          </a>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <ShareShopButton shopName={shop.name} shopUrl={fullUrl} />
+            <a
+              href={fullUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-white px-4 py-3 text-sm font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"
+            >
+              Voir ma boutique <ExternalLink size={15} />
+            </a>
+          </div>
         </article>
 
         <article className="rounded-[22px] border-[2.5px] border-ink bg-[#0F1E3D] p-5 text-white shadow-[4px_4px_0_#FFC83D] sm:p-6">
