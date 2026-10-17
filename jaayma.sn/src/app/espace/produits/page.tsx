@@ -175,7 +175,7 @@ export default async function ProduitsPage() {
 
                 <div className="flex-1 min-w-0 pr-2">
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-ink text-[15px] truncate">{product.name}</p>
+                    <p className="line-clamp-2 font-bold text-ink text-[15px] leading-snug">{product.name}</p>
                     {!hasImage && (
                       <span className="text-[10px] font-black px-1.5 py-0.5 rounded border border-ink/25 text-[#3F4B69] bg-[#0F1E3D]/5 shrink-0">
                         Sans photo

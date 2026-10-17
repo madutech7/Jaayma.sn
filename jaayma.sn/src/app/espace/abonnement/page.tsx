@@ -82,7 +82,7 @@ export default async function AbonnementPage() {
             </li>
             <li className="flex items-start gap-2.5 font-bold text-ink text-sm">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
-              Badge Boutique Vérifiée Pro
+              Badge Boutique Pro
             </li>
           </ul>
 

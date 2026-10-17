@@ -96,11 +96,11 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
       <td className="py-4 px-4 text-xs font-medium text-muted">
         <div className="flex items-center gap-1.5">
           <Package size={13} className="text-muted shrink-0" />
-          <span>{shop.productCount} produit(s)</span>
+          <span>{shop.productCount} {shop.productCount === 1 ? "produit" : "produits"}</span>
         </div>
         <div className="mt-1 flex items-center gap-1.5">
           <ShoppingBag size={13} className="text-muted shrink-0" />
-          <span>{shop.orderCount} commande(s)</span>
+          <span>{shop.orderCount} {shop.orderCount === 1 ? "commande" : "commandes"}</span>
         </div>
       </td>
 

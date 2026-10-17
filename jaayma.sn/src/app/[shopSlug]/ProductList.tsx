@@ -8,6 +8,7 @@ import { formatFcfa } from "@/lib/money";
 import { useEffect, useRef, useState } from "react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { api } from "@/lib/api";
+import FormattedDescription from "@/components/FormattedDescription";
 
 /* ─── Product modal (fiche produit — design 04) ─── */
 type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[]; _count?: { images: number } };
@@ -155,9 +156,7 @@ function ProductModal({
           </h2>
           <PriceDisplay amount={product.price} className="mb-2 text-[25px] leading-tight text-[#C8265A]" />
           {product.description && (
-            <p className="text-sm mb-4" style={{ color: "#3F4B69" }}>
-              {product.description}
-            </p>
+            <FormattedDescription text={product.description} className="mb-4 text-sm" style={{ color: "#3F4B69" }} />
           )}
 
           {/* Options & Variantes dynamiques (Taille, Couleur, Pointure...) */}

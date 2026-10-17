@@ -154,7 +154,7 @@ export default function ProductOptionsEditor({
           </h2>
         </div>
         <p className="text-xs" style={{ color: "#8D98AF" }}>
-          Définissez les options disponibles pour ce produit (taille, couleur, etc.).
+          Facultatif : ajoutez une taille, une couleur ou une autre option uniquement si ce produit existe en plusieurs variantes. Laissez vide sinon.
         </p>
       </div>
 

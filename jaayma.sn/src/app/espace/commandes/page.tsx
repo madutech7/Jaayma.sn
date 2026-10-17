@@ -63,7 +63,9 @@ export default async function CommandesPage({
       {/*  HEADER  */}
       <div className="mb-5">
         <p className="text-sm font-medium mb-1" style={{ color: "#C3CCE6" }}>
-          {todayCount > 0 ? `Aujourd'hui, ${todayCount} commande(s)` : "Aucune commande aujourd'hui"}
+          {todayCount > 0
+            ? `Aujourd'hui, ${todayCount} ${todayCount === 1 ? "commande" : "commandes"}`
+            : "Aucune commande aujourd'hui"}
         </p>
         <h1 className="font-bricolage font-black text-white leading-none" style={{ fontSize: "clamp(2rem, 8vw, 2.5rem)", letterSpacing: "-0.02em" }}>
           Commandes

@@ -8,6 +8,15 @@ async function getAuthenticatedSellerToken() {
   return sellerId && token ? token : null;
 }
 
+function toPushErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message.trim() : "";
+  if (/internal server error|^API error:\s*5\d\d/i.test(message)) {
+    console.error("[push-notifications] Backend request failed:", error);
+    return "Le service des alertes rencontre un problème temporaire. Réessayez dans quelques instants.";
+  }
+  return message || fallback;
+}
+
 export async function getPushVapidPublicKey() {
   try {
     return await api.getVapidPublicKey();
@@ -24,7 +33,7 @@ export async function savePushSubscription(subscription: Record<string, unknown>
     await api.savePushSubscription(token, subscription);
     return { success: true as const };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d’activer les notifications." };
+    return { error: toPushErrorMessage(error, "Impossible d’activer les notifications.") };
   }
 }
 
@@ -36,7 +45,7 @@ export async function removePushSubscription(endpoint: string) {
     await api.removePushSubscription(token, endpoint);
     return { success: true as const };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible de désactiver les notifications." };
+    return { error: toPushErrorMessage(error, "Impossible de désactiver les notifications.") };
   }
 }
 
@@ -48,6 +57,6 @@ export async function sendTestPushNotification(endpoint: string) {
     await api.sendTestNotification(token, endpoint);
     return { success: true as const };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d’envoyer la notification test." };
+    return { error: toPushErrorMessage(error, "Impossible d’envoyer la notification test.") };
   }
 }

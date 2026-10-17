@@ -7,6 +7,7 @@ import Image from "next/image";
 import { getImageUrl } from "@/lib/images";
 import ProductImageFrame, { WAX_PATTERNS } from "@/components/ProductImageFrame";
 import PriceDisplay from "@/components/PriceDisplay";
+import FormattedDescription from "@/components/FormattedDescription";
 import type { Product, Shop } from "@/types/schema";
 
 export interface ExploreItem {
@@ -103,7 +104,7 @@ function ExploreProductSheet({
               {shop.category && <span className="shrink-0 rounded-full border border-ink/20 bg-[#FFC83D]/50 px-3 py-1 text-[10px] font-black text-ink">{shop.category}</span>}
             </div>
             <PriceDisplay amount={product.price} className="text-[30px] leading-tight text-[#C8265A]" />
-            {product.description && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#3F4B69]">{product.description}</p>}
+            {product.description && <FormattedDescription text={product.description} className="mt-3 text-sm leading-relaxed text-[#3F4B69]" />}
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/15 bg-white p-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-ink/20 bg-[#FFC83D]/35 font-bricolage font-black text-ink">
                 {shop.logoKey ? <Image src={getImageUrl(shop.logoKey)!} alt="" width={44} height={44} className="h-full w-full bg-white object-contain" unoptimized /> : shop.name.slice(0, 1).toUpperCase()}

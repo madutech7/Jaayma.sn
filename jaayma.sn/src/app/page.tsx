@@ -257,7 +257,7 @@ export default async function LandingPage() {
             Prêt(e) à vendre<br />en ligne ?
           </h2>
           <p className="text-sm font-medium mb-8" style={{ color: "rgba(15,30,61,0.65)" }}>
-            Rejoins des centaines de vendeurs au Sénégal.<br />C'est gratuit pour démarrer.
+            Crée ta boutique en ligne au Sénégal.<br />C'est gratuit pour démarrer.
           </p>
           {sellerId ? (
             <Link
