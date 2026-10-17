@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, X, SlidersHorizontal } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Trash2, X, SlidersHorizontal, AlertCircle } from "lucide-react";
 import type { ProductOption } from "@/types/schema";
 
 const STANDARD_PRESETS = [
@@ -47,6 +47,27 @@ export default function ProductOptionsEditor({
   const [newValueInputs, setNewValueInputs] = useState<Record<number, string>>({});
   const [customNameInput, setCustomNameInput] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
+  // Ref pour les inputs de valeur (non utilisé directement mais garde le DOM)
+  const inputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  // Fusionne les valeurs en attente dans les inputs avec les options existantes
+  const computeValidOptionsJson = () => {
+    const merged = options.map((opt, idx) => {
+      const pending = (newValueInputs[idx] || "").trim();
+      if (!pending) return opt;
+      const newItems = pending.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
+      const combined = [...opt.values];
+      for (const item of newItems) {
+        if (!combined.includes(item)) combined.push(item);
+      }
+      return { ...opt, values: combined };
+    });
+    const valid = merged.filter((o) => o.name.trim() && o.values.length > 0);
+    return valid.length > 0 ? JSON.stringify(valid) : "";
+  };
+
+  const jsonValue = computeValidOptionsJson();
+  const hasPendingValues = Object.values(newValueInputs).some((v) => v.trim());
 
   const addPreset = (preset: { name: string; values: string[] }) => {
     setOptions((prev) => {
@@ -117,14 +138,11 @@ export default function ProductOptionsEditor({
     });
   };
 
-  const validOptions = options.filter(
-    (o) => o.name.trim() && o.values.length > 0
-  );
-  const jsonValue = validOptions.length > 0 ? JSON.stringify(validOptions) : "";
+  // jsonValue and hasPendingValues computed above
 
   return (
     <div className="pt-6 border-t border-white/10 space-y-4">
-      {/* Hidden input for server action */}
+      {/* Hidden input for server action — always includes pending (unconfirmed) input values */}
       <input type="hidden" name="optionsJson" value={jsonValue} />
 
       {/* Header */}
@@ -281,6 +299,7 @@ export default function ProductOptionsEditor({
               {/* Champ d'ajout de valeurs */}
               <div className="flex items-center gap-2 pt-1">
                 <input
+                  ref={(el) => { inputRefs.current[optIndex] = el; }}
                   type="text"
                   value={newValueInputs[optIndex] || ""}
                   onChange={(e) =>
@@ -295,9 +314,14 @@ export default function ProductOptionsEditor({
                       addValueToOption(optIndex);
                     }
                   }}
-                  placeholder={`Ajouter une valeur (ex: ${
+                  onBlur={() => {
+                    if ((newValueInputs[optIndex] || "").trim()) {
+                      addValueToOption(optIndex);
+                    }
+                  }}
+                  placeholder={`Ajouter (ex: ${
                     opt.name === "Taille" ? "S, M, L" : "Rouge, Bleu"
-                  })`}
+                  }) — Entrée pour valider`}
                   className="flex-1 px-3.5 py-2.5 rounded-xl text-xs font-bold outline-none text-[#0F1E3D] bg-[#FFFBF2] border-[1.5px] border-ink placeholder:text-[#8D98AF] placeholder:font-normal"
                 />
                 <button
@@ -310,6 +334,41 @@ export default function ProductOptionsEditor({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Alerte valeurs en attente */}
+      {hasPendingValues && (
+        <div
+          className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-semibold"
+          style={{
+            backgroundColor: "rgba(255,200,61,0.1)",
+            borderColor: "rgba(255,200,61,0.4)",
+            color: "#FFC83D",
+          }}
+        >
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            Des valeurs sont en cours de saisie. Appuie sur{" "}
+            <strong>Entrée</strong> ou le bouton{" "}
+            <strong>Ajouter</strong> pour les confirmer avant d&apos;enregistrer.
+          </span>
+        </div>
+      )}
+
+      {/* Résumé des options valides */}
+      {options.length > 0 && (
+        <div className="text-[11px] font-medium" style={{ color: "#8D98AF" }}>
+          {(() => {
+            const valid = options.filter(
+              (o) => o.name.trim() && o.values.length > 0
+            );
+            if (valid.length === 0)
+              return "⚠️ Aucune option avec des valeurs — les variantes ne seront pas enregistrées.";
+            return `✓ ${valid.length} option${
+              valid.length > 1 ? "s" : ""
+            } : ${valid.map((o) => `${o.name} (${o.values.length})`).join(", ")}`;
+          })()}
         </div>
       )}
     </div>
