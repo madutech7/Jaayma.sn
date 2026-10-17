@@ -160,14 +160,18 @@ export default function ExplorerFeed({
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ExploreItem | null>(null);
+  const [comingSoonToast, setComingSoonToast] = useState<{ feature: string; id: number } | null>(null);
 
   const cacheRef = useRef<Map<string, { products: ExploreItem[]; shops: Shop[]; hasNextPage: boolean }>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastSequenceRef = useRef(0);
 
   useEffect(() => () => {
     abortControllerRef.current?.abort();
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -256,6 +260,12 @@ export default function ExplorerFeed({
   const openProduct = (item: ExploreItem) => {
     setSelectedProduct(item);
     void router.prefetch(`/${item.shop.slug}?product=${encodeURIComponent(item.product.id)}`);
+  };
+
+  const showComingSoon = (feature: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setComingSoonToast({ feature, id: ++toastSequenceRef.current });
+    toastTimerRef.current = setTimeout(() => setComingSoonToast(null), 2400);
   };
 
   return (
@@ -592,21 +602,43 @@ export default function ExplorerFeed({
                 </svg>
               </div>
             </Link>
-            <Link href="/">
+            <button
+              type="button"
+              aria-label="Panier, fonctionnalité à venir"
+              onClick={() => showComingSoon("Panier")}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#C3CCE6] transition-colors hover:bg-white/10 active:scale-90"
+            >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C3CCE6" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 8h14l-1 12H6z" />
                 <path d="M9 8V6a3 3 0 0 1 6 0v2" />
               </svg>
-            </Link>
-            <Link href="#">
+            </button>
+            <button
+              type="button"
+              aria-label="Boutiques autour de moi, fonctionnalité à venir"
+              onClick={() => showComingSoon("Boutiques autour de moi")}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#C3CCE6] transition-colors hover:bg-white/10 active:scale-90"
+            >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C3CCE6" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
                 <circle cx="12" cy="10" r="2.3" />
               </svg>
-            </Link>
+            </button>
           </div>
         </div>
       </nav>
+
+      {comingSoonToast && (
+        <div
+          key={comingSoonToast.id}
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[60] mx-auto flex max-w-sm items-center justify-center gap-2 rounded-2xl border-2 border-ink bg-[#FFFBF2] px-4 py-3 text-center text-sm font-bold text-ink shadow-[3px_3px_0_#0F1E3D] animate-slide-up"
+        >
+          <span aria-hidden="true" className="text-[#C8265A]">✦</span>
+          {comingSoonToast.feature} : fonctionnalité à venir
+        </div>
+      )}
     </div>
   );
 }
