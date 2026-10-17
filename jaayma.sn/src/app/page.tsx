@@ -80,34 +80,41 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: "#0E7C66" }}>
-      {/*  NAVBAR  */}
-      <nav className="px-5 pt-5 pb-2 flex items-center justify-between max-w-2xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <LogoMark size={30} />
-          <Wordmark color="#fff" size={0.28} />
-        </div>
+      <header className="flex min-h-screen flex-col" style={{ backgroundColor: "#0E7C66", minHeight: "100dvh" }}>
+        {/*  NAVBAR  */}
+        <nav
+          className="w-full px-5 pb-2 flex items-center justify-between max-w-2xl mx-auto"
+          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top))" }}
+        >
+          <div className="flex items-center gap-2.5">
+            <LogoMark size={30} />
+            <Wordmark color="#fff" size={0.28} />
+          </div>
 
-        {sellerId ? (
-          <Link
-            href="/espace"
-            className="text-sm font-bold px-5 py-2.5 rounded-full border-[2.5px] border-ink"
-            style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "3px 3px 0 #0F1E3D" }}
-          >
-            Mon Espace
-          </Link>
-        ) : (
-          <Link
-            href="/connexion"
-            className="text-sm font-bold px-5 py-2.5 rounded-full border-[2.5px] border-ink"
-            style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "3px 3px 0 #0F1E3D" }}
-          >
-            Connexion
-          </Link>
-        )}
-      </nav>
+          {sellerId ? (
+            <Link
+              href="/espace"
+              className="text-sm font-bold px-5 py-2.5 rounded-full border-[2.5px] border-ink"
+              style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "3px 3px 0 #0F1E3D" }}
+            >
+              Mon Espace
+            </Link>
+          ) : (
+            <Link
+              href="/connexion"
+              className="text-sm font-bold px-5 py-2.5 rounded-full border-[2.5px] border-ink"
+              style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "3px 3px 0 #0F1E3D" }}
+            >
+              Connexion
+            </Link>
+          )}
+        </nav>
 
-      {/*  HERO  */}
-      <section className="px-5 pt-12 pb-0 max-w-2xl mx-auto">
+        {/*  HERO  */}
+        <section
+          className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5 pt-7"
+          style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+        >
         <h1 className="font-bricolage font-black text-white leading-none mb-1" style={{ fontSize: "clamp(2.8rem, 12vw, 4.5rem)", letterSpacing: "-0.02em" }}>
           Ta boutique,
         </h1>
@@ -186,10 +193,11 @@ export default async function LandingPage() {
             </p>
           </>
         )}
-      </section>
+        </section>
+      </header>
 
       {/*  EXPLORER section  */}
-      <section className="mt-16 bg-white py-14 px-5">
+      <section className="bg-white py-14 px-5">
         <div className="max-w-2xl mx-auto">
           <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#C8265A" }}>
             Pour les acheteurs
