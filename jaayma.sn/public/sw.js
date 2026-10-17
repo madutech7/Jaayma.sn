@@ -1,5 +1,7 @@
 // Jaay minimal service worker
 const CACHE_NAME = "jaay-cache-v2";
+const IMAGE_CACHE_NAME = "jaay-images-v1";
+const MAX_CACHED_IMAGES = 120;
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -22,7 +24,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== IMAGE_CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -34,6 +36,15 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
+  const isAppImage =
+    event.request.method === "GET" &&
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith("/api/images/") || url.pathname.startsWith("/img/"));
+
+  if (isAppImage) {
+    event.respondWith(cacheImage(event.request));
+    return;
+  }
 
   // Never cache mutation requests, API, orders, or private workspace routes
   if (
@@ -58,22 +69,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for immutable images
-  if (url.pathname.startsWith("/img/")) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then(async (cache) => {
-        const cachedResponse = await cache.match(event.request);
-        if (cachedResponse) return cachedResponse;
-        const networkResponse = await fetch(event.request);
-        if (networkResponse.status === 200) {
-          cache.put(event.request, networkResponse.clone());
-        }
-        return networkResponse;
-      })
-    );
-    return;
-  }
 });
+
+async function cacheImage(request) {
+  const cache = await caches.open(IMAGE_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) return cachedResponse;
+
+  const response = await fetch(request);
+  const contentType = response.headers.get("content-type") || "";
+  const cacheControl = response.headers.get("cache-control") || "";
+  if (response.ok && contentType.startsWith("image/") && /\bimmutable\b/i.test(cacheControl)) {
+    try {
+      await cache.put(request, response.clone());
+      const cachedRequests = await cache.keys();
+      const overflow = cachedRequests.length - MAX_CACHED_IMAGES;
+      if (overflow > 0) {
+        await Promise.all(cachedRequests.slice(0, overflow).map((cachedRequest) => cache.delete(cachedRequest)));
+      }
+    } catch {
+      // Keep the network response usable if the device cannot store another image.
+    }
+  }
+
+  return response;
+}
 
 self.addEventListener("push", (event) => {
   let payload = {};
