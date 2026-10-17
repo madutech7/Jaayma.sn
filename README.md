@@ -223,7 +223,7 @@ Render detecte automatiquement la configuration :
 | Parametre | Valeur |
 |---|---|
 | Root directory | `backend` |
-| Build command | `npm install && npm run build && npx prisma generate` |
+| Build command | `npm install && npm run build && npx prisma db push` |
 | Start command | `npm run start:prod` |
 | Health check | `/health` |
 | URL de production | https://jaayma-sn.onrender.com |
