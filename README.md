@@ -228,7 +228,20 @@ Render detecte automatiquement la configuration :
 | Health check | `/health` |
 | URL de production | https://jaayma-sn.onrender.com |
 
-Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN).
+Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN et les cles VAPID pour les notifications push).
+
+### Notifications push des commandes
+
+Les vendeurs peuvent activer une alerte sur chaque téléphone depuis **Espace vendeur → Commandes**. Le navigateur doit prendre en charge les notifications et l'utilisateur doit les autoriser. Sur iPhone/iPad, Jaayma doit d'abord être ajouté à l'écran d'accueil et ouvert depuis cette icône (iOS/iPadOS 16.4 ou plus récent).
+
+Configurez une paire VAPID une seule fois pour le backend et conservez les mêmes clés lors des déploiements :
+
+```bash
+cd backend
+npx web-push generate-vapid-keys
+```
+
+Ajoutez `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT=mailto:support@jaayma.sn` dans les variables d'environnement du backend Render. Ne partagez jamais la clé privée et ne la remplacez pas après activation des abonnements. Le backend expose la clé publique au PWA. Render applique le schéma avec `prisma db push` pendant son déploiement.
 
 ---
 

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const orderSchema = z.object({
   shopId: z.string().min(1),
@@ -25,7 +26,10 @@ const orderSchema = z.object({
 
 @Injectable()
 export class OrdersService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+  ) {}
 
   async findByShop(shopId: string) {
     return this.prisma.order.findMany({
@@ -121,10 +125,10 @@ export class OrdersService {
 
     const productIds = Array.from(totalQuantityByProductId.keys());
 
-    return this.prisma.$transaction(async (transaction) => {
+    const order = await this.prisma.$transaction(async (transaction) => {
       const shop = await transaction.shop.findFirst({
         where: { id: parsed.data.shopId, status: 'ACTIVE' },
-        select: { deliveryFee: true },
+        select: { deliveryFee: true, ownerId: true },
       });
 
       if (!shop) {
@@ -175,7 +179,7 @@ export class OrdersService {
       );
       const deliveryFee = shop.deliveryFee;
 
-      return transaction.order.create({
+      const createdOrder = await transaction.order.create({
         data: {
           reference: createOrderReference(),
           shopId: parsed.data.shopId,
@@ -199,7 +203,17 @@ export class OrdersService {
         },
         include: { items: true },
       });
+
+      return {
+        order: createdOrder,
+        ownerId: shop.ownerId,
+      };
     });
+
+    // Notification delivery must never prevent a customer order from succeeding.
+    void this.notifications.notifyNewOrder(order.order, order.ownerId);
+
+    return order.order;
   }
 }
 

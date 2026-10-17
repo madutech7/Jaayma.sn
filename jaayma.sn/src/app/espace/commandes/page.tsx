@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatFcfa } from "@/lib/money";
 import { api } from "@/lib/api";
 import type { Order } from "@/types/schema";
+import OrderNotifications from "./OrderNotifications";
 
 export const metadata = {
   title: "Commandes - Espace Vendeur",
@@ -68,6 +69,8 @@ export default async function CommandesPage({
           Commandes
         </h1>
       </div>
+
+      <OrderNotifications />
 
       {/*  FILTRES (chips)  */}
       <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">

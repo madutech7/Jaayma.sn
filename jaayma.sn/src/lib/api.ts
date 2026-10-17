@@ -55,6 +55,35 @@ async function request<T>(
 }
 
 export const api = {
+  // ─── PUSH NOTIFICATIONS ───
+  async getVapidPublicKey(): Promise<{ publicKey: string | null }> {
+    return request<{ publicKey: string | null }>("/notifications/vapid-public-key");
+  },
+
+  async savePushSubscription(token: string, subscription: Record<string, unknown>) {
+    return request<{ success: boolean }>("/notifications/push-subscriptions", {
+      method: "POST",
+      token,
+      body: JSON.stringify(subscription),
+    });
+  },
+
+  async removePushSubscription(token: string, endpoint: string) {
+    return request<{ success: boolean }>("/notifications/push-subscriptions", {
+      method: "DELETE",
+      token,
+      body: JSON.stringify({ endpoint }),
+    });
+  },
+
+  async sendTestNotification(token: string, endpoint: string) {
+    return request<{ success: boolean }>("/notifications/test", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ endpoint }),
+    });
+  },
+
   // ─── SHOPS ───
   async getShops(params?: { q?: string; category?: string }): Promise<Shop[]> {
     const sp = new URLSearchParams();

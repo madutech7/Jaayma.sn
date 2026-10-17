@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ShopsModule } from './shops/shops.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UploadsModule } from './uploads/uploads.module';
     ProductsModule,
     OrdersModule,
     UploadsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })

@@ -1,5 +1,5 @@
 // Jaay minimal service worker
-const CACHE_NAME = "jaay-cache-v1";
+const CACHE_NAME = "jaay-cache-v2";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -73,4 +73,43 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "Une nouvelle commande vient d’arriver." };
+  }
+
+  const title = payload.title || "Nouvelle commande";
+  const options = {
+    body: payload.body || "Une nouvelle commande vient d’arriver sur votre boutique.",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: payload.tag || "jaay-new-order",
+    renotify: Boolean(payload.tag),
+    data: { url: payload.url || "/espace/commandes" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/espace/commandes", self.location.origin);
+  if (target.origin !== self.location.origin) target.href = self.location.origin + "/espace/commandes";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
+      for (const client of windows) {
+        if ("focus" in client && new URL(client.url).pathname.startsWith("/espace")) {
+          await client.navigate(target.href);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target.href);
+    }),
+  );
 });
