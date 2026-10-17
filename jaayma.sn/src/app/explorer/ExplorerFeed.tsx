@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/images";
 import ProductImageFrame, { WAX_PATTERNS } from "@/components/ProductImageFrame";
@@ -25,141 +26,210 @@ const CAT_COLORS: Record<string, { bg: string; color: string; rot: number }> = {
   Artisanat:   { bg: "#C8265A", color: "#fff",    rot: 2  },
 };
 
+function ExploreProductSheet({
+  item,
+  onClose,
+  onOpenShop,
+}: {
+  item: ExploreItem;
+  onClose: () => void;
+  onOpenShop: () => void;
+}) {
+  const { product, shop, imageUrl } = item;
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-[#0F1E3D]/65 backdrop-blur-[3px] sm:items-center sm:p-5"
+      onClick={onClose}
+      role="presentation"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="explore-product-title"
+        className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-[30px] border-[2.5px] border-ink bg-[#FFFBF2] pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(15,30,61,0.25)] animate-slide-up sm:rounded-[30px]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink/10 bg-[#FFFBF2]/95 px-5 py-3 backdrop-blur">
+          <span className="text-xs font-black uppercase tracking-[0.16em] text-[#3F4B69]">Fiche produit</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer la fiche produit"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-ink bg-white text-2xl font-medium leading-none text-ink active:scale-90"
+          >×</button>
+        </div>
+        <div className="p-4 sm:p-5">
+          <div className="overflow-hidden rounded-[22px] border-2 border-ink bg-white p-2 shadow-[3px_3px_0_#0F1E3D]">
+            <ProductImageFrame imageUrl={imageUrl} alt={product.name} wax={WAX_PATTERNS[0]} height={300} loading="eager" />
+          </div>
+          <div className="px-1 pb-2 pt-5">
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <h2 id="explore-product-title" className="font-bricolage text-2xl font-black leading-tight text-ink">{product.name}</h2>
+              {shop.category && <span className="shrink-0 rounded-full border border-ink/20 bg-[#FFC83D]/50 px-3 py-1 text-[10px] font-black text-ink">{shop.category}</span>}
+            </div>
+            <PriceDisplay amount={product.price} className="text-[30px] leading-tight text-[#C8265A]" />
+            {product.description && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#3F4B69]">{product.description}</p>}
+            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/15 bg-white p-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-ink/20 bg-[#FFC83D]/35 font-bricolage font-black text-ink">
+                {shop.logoKey ? <Image src={getImageUrl(shop.logoKey)!} alt="" width={44} height={44} className="h-full w-full bg-white object-contain" unoptimized /> : shop.name.slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#6A748B]">Vendu par</p>
+                <p className="truncate font-bricolage font-black text-ink">{shop.name}</p>
+                {(shop.area || shop.quartier) && <p className="truncate text-xs text-[#3F4B69]">{shop.area || shop.quartier}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="sticky bottom-0 border-t border-ink/10 bg-[#FFFBF2]/95 px-4 py-3 backdrop-blur sm:rounded-b-[28px]">
+          <button
+            type="button"
+            onClick={onOpenShop}
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full border-[2.5px] border-ink px-5 text-sm font-black text-[#FFC83D] shadow-[3px_3px_0_#0F1E3D] transition-transform active:scale-[0.98]"
+            style={{ backgroundColor: "#0F1E3D" }}
+          >
+            Ouvrir dans la boutique <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function ExplorerFeed({
   initialProducts,
   initialCategory,
   initialQuery,
   initialPage,
   initialHasNextPage,
+  initialShops,
+  initialView,
 }: {
   initialProducts: ExploreItem[];
   initialCategory: string;
   initialQuery: string;
   initialPage: number;
   initialHasNextPage: boolean;
+  initialShops: Shop[];
+  initialView: "products" | "shops";
 }) {
+  const router = useRouter();
   const [selectedCat, setSelectedCat] = useState(initialCategory || "Tous");
   const [query, setQuery] = useState(initialQuery || "");
+  const [view, setView] = useState<"products" | "shops">(initialView);
   const [products, setProducts] = useState<ExploreItem[]>(initialProducts);
+  const [shops, setShops] = useState<Shop[]>(initialShops);
   const [page, setPage] = useState(initialPage);
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ExploreItem | null>(null);
 
-  // Cache mémoire local ultra-rapide (catégorie -> données)
-  const cacheRef = useRef<Map<string, { items: ExploreItem[]; hasNextPage: boolean }>>(new Map());
+  const cacheRef = useRef<Map<string, { products: ExploreItem[]; shops: Shop[]; hasNextPage: boolean }>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sauvegarder les produits initiaux
-  const allInitialProductsRef = useRef<ExploreItem[]>(initialProducts);
+  useEffect(() => () => {
+    abortControllerRef.current?.abort();
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+  }, []);
 
   useEffect(() => {
-    allInitialProductsRef.current = initialProducts;
-    const key = `${initialCategory || "Tous"}__${initialQuery}__${initialPage}`;
-    cacheRef.current.set(key, { items: initialProducts, hasNextPage: initialHasNextPage });
+    const clearShopReturnMarker = () => sessionStorage.removeItem("jaayma:explorer-return");
+    window.addEventListener("popstate", clearShopReturnMarker);
+    return () => window.removeEventListener("popstate", clearShopReturnMarker);
+  }, []);
+
+  useEffect(() => {
+    const key = `${initialView}__${initialCategory || "Tous"}__${initialQuery}__${initialPage}`;
+    cacheRef.current.set(key, { products: initialProducts, shops: initialShops, hasNextPage: initialHasNextPage });
     setProducts(initialProducts);
-  }, [initialCategory, initialProducts, initialQuery, initialPage, initialHasNextPage]);
+    setShops(initialShops);
+  }, [initialCategory, initialHasNextPage, initialPage, initialProducts, initialQuery, initialShops, initialView]);
 
-  // Clic sur une catégorie : Réponse INSTANTANÉE (0ms)
-  const handleCategoryClick = async (cat: string) => {
-    if (cat === selectedCat && !isLoading) return;
+  const loadResults = async (next: { view: "products" | "shops"; category: string; query: string; page: number }) => {
+    const normalizedQuery = next.query.trim();
+    const cacheKey = `${next.view}__${next.category}__${normalizedQuery}__${next.page}`;
+    setView(next.view);
+    setSelectedCat(next.category);
+    setQuery(next.query);
+    setPage(next.page);
+    setLoadError(false);
 
-    // 1. Mise à jour visuelle IMMÉDIATE (0ms)
-    setSelectedCat(cat);
-    setPage(1);
+    const urlParams = new URLSearchParams();
+    if (normalizedQuery) urlParams.set("q", normalizedQuery);
+    if (next.category !== "Tous") urlParams.set("cat", next.category);
+    if (next.page > 1) urlParams.set("page", String(next.page));
+    if (next.view === "shops") urlParams.set("view", "shops");
+    const serializedParams = urlParams.toString();
+    window.history.replaceState(null, "", `/explorer${serializedParams ? `?${serializedParams}` : ""}`);
 
-    // Mettre à jour l'URL sans rechargement de page
-    const sp = new URLSearchParams();
-    if (query) sp.set("q", query);
-    if (cat !== "Tous") sp.set("cat", cat);
-    const newUrl = sp.toString() ? `/explorer?${sp.toString()}` : "/explorer";
-    window.history.replaceState(null, "", newUrl);
-
-    const cacheKey = `${cat}__${query}__1`;
-
-    // 2. Si déjà en cache -> affichage 0ms
-    if (cacheRef.current.has(cacheKey)) {
-      const cached = cacheRef.current.get(cacheKey)!;
-      setProducts(cached.items);
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached) {
+      setProducts(cached.products);
+      setShops(cached.shops);
       setHasNextPage(cached.hasNextPage);
       setIsLoading(false);
       return;
     }
 
-    // 3. Filtrage mémoire instantané depuis les produits déjà chargés
-    if (!query && cat !== "Tous") {
-      const memoryMatches = allInitialProductsRef.current.filter((item) => {
-        const itemCat = item.shop.category || "";
-        return itemCat.toLowerCase() === cat.toLowerCase();
-      });
-
-      if (memoryMatches.length > 0) {
-        setProducts(memoryMatches);
-        setHasNextPage(false);
-        // On enregistre ce résultat
-        cacheRef.current.set(cacheKey, { items: memoryMatches, hasNextPage: false });
-        return;
-      }
-    } else if (cat === "Tous" && !query) {
-      setProducts(allInitialProductsRef.current);
-      setHasNextPage(initialHasNextPage);
-      return;
-    }
-
-    // 4. Sinon, requête unique à la demande avec annulation de la précédente
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsLoading(true);
     try {
-      const fetchSp = new URLSearchParams();
-      if (query) fetchSp.set("q", query);
-      if (cat !== "Tous") fetchSp.set("cat", cat);
-
-      const res = await fetch(`/api/explore?${fetchSp.toString()}`, {
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!res.ok) throw new Error("Erreur");
+      const fetchParams = new URLSearchParams();
+      if (normalizedQuery) fetchParams.set("q", normalizedQuery);
+      if (next.category !== "Tous") fetchParams.set("cat", next.category);
+      fetchParams.set("page", String(next.page));
+      const endpoint = next.view === "shops" ? "/api/explore/shops" : "/api/explore";
+      const res = await fetch(`${endpoint}?${fetchParams.toString()}`, { signal: controller.signal });
+      if (!res.ok) throw new Error("La recherche n'a pas pu aboutir.");
       const data = await res.json();
-      const items: ExploreItem[] = data.items || [];
-      const hasNext = Boolean(data.hasNextPage);
-
-      cacheRef.current.set(cacheKey, { items, hasNextPage: hasNext });
-      setProducts(items);
-      setHasNextPage(hasNext);
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        // Ignorer l'erreur d'annulation
-      }
+      const nextProducts: ExploreItem[] = next.view === "products" ? data.items || [] : [];
+      const nextShops: Shop[] = next.view === "shops" ? data.items || [] : [];
+      const nextHasPage = Boolean(data.hasNextPage);
+      cacheRef.current.set(cacheKey, { products: nextProducts, shops: nextShops, hasNextPage: nextHasPage });
+      setProducts(nextProducts);
+      setShops(nextShops);
+      setHasNextPage(nextHasPage);
+    } catch (error) {
+      if (error instanceof Error && error.name !== "AbortError") setLoadError(true);
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) setIsLoading(false);
     }
   };
 
-  // Pagination à la demande
-  const handlePageChange = async (targetPage: number) => {
-    setIsLoading(true);
-    try {
-      const fetchSp = new URLSearchParams();
-      if (query) fetchSp.set("q", query);
-      if (selectedCat !== "Tous") fetchSp.set("cat", selectedCat);
-      fetchSp.set("page", String(targetPage));
-
-      const res = await fetch(`/api/explore?${fetchSp.toString()}`);
-      if (!res.ok) throw new Error("Erreur");
-      const data = await res.json();
-
-      setProducts(data.items || []);
-      setHasNextPage(Boolean(data.hasNextPage));
-      setPage(targetPage);
-    } catch {
-      // Ignorer
-    } finally {
-      setIsLoading(false);
+  const handleCategoryClick = (category: string) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (view === "products" && !query.trim()) {
+      if (category !== "Tous") {
+        setProducts(products.filter(({ shop }) => shop.category?.toLocaleLowerCase() === category.toLocaleLowerCase()));
+      }
     }
+    loadResults({ view, category, query, page: 1 });
   };
+  const handleViewChange = (nextView: "products" | "shops") => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    loadResults({ view: nextView, category: selectedCat, query, page: 1 });
+  };
+  const handlePageChange = (targetPage: number) =>
+    loadResults({ view, category: selectedCat, query, page: targetPage });
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: "#FFC83D" }}>
@@ -200,15 +270,14 @@ export default function ExplorerFeed({
 
         {/*  Barre de recherche  */}
         <form
-          method="GET"
-          action="/explorer"
           onSubmit={(e) => {
             e.preventDefault();
-            handleCategoryClick(selectedCat);
+            if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+            loadResults({ view, category: selectedCat, query, page: 1 });
           }}
           className="mb-5"
         >
-          <div className="flex items-center gap-3 px-4 py-3.5 rounded-full border-[2.5px] border-ink" style={{ backgroundColor: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}>
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border-[2.5px] border-ink" style={{ backgroundColor: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="6.5" />
               <path d="M16 16l5 5" />
@@ -217,14 +286,49 @@ export default function ExplorerFeed({
               type="text"
               name="q"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Robes, bijoux, baskets"
+              onChange={(e) => {
+                const nextQuery = e.target.value;
+                setQuery(nextQuery);
+                if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = setTimeout(() => {
+                  loadResults({ view, category: selectedCat, query: nextQuery, page: 1 });
+                }, 400);
+              }}
+              placeholder={view === "shops" ? "Nom de boutique, quartier, produit…" : "Robes, bijoux, baskets…"}
+              aria-label={view === "shops" ? "Rechercher une boutique" : "Rechercher un produit"}
               className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted"
               style={{ color: "#0F1E3D" }}
             />
-            {selectedCat !== "Tous" && <input type="hidden" name="cat" value={selectedCat} />}
+            <button
+              type="submit"
+              aria-label="Rechercher"
+              className="shrink-0 rounded-full border-2 border-ink px-4 py-2 text-xs font-black active:scale-95 transition-transform"
+              style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "2px 2px 0 #0F1E3D" }}
+            >
+              Rechercher
+            </button>
           </div>
         </form>
+
+        {/* Basculer entre les produits et les boutiques */}
+        <div className="mb-5 grid grid-cols-2 gap-2 rounded-full border-[2.5px] border-ink bg-[#0F1E3D] p-1.5" role="tablist" aria-label="Type de résultats">
+          {(["products", "shops"] as const).map((item) => {
+            const active = view === item;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => handleViewChange(item)}
+                className="rounded-full px-3 py-2.5 text-sm font-black transition-transform active:scale-[0.98]"
+                style={{ backgroundColor: active ? "#FFC83D" : "transparent", color: active ? "#0F1E3D" : "#FFFBF2" }}
+              >
+                {item === "products" ? "Produits" : "Boutiques"}
+              </button>
+            );
+          })}
+        </div>
 
         {/*  Catégories  */}
         <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 mb-6">
@@ -251,18 +355,33 @@ export default function ExplorerFeed({
           })}
         </div>
 
-        {/*  Section produits  */}
+        {/* Résultats */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bricolage font-black text-ink text-xl" style={{ letterSpacing: "-0.02em" }}>
-            {selectedCat !== "Tous" ? selectedCat : query ? `Résultats pour « ${query} »` : "Produits à découvrir"}
+            {view === "shops"
+              ? query ? `Boutiques pour « ${query} »` : "Boutiques à découvrir"
+              : selectedCat !== "Tous" ? selectedCat : query ? `Résultats pour « ${query} »` : "Produits à découvrir"}
           </h2>
           {isLoading && (
             <div className="w-4 h-4 border-2 border-[#0F1E3D] border-t-transparent rounded-full animate-spin" />
           )}
         </div>
 
-        {/*  Résultats  */}
-        {products.length === 0 ? (
+        {loadError && (
+          <div className="mb-4 rounded-2xl border-2 border-ink bg-white px-4 py-3 text-sm font-semibold text-ink" role="alert">
+            La recherche n’a pas pu aboutir. Vérifie ta connexion et réessaie.
+          </div>
+        )}
+
+        {isLoading && (view === "products" ? products.length === 0 : shops.length === 0) && (
+          <div className="rounded-2xl border-[2.5px] border-ink bg-white px-5 py-8 text-center" style={{ boxShadow: "4px 4px 0 #0F1E3D" }} aria-live="polite">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-[3px] border-[#0F1E3D] border-t-transparent" />
+            <p className="font-bricolage font-bold text-ink">{view === "shops" ? "Recherche des boutiques…" : "Recherche des produits…"}</p>
+          </div>
+        )}
+
+        {/* Produits ou boutiques */}
+        {view === "products" && products.length === 0 && !isLoading && !loadError ? (
           <div className="bg-white rounded-2xl border-[2.5px] border-ink p-10 text-center" style={{ boxShadow: "4px 4px 0 #0F1E3D" }}>
             <h3 className="font-bricolage font-bold text-ink text-lg mb-1">Aucun produit trouvé</h3>
             <p className="text-sm mb-5" style={{ color: "#3F4B69" }}>
@@ -279,14 +398,14 @@ export default function ExplorerFeed({
               Voir tout
             </button>
           </div>
-        ) : (
+        ) : view === "products" ? (
           <div className={`grid grid-cols-2 gap-3 transition-opacity duration-150 ${isLoading ? "opacity-60" : "opacity-100"}`}>
             {products.map(({ product, shop, imageUrl }, i) => (
-              <Link
+              <button
                 key={product.id}
-                href={`/${shop.slug}#product-${product.id}`}
-                prefetch={true}
-                className="min-w-0 overflow-hidden rounded-2xl border-[2.5px] border-ink active:scale-[0.98] transition-transform hover:-translate-y-0.5"
+                type="button"
+                onClick={() => setSelectedProduct({ product, shop, imageUrl })}
+                className="min-w-0 overflow-hidden rounded-2xl border-[2.5px] border-ink text-left active:scale-[0.98] transition-transform hover:-translate-y-0.5"
                 style={{ backgroundColor: "#FFFBF2", boxShadow: "4px 4px 0 #0F1E3D" }}
               >
                 <div className="p-2 pb-0">
@@ -312,6 +431,70 @@ export default function ExplorerFeed({
                     </div>
                   </div>
                 </div>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {view === "shops" && shops.length === 0 && !isLoading && !loadError && (
+          <div className="bg-white rounded-2xl border-[2.5px] border-ink p-10 text-center" style={{ boxShadow: "4px 4px 0 #0F1E3D" }}>
+            <h3 className="font-bricolage font-bold text-ink text-lg mb-1">Aucune boutique trouvée</h3>
+            <p className="text-sm mb-5" style={{ color: "#3F4B69" }}>
+              Essaie un autre nom, un quartier ou un produit.
+            </p>
+            <button
+              type="button"
+              onClick={() => loadResults({ view: "shops", category: "Tous", query: "", page: 1 })}
+              className="text-sm font-bold px-5 py-2.5 rounded-full border-[2px] border-ink active:scale-95 transition-transform"
+              style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "2px 2px 0 #0F1E3D" }}
+            >
+              Voir toutes les boutiques
+            </button>
+          </div>
+        )}
+
+        {view === "shops" && shops.length > 0 && (
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-opacity duration-150 ${isLoading ? "opacity-60" : "opacity-100"}`}>
+            {shops.map((shop, index) => (
+              <Link
+                key={shop.id}
+                href={`/${shop.slug}`}
+                prefetch={false}
+                onClick={() => sessionStorage.setItem("jaayma:explorer-return", String(Date.now()))}
+                className="group min-w-0 rounded-2xl border-[2.5px] border-ink p-4 active:scale-[0.99] transition-transform hover:-translate-y-0.5"
+                style={{ backgroundColor: "#FFFBF2", boxShadow: "4px 4px 0 #0F1E3D" }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-14 h-14 shrink-0 rounded-2xl border-2 border-ink bg-white overflow-hidden flex items-center justify-center font-bricolage font-black text-xl text-ink" style={{ boxShadow: "2px 2px 0 #0F1E3D" }}>
+                    {shop.logoKey ? (
+                      <Image src={getImageUrl(shop.logoKey)!} alt={`Logo ${shop.name}`} width={56} height={56} className="w-full h-full object-contain" unoptimized />
+                    ) : shop.name.slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bricolage font-black text-ink text-base leading-tight line-clamp-1">{shop.name}</p>
+                    <p className="mt-1 text-xs leading-snug line-clamp-2" style={{ color: "#3F4B69" }}>{shop.headline || shop.description || "Découvrez la boutique"}</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {shop.category && <span className="rounded-full border border-ink/20 bg-[#FFC83D]/50 px-2 py-0.5 text-[10px] font-bold text-ink">{shop.category}</span>}
+                      {(shop.area || shop.quartier) && <span className="rounded-full border border-ink/15 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink">{shop.area || shop.quartier}</span>}
+                    </div>
+                  </div>
+                </div>
+                {shop.products && shop.products.length > 0 && (
+                  <div className="mt-3 flex items-center justify-between border-t border-ink/15 pt-2.5">
+                    <div className="flex -space-x-2">
+                      {shop.products.slice(0, 3).map((product, productIndex) => {
+                        const image = product.imageUrl ?? product.images?.[0]?.url;
+                        const imageUrl = image ? getImageUrl(image) : null;
+                        return (
+                          <div key={product.id} className="h-8 w-8 overflow-hidden rounded-full border-2 border-[#FFFBF2] bg-white" style={{ zIndex: 3 - productIndex }}>
+                            {imageUrl ? <Image src={imageUrl} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized /> : <span className="flex h-full items-center justify-center text-[9px] font-bold text-ink">{index + 1}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="text-xs font-black text-ink group-hover:text-[#C8265A]">Voir la boutique <span aria-hidden="true">→</span></span>
+                  </div>
+                )}
               </Link>
             ))}
           </div>
@@ -323,25 +506,36 @@ export default function ExplorerFeed({
             {page > 1 && (
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={() => handlePageChange(page - 1)}
-                className="px-5 py-2.5 rounded-full border-[2px] border-ink font-bold text-sm active:scale-95 transition-transform"
+                className="px-5 py-2.5 rounded-full border-[2px] border-ink font-bold text-sm active:scale-95 transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ backgroundColor: "#0F1E3D", color: "#FFC83D" }}
-              >
-                Précédent
-              </button>
+              >Précédent</button>
             )}
             <span className="text-sm font-semibold text-ink">Page {page}</span>
             {hasNextPage && (
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={() => handlePageChange(page + 1)}
-                className="px-5 py-2.5 rounded-full border-[2px] border-ink font-bold text-sm active:scale-95 transition-transform"
+                className="px-5 py-2.5 rounded-full border-[2px] border-ink font-bold text-sm active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-wait"
                 style={{ backgroundColor: "#0F1E3D", color: "#FFC83D" }}
               >
                 Suivant
               </button>
             )}
           </div>
+        )}
+
+        {selectedProduct && (
+          <ExploreProductSheet
+            item={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            onOpenShop={() => {
+              sessionStorage.setItem("jaayma:explorer-return", String(Date.now()));
+              router.push(`/${selectedProduct.shop.slug}?product=${encodeURIComponent(selectedProduct.product.id)}`);
+            }}
+          />
         )}
 
         {/*  Lien inscription  */}
@@ -353,7 +547,7 @@ export default function ExplorerFeed({
       </div>
 
       {/*  Bottom nav  */}
-      <nav className="fixed bottom-0 left-0 right-0 px-5 pb-4 pt-2 pointer-events-none z-40">
+      <nav className="fixed bottom-0 left-0 right-0 px-5 pt-2 pointer-events-none z-40" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
         <div className="max-w-2xl mx-auto">
           <div
             className="pointer-events-auto flex items-center justify-around py-4 px-6 rounded-full border-[2.5px] border-ink"

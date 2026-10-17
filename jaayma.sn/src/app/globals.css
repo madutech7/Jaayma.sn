@@ -29,6 +29,8 @@
     background-color: var(--bg);
     color: var(--ink);
     font-family: var(--font-instrument), sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   /* Keep mobile browsers from zooming when a small form control receives focus. */

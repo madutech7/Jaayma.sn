@@ -63,6 +63,7 @@ model Shop {
   area              String       @default("")
   description       String       @default("")
   category          String?
+  themeColor        String       @default("#C8265A")
   whatsapp          String?
   waveNumber        String?
   orangeMoneyNumber String?

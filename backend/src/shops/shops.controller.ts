@@ -10,6 +10,21 @@ export class ShopsController {
     return this.shopsService.findAll({ q, category });
   }
 
+  @Get('explore')
+  explore(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.shopsService.findForExplore({
+      q,
+      category,
+      page: page && /^\d+$/.test(page) ? Number(page) : 1,
+      limit: limit && /^\d+$/.test(limit) ? Number(limit) : 12,
+    });
+  }
+
   @Post()
   create(@Body() body: unknown) {
     return this.shopsService.create(body);

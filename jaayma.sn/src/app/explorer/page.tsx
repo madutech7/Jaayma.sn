@@ -14,26 +14,31 @@ const ITEMS_PER_PAGE = 20;
 export default async function ExplorerPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; cat?: string; page?: string; view?: string }>;
 }) {
   const params = await searchParams;
   const query = params.q?.trim() || "";
   const selectedCategory = params.cat && params.cat !== "Tous" ? params.cat : "";
   const currentPage = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const { items: listedProducts, hasNextPage } = await api.getExploreProducts({
-    q: query,
-    category: selectedCategory,
-    page: currentPage,
-    limit: ITEMS_PER_PAGE,
-  });
+  const initialView = params.view === "shops" ? "shops" : "products";
+  const [productResults, shopResults] = await Promise.all([
+    initialView === "products"
+      ? api.getExploreProducts({ q: query, category: selectedCategory, page: currentPage, limit: ITEMS_PER_PAGE })
+      : Promise.resolve({ items: [], hasNextPage: false }),
+    initialView === "shops"
+      ? api.getExploreShops({ q: query, category: selectedCategory, page: currentPage, limit: 12 })
+      : Promise.resolve({ items: [], hasNextPage: false }),
+  ]);
 
   return (
     <ExplorerFeed
-      initialProducts={listedProducts}
+      initialProducts={productResults.items}
       initialCategory={selectedCategory || "Tous"}
       initialQuery={query}
       initialPage={currentPage}
-      initialHasNextPage={hasNextPage}
+      initialHasNextPage={initialView === "products" ? productResults.hasNextPage : shopResults.hasNextPage}
+      initialShops={shopResults.items}
+      initialView={initialView}
     />
   );
 }

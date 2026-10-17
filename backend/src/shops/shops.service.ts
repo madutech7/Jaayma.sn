@@ -14,6 +14,7 @@ const shopSchema = z.object({
   area: z.string().optional().default(''),
   description: z.string().optional().default(''),
   category: z.string().optional().nullable(),
+  themeColor: z.enum(['#C8265A', '#0E7C66', '#FFC83D', '#3B4A7A', '#B4531E']).optional().default('#C8265A'),
   whatsapp: z.string().optional().nullable(),
   waveNumber: z.string().optional().nullable(),
   orangeMoneyNumber: z.string().optional().nullable(),
@@ -66,6 +67,45 @@ export class ShopsService {
         },
       },
     });
+  }
+
+  async findForExplore(options: { q?: string; category?: string; page?: number; limit?: number }) {
+    const page = Math.max(1, Math.floor(options.page || 1));
+    const limit = Math.min(24, Math.max(1, Math.floor(options.limit || 12)));
+    const query = options.q?.trim().slice(0, 100);
+    const whereClause: Record<string, unknown> = { status: 'ACTIVE' };
+
+    if (options.category && options.category !== 'Tous') {
+      whereClause.category = options.category;
+    }
+
+    if (query) {
+      whereClause.OR = [
+        { name: { contains: query, mode: 'insensitive' } },
+        { headline: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { area: { contains: query, mode: 'insensitive' } },
+        { products: { some: { status: 'ACTIVE', name: { contains: query, mode: 'insensitive' } } } },
+      ];
+    }
+
+    const items = await this.prisma.shop.findMany({
+      where: whereClause,
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      skip: (page - 1) * limit,
+      take: limit + 1,
+      include: {
+        products: {
+          where: { status: 'ACTIVE' },
+          take: 4,
+          include: { images: { orderBy: { position: 'asc' }, take: 1 } },
+        },
+      },
+    });
+
+    const hasNextPage = items.length > limit;
+    if (hasNextPage) items.pop();
+    return { items, hasNextPage };
   }
 
   async create(input: unknown) {

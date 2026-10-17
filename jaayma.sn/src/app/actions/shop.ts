@@ -3,6 +3,7 @@
 import { getCurrentSellerContext, getCurrentSellerId } from "@/lib/auth";
 import { isAvailableSlug, suggestSlug } from "@/lib/slug";
 import { normalizePhone } from "@/lib/phone";
+import { DEFAULT_SHOP_THEME, SHOP_THEME_COLORS } from "@/lib/shop-theme";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { api } from "@/lib/api";
 
@@ -21,6 +22,7 @@ export async function upsertShop(
   const category = (formData.get("category") as string)?.trim();
   const quartier = (formData.get("quartier") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
+  const themeColor = (formData.get("themeColor") as string)?.trim() || DEFAULT_SHOP_THEME;
   const rawWhatsapp = formData.get("whatsapp") as string;
   const acceptsCash = formData.get("acceptsCash") === "on";
   const rawDeliveryFee = formData.get("deliveryFee") as string;
@@ -39,6 +41,10 @@ export async function upsertShop(
 
   if (!name) {
     return { error: "Le nom de la boutique est obligatoire." };
+  }
+
+  if (!SHOP_THEME_COLORS.includes(themeColor as (typeof SHOP_THEME_COLORS)[number])) {
+    return { error: "Cette couleur de boutique n’est pas disponible." };
   }
 
   slug = suggestSlug((slug || name).trim());
@@ -78,6 +84,7 @@ export async function upsertShop(
       area: quartier || "",
       description: description || "",
       category: category || null,
+      themeColor,
       whatsapp,
       acceptsCash,
       deliveryFee,

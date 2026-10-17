@@ -36,6 +36,7 @@ export interface Shop {
   quartier?: string | null;
   description?: string | null;
   category?: string | null;
+  themeColor?: string | null;
   whatsapp?: string | null;
   waveNumber?: string | null;
   orangeMoneyNumber?: string | null;

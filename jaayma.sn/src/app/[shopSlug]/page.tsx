@@ -2,14 +2,15 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import ProductList from "./ProductList";
 import CartButton from "./CartButton";
+import ShopBackButton from "./ShopBackButton";
 import { formatFcfa } from "@/lib/money";
 import { getImageUrl } from "@/lib/images";
 import { waLink } from "@/lib/whatsapp";
 import TrackVisit from "@/components/TrackVisit";
 import MarketingPixel from "@/components/MarketingPixel";
-import Link from "next/link";
 import { cache } from "react";
 import { api } from "@/lib/api";
+import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEME_COLORS } from "@/lib/shop-theme";
 import { MapPin, Star, Truck, ShoppingBag } from "lucide-react";
 
 const getShopBySlug = cache(async (shopSlug: string) => {
@@ -27,14 +28,14 @@ export async function generateMetadata({ params }: { params: Promise<{ shopSlug:
 }
 
 /* ─── Wax band décorative (comme dans le design, entre header et produits) ─── */
-function WaxBand() {
+function WaxBand({ color }: { color: string }) {
   return (
     <div className="relative" style={{ height: 24 }}>
       <svg viewBox="0 0 344 24" preserveAspectRatio="none" style={{ width: "100%", height: 24 }}>
         <defs>
           <pattern id="waxBand" width="36" height="24" patternUnits="userSpaceOnUse">
             <rect width="36" height="24" fill="#0F1E3D" />
-            <polygon points="18,3 31,12 18,21 5,12" fill="#FFC83D" />
+            <polygon points="18,3 31,12 18,21 5,12" fill={color} />
           </pattern>
         </defs>
         <rect width="344" height="24" fill="url(#waxBand)" />
@@ -45,11 +46,24 @@ function WaxBand() {
   );
 }
 
+function colorWithOpacity(color: string, opacity: number) {
+  const safeColor = SHOP_THEME_COLORS.some((theme) => theme === color) ? color : DEFAULT_SHOP_THEME;
+  const red = parseInt(safeColor.slice(1, 3), 16);
+  const green = parseInt(safeColor.slice(3, 5), 16);
+  const blue = parseInt(safeColor.slice(5, 7), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
 export default async function ShopPage({ params }: { params: Promise<{ shopSlug: string }> }) {
   const { shopSlug } = await params;
 
   const shop = await getShopBySlug(shopSlug);
   if (!shop || !shop.isPublished) notFound();
+  const themeColor = shop.themeColor && SHOP_THEME_COLORS.some((theme) => theme === shop.themeColor)
+    ? shop.themeColor
+    : DEFAULT_SHOP_THEME;
+  const themeForeground = getShopThemeForeground(themeColor);
+  const themeSecondaryText = shop.coverKey ? "#FFFFFF" : themeForeground === "#FFFFFF" ? "#FFE3EC" : "#29364F";
 
   const activeProducts = (shop.products ?? []).filter((p) => p.isActive);
   activeProducts.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
@@ -73,7 +87,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
       />
 
       {/* ─── HEADER BOUTIQUE (fond Hibiscus) ─── */}
-      <div className="relative overflow-hidden" style={{ backgroundColor: "#C8265A" }}>
+      <div className="relative overflow-hidden" style={{ backgroundColor: themeColor }}>
         {shop.coverKey && (
           <>
             <Image
@@ -89,7 +103,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
               className="absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(200,38,90,0.68), rgba(15,30,61,0.58))",
+                  `linear-gradient(135deg, ${colorWithOpacity(themeColor, 0.68)}, rgba(15,30,61,0.58))`,
               }}
             />
           </>
@@ -98,11 +112,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
         {/* Status bar */}
         <div className="flex items-center justify-between px-5 pt-4 pb-0 max-w-xl mx-auto">
           {/* Bouton retour */}
-          <Link href="/explorer" className="w-9 h-9 rounded-full bg-white border-[2px] border-ink flex items-center justify-center active:scale-90 transition-transform">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
-          </Link>
+          <ShopBackButton />
           {/* Bouton WhatsApp / Chat */}
           {shop.whatsapp && (
             <a
@@ -133,12 +143,12 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
                   />
                 </div>
               )}
-              <h1 className="min-w-0 font-bricolage font-black text-white leading-tight" style={{ fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
+              <h1 className="min-w-0 font-bricolage font-black leading-tight" style={{ color: themeForeground, fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
                 {shop.name}
               </h1>
             </div>
             {(shop.headline || shop.tagline || shop.area || shop.quartier) && (
-              <div className="flex flex-wrap items-center gap-x-2 text-sm font-medium mb-2.5" style={{ color: "#FFE3EC" }}>
+              <div className="flex flex-wrap items-center gap-x-2 text-sm font-medium mb-2.5" style={{ color: themeSecondaryText }}>
                 {(shop.headline || shop.tagline) && (
                   <span>{shop.headline || shop.tagline}</span>
                 )}
@@ -155,7 +165,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
             )}
 
             {shop.description && (
-              <p className="text-xs leading-relaxed text-white/90 mb-3.5 max-w-lg bg-black/15 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
+              <p className="mb-3.5 max-w-lg rounded-xl border border-white/10 bg-black/15 p-3 text-xs leading-relaxed backdrop-blur-sm" style={{ color: themeSecondaryText }}>
                 {shop.description}
               </p>
             )}
@@ -163,7 +173,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
             {/* Chips : avis + livraison + catégorie + note */}
             <div className="flex flex-wrap gap-2">
               {shop.category && (
-                <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border-[2px] border-ink bg-[#0F1E3D] text-[#FFC83D]" style={{ boxShadow: "2px 2px 0 #0F1E3D" }}>
+                <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border-[2px] border-ink" style={{ backgroundColor: themeColor, color: themeForeground, boxShadow: "2px 2px 0 #0F1E3D" }}>
                   {shop.category}
                 </span>
               )}
@@ -184,7 +194,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
           </div>
 
         {/* Wax band décorative */}
-        <WaxBand />
+        <WaxBand color={themeColor} />
         </div>
       </div>
 
@@ -199,12 +209,12 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
             <p className="text-sm mt-1" style={{ color: "#3F4B69" }}>Cette boutique n'a pas encore de produits.</p>
           </div>
         ) : (
-          <ProductList products={productsWithImages} shopId={shop.id} />
+          <ProductList products={productsWithImages} shopId={shop.id} themeColor={themeColor} />
         )}
       </div>
 
       {/* ─── Barre panier flottante ─── */}
-      <CartButton shopId={shop.id} shopSlug={shop.slug} />
+      <CartButton shopId={shop.id} shopSlug={shop.slug} themeColor={themeColor} />
     </div>
   );
 }

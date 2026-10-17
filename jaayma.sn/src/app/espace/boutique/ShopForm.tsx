@@ -5,6 +5,7 @@ import { Check, Copy, Loader2 } from "lucide-react";
 import { upsertShop } from "../../actions/shop";
 import { formatPhone } from "@/lib/phone";
 import { suggestSlug } from "@/lib/slug";
+import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEMES } from "@/lib/shop-theme";
 import type { Shop } from "@/types/schema";
 import ImageUploader from "@/components/ImageUploader";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
   const [name, setName] = useState(shop?.name || "");
   const [slug, setSlug] = useState(shop?.slug || "");
   const [selectedCategory, setSelectedCategory] = useState(shop?.category || "");
+  const [selectedTheme, setSelectedTheme] = useState(shop?.themeColor || DEFAULT_SHOP_THEME);
   const [waveNumber, setWaveNumber] = useState(
     shop?.waveNumber ? formatPhone(shop.waveNumber) : ""
   );
@@ -42,6 +44,7 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
       setName(shop.name);
       setSlug(shop.slug);
       setSelectedCategory(shop.category || "");
+      setSelectedTheme(shop.themeColor || DEFAULT_SHOP_THEME);
       setWaveNumber(shop.waveNumber ? formatPhone(shop.waveNumber) : "");
       setOrangeMoneyNumber(shop.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : "");
     }
@@ -196,15 +199,40 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
           tone="dark"
         />
 
-        {/*  COULEURS (Juste visuel pour le design, ou a lier au schema plus tard)  */}
+        {/* Thème de la boutique */}
         <div>
-          <label className="block text-xs font-bold mb-3" style={{ color: "#C3CCE6" }}>Couleur de ta boutique</label>
-          <div className="flex gap-4">
-            <div className="w-10 h-10 rounded-full border-[3px] border-white cursor-pointer" style={{ backgroundColor: "#C8265A" }} />
-            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#0E7C66" }} />
-            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#FFC83D" }} />
-            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#3B4A7A" }} />
-            <div className="w-10 h-10 rounded-full cursor-pointer" style={{ backgroundColor: "#B4531E" }} />
+          <input type="hidden" name="themeColor" value={selectedTheme} />
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <label className="block text-xs font-bold" style={{ color: "#C3CCE6" }}>Couleur de ta boutique</label>
+              <p className="mt-1 text-[11px]" style={{ color: "#8D98AF" }}>Elle personnalisera l’en-tête de ta vitrine.</p>
+            </div>
+            <span className="text-xs font-bold" style={{ color: selectedTheme }}>{SHOP_THEMES.find(({ value }) => value === selectedTheme)?.name}</span>
+          </div>
+          <div className="flex flex-wrap gap-3" role="group" aria-label="Choisir la couleur de la boutique">
+            {SHOP_THEMES.map((theme) => {
+              const isSelected = selectedTheme === theme.value;
+              return (
+                <button
+                  key={theme.value}
+                  type="button"
+                  onClick={() => setSelectedTheme(theme.value)}
+                  aria-label={`Choisir le thème ${theme.name}`}
+                  aria-pressed={isSelected}
+                  title={theme.name}
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border-[2.5px] transition-transform active:scale-90 ${isSelected ? "border-white ring-2 ring-[#FFC83D] ring-offset-2 ring-offset-[#0F1E3D]" : "border-white/25 hover:border-white/70"}`}
+                  style={{ backgroundColor: theme.value, color: getShopThemeForeground(theme.value) }}
+                >
+                  {isSelected && <Check className="h-5 w-5" strokeWidth={3} />}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 overflow-hidden rounded-xl border-2 border-ink" style={{ backgroundColor: selectedTheme }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ color: getShopThemeForeground(selectedTheme) }}>
+              <span className="font-bricolage text-sm font-black">{name || "Ma boutique"}</span>
+              <span className="rounded-full border border-current/30 px-3 py-1 text-[10px] font-bold">Aperçu de l’en-tête</span>
+            </div>
           </div>
         </div>
 

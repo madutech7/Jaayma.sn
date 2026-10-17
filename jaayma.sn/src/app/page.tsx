@@ -203,7 +203,7 @@ export default async function LandingPage() {
           <Link
             href="/explorer"
             prefetch={true}
-            className="inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-full border-[2.5px] border-ink"
+            className="inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-full border-[2.5px] border-ink transition-transform active:scale-95"
             style={{ backgroundColor: "#0F1E3D", color: "#FFC83D", boxShadow: "4px 4px 0 #FFC83D" }}
           >
             Explorer les boutiques 
@@ -298,7 +298,7 @@ export default async function LandingPage() {
                 <Link href="/inscription" className="hover:text-white transition-colors">Inscription</Link>
               </>
             )}
-            <Link href="/explorer" className="hover:text-white transition-colors">Explorer</Link>
+          <Link href="/explorer" prefetch={true} className="hover:text-white transition-colors">Explorer</Link>
           </div>
         </div>
       </footer>

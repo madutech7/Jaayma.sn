@@ -8,9 +8,11 @@ import { useEffect, useState } from "react";
 export default function CartButton({
   shopId,
   shopSlug,
+  themeColor = "#FFC83D",
 }: {
   shopId: string;
   shopSlug: string;
+  themeColor?: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -21,6 +23,7 @@ export default function CartButton({
 
   const count = getCartCount();
   if (count === 0 || cartShopId !== shopId) return null;
+  const themeForeground = themeColor.toUpperCase() === "#FFC83D" ? "#0F1E3D" : "#FFFFFF";
 
   return (
     <div className="fixed bottom-0 left-0 right-0 px-4 pb-5 pt-2 pointer-events-none z-40">
@@ -39,7 +42,7 @@ export default function CartButton({
           </div>
 
           {/* CTA */}
-          <span className="font-bold text-sm px-5 py-2.5 rounded-full border-[2px] border-sun bg-sun text-ink flex items-center gap-2">
+          <span className="flex items-center gap-2 rounded-full border-[2px] border-ink px-5 py-2.5 text-sm font-bold" style={{ backgroundColor: themeColor, color: themeForeground }}>
             {isNavigating ? (
               <>
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

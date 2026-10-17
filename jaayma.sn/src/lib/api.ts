@@ -131,6 +131,24 @@ export const api = {
     };
   },
 
+  async getExploreShops(params?: {
+    q?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ items: Shop[]; hasNextPage: boolean }> {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.category) sp.set("category", params.category);
+    if (params?.page) sp.set("page", String(params.page));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const queryString = sp.toString();
+    const result = await request<{ items: any[]; hasNextPage: boolean }>(
+      `/shops/explore${queryString ? `?${queryString}` : ""}`
+    );
+    return { items: result.items.map(normalizeShop), hasNextPage: result.hasNextPage };
+  },
+
   async getShopBySlug(slug: string): Promise<Shop | null> {
     try {
       const data = await request<any>(`/shops/${encodeURIComponent(slug)}`);
