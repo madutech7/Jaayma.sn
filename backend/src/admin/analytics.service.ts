@@ -135,10 +135,6 @@ export class AnalyticsService {
         ],
       });
 
-      const [realtimeResponse] = await client.runRealtimeReport({
-        property,
-        metrics: [{ name: 'activeUsers' }],
-      });
       const reports = mainBatch.reports ?? [];
       const detailReports = detailBatch.reports ?? [];
       const current = this.toSummary(reports[0]?.rows?.[0] ?? reports[0]?.totals?.[0]);
@@ -149,7 +145,6 @@ export class AnalyticsService {
         propertyId: setup.propertyId,
         rangeDays: days,
         generatedAt: new Date().toISOString(),
-        realtimeUsers: this.metric(realtimeResponse.rows?.[0] ?? realtimeResponse.totals?.[0], 0),
         current,
         previous,
         trend: (reports[2]?.rows ?? []).map((row) => ({
@@ -211,6 +206,62 @@ export class AnalyticsService {
         message: isAccessError
           ? 'Google Analytics refuse l’accès. Vérifiez que l’API Google Analytics Data est activée et que le compte de service a le rôle Lecteur sur cette propriété GA4.'
           : 'Impossible de récupérer les rapports GA4 pour le moment. Vérifiez la configuration et réessayez.',
+      };
+    }
+  }
+
+  async getRealtime() {
+    const setup = this.getConfiguration();
+    if (!setup.configured) {
+      return {
+        status: 'connection_error' as const,
+        message: 'La configuration Google Analytics n’est pas disponible.',
+      };
+    }
+
+    try {
+      const client = this.getClient(setup.propertyId, setup.credentials);
+      const property = `properties/${setup.propertyId}`;
+      const [summaryResponse, pagesResponse] = await Promise.all([
+        client.runRealtimeReport({
+          property,
+          metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
+        }),
+        client.runRealtimeReport({
+          property,
+          dimensions: [{ name: 'unifiedScreenName' }],
+          metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
+          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 8,
+        }),
+      ]);
+      const summary = summaryResponse[0];
+      const pageReport = pagesResponse[0];
+      const totals = summary.rows?.[0] ?? summary.totals?.[0];
+
+      return {
+        status: 'ready' as const,
+        generatedAt: new Date().toISOString(),
+        activeUsers: this.metric(totals, 0),
+        views: this.metric(totals, 1),
+        pages: (pageReport.rows ?? []).map((row) => ({
+          title: this.dimension(row, 0),
+          views: this.metric(row, 0),
+          users: this.metric(row, 1),
+        })),
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const safeMessage = message
+        .replace(/-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA )?PRIVATE KEY-----/gi, '[REDACTED PRIVATE KEY]')
+        .replace(/("private_key"\s*:\s*")[^"]*(")/gi, '$1[REDACTED]$2')
+        .slice(0, 600);
+      this.logger.error(`GA4 realtime request failed for property ${setup.propertyId}: ${safeMessage || 'Unknown error'}`);
+      return {
+        status: 'connection_error' as const,
+        message: /permission|denied|403|unauthenticated|credential/i.test(message)
+          ? 'Google Analytics refuse l’accès au rapport en temps réel. Vérifiez le rôle Lecteur du compte de service sur la propriété GA4.'
+          : 'Impossible de récupérer les données en temps réel pour le moment.',
       };
     }
   }

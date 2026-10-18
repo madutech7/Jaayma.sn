@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Clock3, Globe2, MousePointerClick, RefreshCw, Smartphone, Users } from "lucide-react";
-import type { AdminAnalyticsDashboard } from "@/lib/api";
+import type { AdminAnalyticsDashboard, AdminAnalyticsRealtime } from "@/lib/api";
 import { adminPanelClass, AdminPageTitle } from "../AdminUI";
 
 const RANGES = [
@@ -28,12 +29,6 @@ export default function AnalyticsDashboard({
         eyebrow="Audience · acquisition · conversion"
         title="Google Analytics"
         description="Comprends comment les visiteurs découvrent Jaayma, explorent les boutiques et passent commande."
-        action={data.status === "ready" ? (
-          <div className="flex items-center gap-2 self-start rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-semibold text-muted sm:self-auto">
-            <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-baobab opacity-50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-baobab" /></span>
-            {data.realtimeUsers} actif{data.realtimeUsers === 1 ? "" : "s"} · 30 min
-          </div>
-        ) : undefined}
       />
 
       {!measurementConfigured && (
@@ -64,6 +59,8 @@ export default function AnalyticsDashboard({
               <RefreshCw size={14} /> Actualiser
             </button>
           </section>
+
+          <RealtimePanel />
 
           <p className="mb-4 text-[11px] text-muted">Du {formatDate(data.trend[0]?.date)} au {formatDate(data.trend.at(-1)?.date)} · comparé aux {data.rangeDays} jours précédents · mis à jour le {new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Africa/Dakar" }).format(new Date(data.generatedAt))}</p>
 
@@ -119,6 +116,93 @@ export default function AnalyticsDashboard({
         </>
       )}
     </>
+  );
+}
+
+function RealtimePanel() {
+  const [data, setData] = useState<AdminAnalyticsRealtime | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetch("/api/admin/analytics/realtime", { cache: "no-store" });
+      const result = (await response.json()) as AdminAnalyticsRealtime;
+      setData(result);
+    } catch {
+      setData({ status: "connection_error", message: "Impossible d’actualiser les données en temps réel." });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 30_000);
+    return () => window.clearInterval(interval);
+  }, [refresh]);
+
+  const ready = data?.status === "ready" ? data : null;
+
+  return (
+    <section className={`${adminPanelClass()} mb-5 overflow-hidden`} aria-label="Audience en temps réel">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-4 py-4 sm:px-5">
+        <Heading icon={<Activity size={17} />} eyebrow="Audience · actualisation automatique" title="En temps réel" />
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#E7F5EF] px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#087B5C]">
+            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-baobab opacity-50" /><span className="relative h-2 w-2 rounded-full bg-baobab" /></span>
+            30 dernières minutes
+          </span>
+          <button type="button" onClick={() => void refresh()} disabled={refreshing} aria-label="Actualiser les données en temps réel" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-white text-muted hover:text-ink disabled:opacity-50">
+            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+          </button>
+        </div>
+      </div>
+
+      {ready ? (
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-ink/10 bg-white p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">Visiteurs actifs</p>
+              <p className="mt-2 font-bricolage text-3xl font-black">{number(ready.activeUsers)}</p>
+              <p className="mt-1 text-[10px] text-muted">sur les 30 dernières minutes</p>
+            </div>
+            <div className="rounded-2xl border border-ink/10 bg-white p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">Pages vues</p>
+              <p className="mt-2 font-bricolage text-3xl font-black">{number(ready.views)}</p>
+              <p className="mt-1 text-[10px] text-muted">sur les 30 dernières minutes</p>
+            </div>
+            <p className="col-span-2 text-[10px] text-muted">
+              Dernière actualisation : {new Intl.DateTimeFormat("fr-FR", { timeStyle: "medium", timeZone: "Africa/Dakar" }).format(new Date(ready.generatedAt))} · mise à jour automatique toutes les 30 secondes.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-ink/10 bg-white">
+            <div className="border-b border-ink/[0.07] px-4 py-3">
+              <h3 className="text-xs font-black">Pages actuellement consultées</h3>
+            </div>
+            {ready.pages.length === 0 ? (
+              <p className="px-4 py-6 text-center text-xs text-muted">Aucune page consultée dans les 30 dernières minutes.</p>
+            ) : (
+              <div className="divide-y divide-ink/[0.07]">
+                {ready.pages.map((page, index) => (
+                  <div key={`${page.title}-${index}`} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <p className="min-w-0 truncate text-xs font-bold">{page.title || "Page sans titre"}</p>
+                    <p className="shrink-0 text-[10px] text-muted">{number(page.views)} vue{page.views === 1 ? "" : "s"} · {number(page.users)} actif{page.users === 1 ? "" : "s"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 py-6 text-center text-xs text-muted sm:px-5">
+          {loading ? "Chargement des données en temps réel…" : data?.status === "connection_error" ? data.message : "Les données en temps réel sont indisponibles."}
+        </div>
+      )}
+    </section>
   );
 }
 

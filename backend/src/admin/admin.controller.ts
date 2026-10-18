@@ -135,6 +135,12 @@ export class AdminController {
     return this.analytics.getDashboard(rangeDays);
   }
 
+  @Get('analytics/realtime')
+  async analyticsRealtime(@Headers('authorization') authHeader: string | undefined) {
+    await this.requireAdmin(authHeader);
+    return this.analytics.getRealtime();
+  }
+
   @Patch('settings/explorer')
   async setExplorerVisibility(
     @Headers('authorization') authHeader: string | undefined,

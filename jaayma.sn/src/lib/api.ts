@@ -250,6 +250,13 @@ export const api = {
     });
   },
 
+  async getAdminAnalyticsRealtime(token: string) {
+    return request<AdminAnalyticsRealtime>("/admin/analytics/realtime", {
+      token,
+      cache: "no-store",
+    });
+  },
+
   async getPublicFeatures() {
     return request<{ explorerEnabled: boolean; maintenanceEnabled: boolean }>("/admin/public-features", { cache: "no-store" });
   },
@@ -625,7 +632,6 @@ export type AdminAnalyticsDashboard =
       propertyId: string;
       rangeDays: number;
       generatedAt: string;
-      realtimeUsers: number;
       current: {
         activeUsers: number;
         newUsers: number;
@@ -658,6 +664,19 @@ export type AdminAnalyticsDashboard =
       events: Array<{ name: string; count: number; users: number }>;
       landingPages: Array<{ path: string; sessions: number; users: number }>;
       products: Array<{ name: string; views: number; addedToCart: number; purchases: number; revenue: number }>;
+    };
+
+export type AdminAnalyticsRealtime =
+  | {
+      status: "ready";
+      generatedAt: string;
+      activeUsers: number;
+      views: number;
+      pages: Array<{ title: string; views: number; users: number }>;
+    }
+  | {
+      status: "connection_error";
+      message: string;
     };
 
 function normalizeShop(s: any): Shop {
