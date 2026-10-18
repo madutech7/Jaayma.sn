@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import { z } from 'zod';
 import * as webpush from 'web-push';
 import { PrismaService } from '../prisma/prisma.service';
@@ -35,6 +36,15 @@ type NewOrder = {
   customerName: string;
   total: number;
   items: Array<{ quantity: number }>;
+};
+
+type ExpiringProShop = {
+  id: string;
+  name: string;
+  planExpiresAt: Date | null;
+  owner: {
+    pushSubscriptions: Array<{ id: string; endpoint: string; p256dh: string; auth: string }>;
+  } | null;
 };
 
 @Injectable()
@@ -201,6 +211,124 @@ export class NotificationsService {
       }
     } catch (error) {
       this.logger.warn(`Impossible d’envoyer la notification de commande : ${(error as Error).message}`);
+    }
+  }
+
+  @Cron('0 * * * *')
+  async sendProExpiryReminders() {
+    if (!this.getVapidConfiguration()) return;
+
+    const now = new Date();
+    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    try {
+      const [threeDayReminders, oneDayReminders] = await Promise.all([
+        this.getShopsNeedingProReminder({
+          expiresAfter: oneDayFromNow,
+          expiresBy: threeDaysFromNow,
+          reminderField: 'proReminder3DaysSentAt',
+        }),
+        this.getShopsNeedingProReminder({
+          expiresAfter: now,
+          expiresBy: oneDayFromNow,
+          reminderField: 'proReminder1DaySentAt',
+        }),
+      ]);
+
+      for (const shop of threeDayReminders) {
+        await this.sendProExpiryReminder(shop, 3);
+      }
+      for (const shop of oneDayReminders) {
+        await this.sendProExpiryReminder(shop, 1);
+      }
+    } catch (error) {
+      this.logger.error(`Impossible de préparer les rappels Pro : ${(error as Error).message}`);
+    }
+  }
+
+  private async getShopsNeedingProReminder({
+    expiresAfter,
+    expiresBy,
+    reminderField,
+  }: {
+    expiresAfter: Date;
+    expiresBy: Date;
+    reminderField: 'proReminder3DaysSentAt' | 'proReminder1DaySentAt';
+  }): Promise<ExpiringProShop[]> {
+    const shops = await this.prisma.shop.findMany({
+      where: {
+        plan: 'pro',
+        planExpiresAt: { gt: expiresAfter, lte: expiresBy },
+        [reminderField]: null,
+        owner: { is: { pushSubscriptions: { some: {} } } },
+      },
+      select: {
+        id: true,
+        name: true,
+        planExpiresAt: true,
+        owner: {
+          select: {
+            pushSubscriptions: {
+              select: { id: true, endpoint: true, p256dh: true, auth: true },
+            },
+          },
+        },
+      },
+    });
+    return shops.filter((shop): shop is typeof shop & { planExpiresAt: Date } => shop.planExpiresAt !== null);
+  }
+
+  private async sendProExpiryReminder(shop: ExpiringProShop, daysBefore: 1 | 3) {
+    if (!shop.planExpiresAt || !shop.owner?.pushSubscriptions.length) return;
+
+    const expiresAt = shop.planExpiresAt;
+    const reminderField = daysBefore === 3 ? 'proReminder3DaysSentAt' : 'proReminder1DaySentAt';
+    const claimedAt = new Date();
+    const claim = await this.prisma.shop.updateMany({
+      where: {
+        id: shop.id,
+        plan: 'pro',
+        planExpiresAt: expiresAt,
+        [reminderField]: null,
+      },
+      data: { [reminderField]: claimedAt },
+    });
+    if (claim.count === 0) return;
+
+    const expiryDate = new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'long',
+      timeZone: 'Africa/Dakar',
+    }).format(expiresAt);
+    const shopName = shop.name.slice(0, 50);
+    const deliveries = await Promise.allSettled(
+      shop.owner.pushSubscriptions.map((subscription) =>
+        this.sendToSubscription(subscription, {
+          title: 'Votre abonnement Pro expire bientôt',
+          body: `L’abonnement Pro de ${shopName} expire le ${expiryDate}. Renouvelez-le depuis votre espace vendeur.`,
+          url: '/espace/abonnement',
+          tag: `jaay-pro-expiry-${daysBefore}-${shop.id}-${expiresAt.getTime()}`,
+        }),
+      ),
+    );
+    const deliveredCount = deliveries.filter(
+      (delivery) => delivery.status === 'fulfilled' && delivery.value,
+    ).length;
+
+    if (deliveredCount === 0) {
+      await this.prisma.shop.updateMany({
+        where: { id: shop.id, planExpiresAt: expiresAt, [reminderField]: claimedAt },
+        data: { [reminderField]: null },
+      });
+      this.logger.warn(`Le rappel Pro n’a été livré sur aucun appareil pour ${shop.id}.`);
+      return;
+    }
+
+    const failedCount = deliveries.length - deliveredCount;
+    if (failedCount > 0) {
+      this.logger.warn(`Rappel Pro envoyé à ${deliveredCount} appareil(s), ${failedCount} échec(s) pour ${shop.id}.`);
+    } else {
+      this.logger.log(`Rappel Pro envoyé pour la boutique ${shop.id} (${daysBefore} jour(s) avant échéance).`);
     }
   }
 

@@ -371,7 +371,7 @@ export class AdminService {
     const planExpiresAt = plan === 'pro' ? new Date(Date.now() + durationDays * 86_400_000) : null;
     return this.prisma.shop.update({
       where: { id },
-      data: { plan, planExpiresAt },
+      data: { plan, planExpiresAt, proReminder3DaysSentAt: null, proReminder1DaySentAt: null },
       select: { id: true, plan: true, planExpiresAt: true },
     });
   }

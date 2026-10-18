@@ -280,7 +280,7 @@ export default function OrderNotifications({ sellerId }: { sellerId: string }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="order-notifications-title" className="font-bricolage text-base font-black text-white">
-                Alertes de commande
+                Notifications Jaayma
               </h2>
               {isEnabled && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-200">
@@ -289,7 +289,7 @@ export default function OrderNotifications({ sellerId }: { sellerId: string }) {
               )}
             </div>
             <p className="mt-1 max-w-lg text-xs leading-relaxed text-[#C3CCE6]">
-              Recevez une alerte sur ce téléphone dès qu’un client passe commande, même si Jaayma est fermé.
+              Recevez sur ce téléphone les nouvelles commandes et les rappels avant l’échéance de votre abonnement Pro.
             </p>
           </div>
         </div>
