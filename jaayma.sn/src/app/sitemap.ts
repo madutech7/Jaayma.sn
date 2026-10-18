@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = await getRequestOrigin();
 
+  const explorerEnabled = await api.getPublicFeatures()
+    .then(({ explorerEnabled }) => explorerEnabled)
+    .catch(() => true);
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -14,13 +17,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1.0,
     },
-    {
+  ];
+  if (explorerEnabled) {
+    staticRoutes.push({
       url: `${baseUrl}/explorer`,
       lastModified: new Date(),
       changeFrequency: "hourly",
       priority: 0.9,
-    },
-  ];
+    });
+  }
 
   try {
     const publishedShops = await api.getShops();

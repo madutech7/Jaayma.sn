@@ -15,11 +15,11 @@ export default function NotFound() {
         La page ou la boutique que vous recherchez n&apos;existe pas ou a été déplacée.
       </p>
       <Link
-        href="/explorer"
+        href="/"
         className="px-6 py-3 rounded-full font-bold border-[2.5px] border-ink"
         style={{ backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "3px 3px 0 #0F1E3D" }}
       >
-        Explorer les boutiques
+        Retour à l’accueil
       </Link>
     </main>
   );

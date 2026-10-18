@@ -77,16 +77,38 @@ export class AdminService {
       .split(',')
       .map((phone) => phone.trim())
       .filter(Boolean);
-    const [pushSubscriptions, pushSettings] = await Promise.all([
+    const [pushSubscriptions, pushSettings, platformSettings] = await Promise.all([
       this.prisma.pushSubscription.count(),
       Promise.resolve(this.notifications.getAdminPushSettings()),
+      this.prisma.platformSetting.findUnique({
+        where: { id: 'global' },
+        select: { explorerEnabled: true },
+      }),
     ]);
     return {
       admins: adminPhones,
       pushSubscriptions,
       push: pushSettings,
       databaseConnected: true,
+      explorerEnabled: platformSettings?.explorerEnabled ?? true,
     };
+  }
+
+  async getPublicFeatures() {
+    const settings = await this.prisma.platformSetting.findUnique({
+      where: { id: 'global' },
+      select: { explorerEnabled: true },
+    });
+    return { explorerEnabled: settings?.explorerEnabled ?? true };
+  }
+
+  async setExplorerEnabled(explorerEnabled: boolean) {
+    return this.prisma.platformSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', explorerEnabled },
+      update: { explorerEnabled },
+      select: { explorerEnabled: true },
+    });
   }
 
   async getBroadcastHistory(page: number) {

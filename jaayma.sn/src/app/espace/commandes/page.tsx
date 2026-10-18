@@ -102,7 +102,7 @@ export default async function CommandesPage({
             Partage le lien de ta boutique pour que tes clients puissent passer leurs commandes en direct.
           </p>
           <Link
-            href={`/${shop.slug}`}
+            href={`/${shop.slug}?from=seller`}
             target="_blank"
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-black border-[2px] border-ink bg-sun text-ink shadow-[3px_3px_0_#0F1E3D] active:scale-95 transition-transform"
           >

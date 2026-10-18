@@ -1,16 +1,22 @@
 import type { MetadataRoute } from "next";
 import { getRequestOrigin } from "@/lib/site-url";
+import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const baseUrl = await getRequestOrigin();
+  const [baseUrl, explorerEnabled] = await Promise.all([
+    getRequestOrigin(),
+    api.getPublicFeatures().then(({ explorerEnabled }) => explorerEnabled).catch(() => true),
+  ]);
 
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/explorer", "/*"],
-      disallow: ["/espace/", "/admin/", "/api/"],
+      allow: explorerEnabled ? ["/", "/explorer", "/*"] : ["/", "/*"],
+      disallow: explorerEnabled
+        ? ["/espace/", "/admin/", "/api/"]
+        : ["/explorer", "/espace/", "/admin/", "/api/"],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };

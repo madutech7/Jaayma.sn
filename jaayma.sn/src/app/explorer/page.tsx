@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { redirect } from "next/navigation";
 import ExplorerFeed from "./ExplorerFeed";
 
 export const metadata = {
@@ -16,6 +17,11 @@ export default async function ExplorerPage({
 }: {
   searchParams: Promise<{ q?: string; cat?: string; page?: string; view?: string }>;
 }) {
+  const explorerEnabled = await api.getPublicFeatures()
+    .then(({ explorerEnabled }) => explorerEnabled)
+    .catch(() => true);
+  if (!explorerEnabled) redirect("/");
+
   const params = await searchParams;
   const query = params.q?.trim() || "";
   const selectedCategory = params.cat && params.cat !== "Tous" ? params.cat : "";

@@ -28,6 +28,10 @@ const statusSchema = z.object({
   status: z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED']),
 });
 
+const explorerSettingSchema = z.object({
+  enabled: z.boolean(),
+});
+
 @Controller('admin')
 export class AdminController {
   constructor(
@@ -36,6 +40,11 @@ export class AdminController {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
+
+  @Get('public-features')
+  publicFeatures() {
+    return this.admin.getPublicFeatures();
+  }
 
   @Get('access')
   async access(@Headers('authorization') authHeader?: string) {
@@ -111,6 +120,17 @@ export class AdminController {
   async settings(@Headers('authorization') authHeader: string | undefined) {
     await this.requireAdmin(authHeader);
     return this.admin.getSettings();
+  }
+
+  @Patch('settings/explorer')
+  async setExplorerVisibility(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: unknown,
+  ) {
+    await this.requireAdmin(authHeader);
+    const parsed = explorerSettingSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    return this.admin.setExplorerEnabled(parsed.data.enabled);
   }
 
   @Get('notifications')

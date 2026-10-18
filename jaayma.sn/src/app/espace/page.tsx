@@ -261,7 +261,7 @@ export default async function DashboardPage() {
               {shop.isPublished ? "Boutique en ligne" : "Boutique non publiée"}
             </span>
             <a
-              href={fullUrl}
+              href={`${fullUrl}?from=seller`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-[#0F1E3D] px-4 py-2.5 text-sm font-black text-[#FFFBF2] shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"
@@ -507,7 +507,7 @@ export default async function DashboardPage() {
           <div className="flex shrink-0 flex-wrap gap-2">
             <ShareShopButton shopName={shop.name} shopUrl={fullUrl} />
             <a
-              href={fullUrl}
+              href={`${fullUrl}?from=seller`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-white px-4 py-3 text-sm font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"

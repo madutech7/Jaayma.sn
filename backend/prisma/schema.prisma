@@ -68,6 +68,12 @@ model AdminBroadcast {
   @@index([createdAt])
 }
 
+model PlatformSetting {
+  id              String   @id @default("global")
+  explorerEnabled Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+}
+
 model Shop {
   id                String       @id @default(cuid())
   ownerId           String?

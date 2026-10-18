@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentSellerId } from "@/lib/auth";
+import { api } from "@/lib/api";
 
 export const metadata = {
   title: "Jaayma  Ta boutique en ligne, en un lien",
@@ -76,7 +77,10 @@ const WAX_STYLES = [
 ];
 
 export default async function LandingPage() {
-  const sellerId = await getCurrentSellerId();
+  const [sellerId, explorerEnabled] = await Promise.all([
+    getCurrentSellerId(),
+    api.getPublicFeatures().then(({ explorerEnabled }) => explorerEnabled).catch(() => true),
+  ]);
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: "#0E7C66" }}>
@@ -197,27 +201,29 @@ export default async function LandingPage() {
       </header>
 
       {/*  EXPLORER section  */}
-      <section className="bg-white py-14 px-5">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#C8265A" }}>
-            Pour les acheteurs
-          </p>
-          <h2 className="font-bricolage font-black leading-tight mb-4" style={{ fontSize: "clamp(1.8rem, 6vw, 2.5rem)", color: "#0F1E3D", letterSpacing: "-0.02em" }}>
-            Ce que tu veux,<br />livré chez toi.
-          </h2>
-          <p className="text-sm mb-6" style={{ color: "#3F4B69" }}>
-            Découvre des boutiques sénégalaises  mode, beauté, maison  et commande en quelques secondes.
-          </p>
-          <Link
-            href="/explorer"
-            prefetch={true}
-            className="inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-full border-[2.5px] border-ink transition-transform active:scale-95"
-            style={{ backgroundColor: "#0F1E3D", color: "#FFC83D", boxShadow: "4px 4px 0 #FFC83D" }}
-          >
-            Explorer les boutiques 
-          </Link>
-        </div>
-      </section>
+      {explorerEnabled && (
+        <section className="bg-white py-14 px-5">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#C8265A" }}>
+              Pour les acheteurs
+            </p>
+            <h2 className="font-bricolage font-black leading-tight mb-4" style={{ fontSize: "clamp(1.8rem, 6vw, 2.5rem)", color: "#0F1E3D", letterSpacing: "-0.02em" }}>
+              Ce que tu veux,<br />livré chez toi.
+            </h2>
+            <p className="text-sm mb-6" style={{ color: "#3F4B69" }}>
+              Découvre des boutiques sénégalaises  mode, beauté, maison  et commande en quelques secondes.
+            </p>
+            <Link
+              href="/explorer"
+              prefetch={true}
+              className="inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-full border-[2.5px] border-ink transition-transform active:scale-95"
+              style={{ backgroundColor: "#0F1E3D", color: "#FFC83D", boxShadow: "4px 4px 0 #FFC83D" }}
+            >
+              Explorer les boutiques
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/*  FONCTIONNALITÉS  */}
       <section style={{ backgroundColor: "#0F1E3D" }} className="py-14 px-5">
@@ -306,7 +312,7 @@ export default async function LandingPage() {
                 <Link href="/inscription" className="hover:text-white transition-colors">Inscription</Link>
               </>
             )}
-          <Link href="/explorer" prefetch={true} className="hover:text-white transition-colors">Explorer</Link>
+          {explorerEnabled && <Link href="/explorer" prefetch={true} className="hover:text-white transition-colors">Explorer</Link>}
           </div>
         </div>
       </footer>

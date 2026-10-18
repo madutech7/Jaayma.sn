@@ -54,8 +54,11 @@ function colorWithOpacity(color: string, opacity: number) {
   return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
 }
 
-export default async function ShopPage({ params }: { params: Promise<{ shopSlug: string }> }) {
-  const { shopSlug } = await params;
+export default async function ShopPage({ params, searchParams }: {
+  params: Promise<{ shopSlug: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const [{ shopSlug }, { from }] = await Promise.all([params, searchParams]);
 
   const shop = await getShopBySlug(shopSlug);
   if (!shop || !shop.isPublished) notFound();
@@ -112,7 +115,7 @@ export default async function ShopPage({ params }: { params: Promise<{ shopSlug:
         {/* Status bar */}
         <div className="flex items-center justify-between px-5 pt-4 pb-0 max-w-xl mx-auto">
           {/* Bouton retour */}
-          <ShopBackButton />
+          <ShopBackButton returnToSeller={from === "seller"} />
           {/* Bouton WhatsApp / Chat */}
           {shop.whatsapp && (
             <a

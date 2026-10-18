@@ -194,6 +194,14 @@ export const api = {
     });
   },
 
+  async adminSetExplorerEnabled(token: string, enabled: boolean) {
+    return request<{ explorerEnabled: boolean }>("/admin/settings/explorer", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ enabled }),
+    });
+  },
+
   async getAdminAccounts(token: string, params: { q?: string; hasShop?: string; page?: number }) {
     const search = new URLSearchParams();
     if (params.q) search.set("q", params.q);
@@ -222,7 +230,12 @@ export const api = {
       pushSubscriptions: number;
       push: { configured: boolean; subject: string | null };
       databaseConnected: boolean;
+      explorerEnabled: boolean;
     }>("/admin/settings", { token, cache: "no-store" });
+  },
+
+  async getPublicFeatures() {
+    return request<{ explorerEnabled: boolean }>("/admin/public-features", { cache: "no-store" });
   },
 
   async getAdminNotificationHistory(token: string, page = 1) {
