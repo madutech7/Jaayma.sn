@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
@@ -41,6 +41,7 @@ type DashboardSummary = {
 
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
   private client: BetaAnalyticsDataClient | null = null;
   private propertyId = '';
 
@@ -197,6 +198,11 @@ export class AnalyticsService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
+      const safeMessage = message
+        .replace(/-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA )?PRIVATE KEY-----/gi, '[REDACTED PRIVATE KEY]')
+        .replace(/("private_key"\s*:\s*")[^"]*(")/gi, '$1[REDACTED]$2')
+        .slice(0, 600);
+      this.logger.error(`GA4 report request failed for property ${setup.propertyId}: ${safeMessage || 'Unknown error'}`);
       const isAccessError = /permission|denied|403|unauthenticated|credential/i.test(message);
       return {
         status: 'connection_error' as const,
