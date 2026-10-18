@@ -82,7 +82,7 @@ export class AdminService {
       Promise.resolve(this.notifications.getAdminPushSettings()),
       this.prisma.platformSetting.findUnique({
         where: { id: 'global' },
-        select: { explorerEnabled: true },
+        select: { explorerEnabled: true, maintenanceEnabled: true },
       }),
     ]);
     return {
@@ -91,15 +91,19 @@ export class AdminService {
       push: pushSettings,
       databaseConnected: true,
       explorerEnabled: platformSettings?.explorerEnabled ?? true,
+      maintenanceEnabled: platformSettings?.maintenanceEnabled ?? false,
     };
   }
 
   async getPublicFeatures() {
     const settings = await this.prisma.platformSetting.findUnique({
       where: { id: 'global' },
-      select: { explorerEnabled: true },
+      select: { explorerEnabled: true, maintenanceEnabled: true },
     });
-    return { explorerEnabled: settings?.explorerEnabled ?? true };
+    return {
+      explorerEnabled: settings?.explorerEnabled ?? true,
+      maintenanceEnabled: settings?.maintenanceEnabled ?? false,
+    };
   }
 
   async setExplorerEnabled(explorerEnabled: boolean) {
@@ -108,6 +112,15 @@ export class AdminService {
       create: { id: 'global', explorerEnabled },
       update: { explorerEnabled },
       select: { explorerEnabled: true },
+    });
+  }
+
+  async setMaintenanceEnabled(maintenanceEnabled: boolean) {
+    return this.prisma.platformSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', maintenanceEnabled },
+      update: { maintenanceEnabled },
+      select: { maintenanceEnabled: true },
     });
   }
 

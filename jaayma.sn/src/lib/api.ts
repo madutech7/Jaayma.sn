@@ -202,6 +202,14 @@ export const api = {
     });
   },
 
+  async adminSetMaintenanceEnabled(token: string, enabled: boolean) {
+    return request<{ maintenanceEnabled: boolean }>("/admin/settings/maintenance", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ enabled }),
+    });
+  },
+
   async getAdminAccounts(token: string, params: { q?: string; hasShop?: string; page?: number }) {
     const search = new URLSearchParams();
     if (params.q) search.set("q", params.q);
@@ -231,11 +239,12 @@ export const api = {
       push: { configured: boolean; subject: string | null };
       databaseConnected: boolean;
       explorerEnabled: boolean;
+      maintenanceEnabled: boolean;
     }>("/admin/settings", { token, cache: "no-store" });
   },
 
   async getPublicFeatures() {
-    return request<{ explorerEnabled: boolean }>("/admin/public-features", { cache: "no-store" });
+    return request<{ explorerEnabled: boolean; maintenanceEnabled: boolean }>("/admin/public-features", { cache: "no-store" });
   },
 
   async getAdminNotificationHistory(token: string, page = 1) {

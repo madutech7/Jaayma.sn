@@ -133,6 +133,17 @@ export class AdminController {
     return this.admin.setExplorerEnabled(parsed.data.enabled);
   }
 
+  @Patch('settings/maintenance')
+  async setMaintenanceMode(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: unknown,
+  ) {
+    await this.requireAdmin(authHeader);
+    const parsed = explorerSettingSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    return this.admin.setMaintenanceEnabled(parsed.data.enabled);
+  }
+
   @Get('notifications')
   async notificationHistory(
     @Headers('authorization') authHeader: string | undefined,

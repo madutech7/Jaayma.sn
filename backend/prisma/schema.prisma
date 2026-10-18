@@ -69,9 +69,10 @@ model AdminBroadcast {
 }
 
 model PlatformSetting {
-  id              String   @id @default("global")
-  explorerEnabled Boolean  @default(true)
-  updatedAt       DateTime @updatedAt
+  id                 String   @id @default("global")
+  explorerEnabled    Boolean  @default(true)
+  maintenanceEnabled Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
 }
 
 model Shop {

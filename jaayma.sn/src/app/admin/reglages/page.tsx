@@ -3,6 +3,7 @@ import { getSessionToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, adminPanelClass } from "../AdminUI";
 import ExplorerVisibilityControl from "./ExplorerVisibilityControl";
+import MaintenanceModeControl from "./MaintenanceModeControl";
 
 export const metadata = { title: "Réglages · Administration Jaayma" };
 
@@ -21,6 +22,7 @@ export default async function AdminSettingsPage() {
         <AdminPageTitle eyebrow="Configuration de la plateforme" title="Réglages" description="Vérifiez l’état des services essentiels et les comptes autorisés. Les clés secrètes restent protégées et ne sont jamais affichées dans le navigateur." />
 
         <ExplorerVisibilityControl initialEnabled={settings.explorerEnabled} />
+        <MaintenanceModeControl initialEnabled={settings.maintenanceEnabled} />
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {checks.map((check) => (

@@ -2,8 +2,42 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const SESSION_COOKIE = "jaay_session";
+const API_BASE_URL =
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://jaayma-sn.onrender.com"
+    : "http://127.0.0.1:4000");
 
-export function middleware(request: NextRequest) {
+let cachedMaintenanceState: { enabled: boolean; expiresAt: number } | null = null;
+
+async function isMaintenanceEnabled() {
+  if (cachedMaintenanceState && cachedMaintenanceState.expiresAt > Date.now()) {
+    return cachedMaintenanceState.enabled;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/admin/public-features`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) return true;
+
+    const features = (await response.json()) as { maintenanceEnabled?: unknown };
+    const enabled = features.maintenanceEnabled === true;
+    cachedMaintenanceState = { enabled, expiresAt: Date.now() + 3000 };
+    return enabled;
+  } catch {
+    // Keep the public site in a safe state if its feature configuration cannot be read.
+    return true;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protect the /espace and /admin routes and all sub-routes
@@ -28,6 +62,37 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isMaintenanceExempt =
+    isAdminPath || pathname === "/connexion" || pathname === "/maintenance" || pathname === "/api/cron/keepalive";
+  if (!isMaintenanceExempt && await isMaintenanceEnabled()) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Le site est temporairement en maintenance." },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control": "no-store, max-age=0",
+            "Cloudflare-CDN-Cache-Control": "no-store",
+            "Retry-After": "60",
+          },
+        },
+      );
+    }
+
+    const url = request.nextUrl.clone();
+    url.pathname = "/maintenance";
+    url.search = "";
+    return NextResponse.rewrite(url, {
+      status: 503,
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+        "Cloudflare-CDN-Cache-Control": "no-store",
+        "Retry-After": "60",
+      },
+    });
+  }
+
   const response = NextResponse.next();
   const firstSegment = pathname.split("/").filter(Boolean)[0] || "";
   const isPublicShopPage =
@@ -48,13 +113,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Apply middleware to specific routes only for performance
+  // Keep framework assets and static files out of the page gate.
   matcher: [
-    "/espace/:path*",
-    "/admin/:path*",
-    "/connexion",
-    "/inscription",
-    "/explorer",
-    "/:shopSlug",
+    "/((?!_next/|favicon.ico|icons/|manifest.webmanifest|sw.js|offline.html|robots.txt|sitemap.xml).*)",
   ],
 };

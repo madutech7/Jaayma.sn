@@ -95,6 +95,21 @@ export async function setExplorerEnabled(enabled: boolean) {
   }
 }
 
+export async function setMaintenanceEnabled(enabled: boolean) {
+  const token = await getSessionToken();
+  if (!token) return { error: "Session expirée. Reconnectez-vous." };
+
+  try {
+    await api.adminSetMaintenanceEnabled(token, enabled);
+    revalidatePath("/admin/reglages");
+    revalidatePath("/");
+    revalidatePath("/maintenance");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Impossible de modifier le mode maintenance." };
+  }
+}
+
 export async function sendAdminAnnouncement(_prevState: unknown, formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const body = String(formData.get("body") || "").trim();
