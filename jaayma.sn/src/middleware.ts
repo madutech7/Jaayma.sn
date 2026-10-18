@@ -64,7 +64,11 @@ export async function middleware(request: NextRequest) {
 
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isMaintenanceExempt =
-    isAdminPath || pathname === "/connexion" || pathname === "/maintenance" || pathname === "/api/cron/keepalive";
+    isAdminPath ||
+    pathname === "/connexion" ||
+    pathname === "/maintenance" ||
+    pathname === "/api/cron/keepalive" ||
+    pathname === "/api/admin/analytics/realtime";
   if (!isMaintenanceExempt && await isMaintenanceEnabled()) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
