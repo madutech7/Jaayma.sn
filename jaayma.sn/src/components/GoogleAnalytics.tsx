@@ -31,8 +31,10 @@ export default function GoogleAnalytics({ measurementId }: { measurementId: stri
     if (!isConfigured || window.gtag) return;
 
     window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args);
+    // Google Tag expects the original arguments object in each dataLayer entry.
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer?.push(arguments);
     };
     window.gtag("js", new Date());
     window.gtag("config", measurementId, { send_page_view: false });
