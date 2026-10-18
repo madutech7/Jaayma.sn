@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Bell,
   Boxes,
+  BarChart3,
   CreditCard,
   Ellipsis,
   LayoutDashboard,
@@ -16,6 +17,7 @@ import {
 
 const links = [
   { href: "/admin", label: "Vue d’ensemble", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Google Analytics", icon: BarChart3 },
   { href: "/admin/boutiques", label: "Boutiques", icon: Boxes },
   { href: "/admin/comptes", label: "Comptes vendeurs", icon: Users },
   { href: "/admin/abonnements", label: "Abonnements Pro", icon: CreditCard },
@@ -32,7 +34,7 @@ const mobileLinks = [
 ];
 
 const moreLinks = links.filter(({ href }) =>
-  ["/admin/abonnements", "/admin/notifications", "/admin/reglages"].includes(href),
+  ["/admin/analytics", "/admin/abonnements", "/admin/notifications", "/admin/reglages"].includes(href),
 );
 
 export default function AdminNavigation({ mobile = false }: { mobile?: boolean }) {

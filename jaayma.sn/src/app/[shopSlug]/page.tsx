@@ -122,6 +122,9 @@ export default async function ShopPage({ params, searchParams }: {
               href={waLink(shop.whatsapp)}
               target="_blank"
               rel="noreferrer"
+              data-ga-event="generate_lead"
+              data-ga-method="whatsapp"
+              data-ga-shop={shop.slug}
               className="w-9 h-9 rounded-full bg-white border-[2px] border-ink flex items-center justify-center active:scale-90 transition-transform"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">

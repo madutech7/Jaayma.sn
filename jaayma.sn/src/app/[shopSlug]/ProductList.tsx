@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { api } from "@/lib/api";
 import FormattedDescription from "@/components/FormattedDescription";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 /* ─── Product modal (fiche produit — design 04) ─── */
 type ProductCard = Product & { imageUrl?: string | null; imageUrls?: string[]; _count?: { images: number } };
@@ -276,6 +277,11 @@ export default function ProductList({
       return;
     }
     addItem(product, selectedOptions, qty);
+    trackAnalyticsEvent("add_to_cart", {
+      currency: "XOF",
+      value: product.price * qty,
+      items: [{ item_id: product.id, item_name: product.name, price: product.price, quantity: qty }],
+    });
   };
 
   const handleCardAdd = (e: React.MouseEvent, product: ProductCard) => {
@@ -295,7 +301,14 @@ export default function ProductList({
     }
   };
 
-  const handleTap = (product: ProductCard) => setModalProduct(product);
+  const handleTap = (product: ProductCard) => {
+    trackAnalyticsEvent("view_item", {
+      currency: "XOF",
+      value: product.price,
+      items: [{ item_id: product.id, item_name: product.name, price: product.price }],
+    });
+    setModalProduct(product);
+  };
 
   const normalizedQuery = normalizeSearchText(searchQuery.trim());
   const filteredProducts = normalizedQuery
@@ -542,6 +555,16 @@ export default function ProductList({
               pendingShopSwitch.selectedOptions,
               pendingShopSwitch.qty
             );
+            trackAnalyticsEvent("add_to_cart", {
+              currency: "XOF",
+              value: pendingShopSwitch.product.price * pendingShopSwitch.qty,
+              items: [{
+                item_id: pendingShopSwitch.product.id,
+                item_name: pendingShopSwitch.product.name,
+                price: pendingShopSwitch.product.price,
+                quantity: pendingShopSwitch.qty,
+              }],
+            });
             setPendingShopSwitch(null);
           }
         }}

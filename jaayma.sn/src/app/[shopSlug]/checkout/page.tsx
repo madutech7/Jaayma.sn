@@ -9,6 +9,7 @@ import { useState, useEffect, use } from "react";
 import { createOrder } from "../../actions/checkout";
 import { Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 /* ─── Ticket shape (haut du reçu) ─── */
 function TicketShape({ children }: { children: React.ReactNode }) {
@@ -77,10 +78,26 @@ export default function CheckoutPage({
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("wave");
+  const [checkoutTracked, setCheckoutTracked] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !items.length || checkoutTracked) return;
+    trackAnalyticsEvent("begin_checkout", {
+      currency: "XOF",
+      value: getCartTotal(),
+      items: items.map(({ product, quantity }) => ({
+        item_id: product.id,
+        item_name: product.name,
+        price: product.price,
+        quantity,
+      })),
+    });
+    setCheckoutTracked(true);
+  }, [checkoutTracked, getCartTotal, items, mounted]);
 
   if (!mounted) {
     return (
@@ -130,6 +147,17 @@ export default function CheckoutPage({
       setError(res.error);
       setIsSubmitting(false);
     } else if (res.success && res.publicToken) {
+      trackAnalyticsEvent("purchase", {
+        transaction_id: res.publicToken,
+        currency: "XOF",
+        value: subtotal,
+        items: items.map(({ product, quantity }) => ({
+          item_id: product.id,
+          item_name: product.name,
+          price: product.price,
+          quantity,
+        })),
+      });
       // Naviguer d'abord, puis vider le panier pour éviter le flash "Panier vide"
       setIsRedirecting(true);
       router.push(`/${shopSlug}/commande/${res.publicToken}`);

@@ -46,6 +46,7 @@ export const metadata: Metadata = {
 import { Suspense } from "react";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export default function RootLayout({
   children,
@@ -61,6 +62,7 @@ export default function RootLayout({
           <NavigationProgressBar />
         </Suspense>
         <ServiceWorkerRegister />
+        <GoogleAnalytics measurementId={process.env.GA_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""} />
         {children}
       </body>
     </html>

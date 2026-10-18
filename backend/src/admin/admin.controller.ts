@@ -17,6 +17,7 @@ import { ShopStatus } from '@prisma/client';
 import { z } from 'zod';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AnalyticsService } from './analytics.service';
 import { AdminService } from './admin.service';
 
 const planSchema = z.object({
@@ -39,6 +40,7 @@ export class AdminController {
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(AnalyticsService) private readonly analytics: AnalyticsService,
   ) {}
 
   @Get('public-features')
@@ -120,6 +122,17 @@ export class AdminController {
   async settings(@Headers('authorization') authHeader: string | undefined) {
     await this.requireAdmin(authHeader);
     return this.admin.getSettings();
+  }
+
+  @Get('analytics')
+  async analyticsDashboard(
+    @Headers('authorization') authHeader: string | undefined,
+    @Query('days') days?: string,
+  ) {
+    await this.requireAdmin(authHeader);
+    const requestedDays = Number(days);
+    const rangeDays = [7, 28, 90, 365].includes(requestedDays) ? requestedDays : 28;
+    return this.analytics.getDashboard(rangeDays);
   }
 
   @Patch('settings/explorer')

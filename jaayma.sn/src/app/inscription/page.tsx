@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { registerSeller, type AuthResult } from "../actions/auth";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const initialState: AuthResult = { error: undefined, success: false };
 
@@ -12,9 +13,14 @@ export default function InscriptionPage() {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(registerSeller, initialState);
   const [password, setPassword] = useState("");
+  const signupTracked = useRef(false);
 
   useEffect(() => {
-    if (state?.success) router.push("/espace");
+    if (state?.success && !signupTracked.current) {
+      signupTracked.current = true;
+      trackAnalyticsEvent("sign_up", { method: "phone" });
+      router.push("/espace");
+    }
   }, [state, router]);
 
   const inputClass =
