@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Maintenance en cours",
-  description: "Jaayma sera de retour très bientôt. Merci pour votre patience.",
+  description: "Jaaymaa sera de retour très bientôt. Merci pour votre patience.",
   robots: { index: false, follow: false },
 };
 
@@ -30,7 +30,7 @@ export default async function MaintenancePage() {
             <circle cx="12" cy="12" r="9" />
           </svg>
         </div>
-        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.15em] text-[#0E7C66] sm:mt-7 sm:text-xs sm:tracking-[0.2em]">Jaayma · Intervention en cours</p>
+        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.15em] text-[#0E7C66] sm:mt-7 sm:text-xs sm:tracking-[0.2em]">Jaaymaa · Intervention en cours</p>
         <h1 className="mt-3 font-bricolage text-[clamp(1.75rem,8vw,2.5rem)] font-black leading-tight">Nous revenons très bientôt.</h1>
         <p className="mx-auto mt-4 max-w-md break-words text-sm leading-6 text-[#526079] sm:text-base">
           Notre site fait l’objet d’une courte maintenance afin de vous offrir un service fiable et sécurisé.

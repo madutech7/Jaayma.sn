@@ -16,16 +16,16 @@ const instrument = Instrument_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Jaay — Ta boutique en ligne, en un lien",
-    template: "%s | Jaay",
+    default: "Jaaymaa — Ta boutique en ligne, en un lien",
+    template: "%s | Jaaymaa",
   },
   description:
     "Crée ta boutique en ligne en 2 minutes, partage-la sur WhatsApp et reçois des commandes facilement. La solution e-commerce pensée pour les vendeurs sénégalais.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://jaayma.sn"),
   openGraph: {
-    title: "Jaay — Ta boutique en ligne, en un lien",
+    title: "Jaaymaa — Ta boutique en ligne, en un lien",
     description: "Crée ta boutique en ligne en 2 minutes. Partage sur WhatsApp. Gère tes commandes facilement.",
-    siteName: "Jaay",
+    siteName: "Jaaymaa",
     locale: "fr_SN",
     type: "website",
   },

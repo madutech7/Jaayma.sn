@@ -3,11 +3,11 @@ import { getCurrentSellerId } from "@/lib/auth";
 import { api } from "@/lib/api";
 
 export const metadata = {
-  title: "Jaayma  Ta boutique en ligne, en un lien",
+  title: "Jaaymaa — Ta boutique en ligne, en un lien",
   description:
     "Crée ta boutique en ligne en 2 minutes, partage-la sur WhatsApp et reçois des commandes facilement. La solution e-commerce pensée pour les vendeurs sénégalais.",
   openGraph: {
-    title: "Jaayma  Ta boutique en ligne, en un lien",
+    title: "Jaaymaa — Ta boutique en ligne, en un lien",
     description: "Crée ta boutique en ligne en 2 minutes et vends sur WhatsApp.",
     locale: "fr_SN",
     type: "website",
@@ -25,10 +25,10 @@ function LogoMark({ size = 22 }: { size?: number }) {
   );
 }
 
-/*  SVG Wordmark "jaayma"  */
+/*  SVG Wordmark "jaaymaa"  */
 function Wordmark({ color = "#0F1E3D", size = 1 }: { color?: string; size?: number }) {
   return (
-    <svg width={Math.round(380 * size)} height={Math.round(88 * size)} viewBox="0 0 380 88" fill="none">
+    <svg width={Math.round(440 * size)} height={Math.round(88 * size)} viewBox="0 0 440 88" fill="none">
       <g stroke={color} strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 20V64C22 78 16 84 8 84" />
         <circle cx="66" cy="40" r="20" />
@@ -39,6 +39,8 @@ function Wordmark({ color = "#0F1E3D", size = 1 }: { color?: string; size?: numb
         <path d="M234 20V60M234 33A13 13 0 0 1 260 33V60M260 33A13 13 0 0 1 286 33V60" />
         <circle cx="330" cy="40" r="20" />
         <path d="M350 20V60" />
+        <circle cx="390" cy="40" r="20" />
+        <path d="M410 20V60" />
       </g>
       <circle cx="22" cy="4" r="6.5" fill="#C8265A" />
     </svg>
@@ -301,7 +303,7 @@ export default async function LandingPage() {
             <Wordmark color="#fff" size={0.22} />
           </div>
           <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.25)" }}>
-            © 2026 Jaayma. Fait au Sénégal.
+            © 2026 Jaaymaa. Fait au Sénégal.
           </p>
           <div className="flex gap-5 text-xs font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>
             {sellerId ? (

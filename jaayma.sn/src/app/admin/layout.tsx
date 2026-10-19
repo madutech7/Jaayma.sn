@@ -36,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/espace" aria-label="Retour à l’espace vendeur" className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-ghost transition-colors hover:bg-white/10"><ArrowLeft className="h-4 w-4" /></Link>
             <div className="flex min-w-0 items-center gap-2.5">
-              <Image src="/logo-sombre.svg" alt="Jaayma" width={112} height={30} className="h-7 w-auto" priority />
+              <Image src="/logo-sombre.svg" alt="Jaaymaa" width={112} height={30} className="h-7 w-auto" priority />
               <span className="rounded-md border border-sun/30 bg-sun/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-sun">Admin</span>
             </div>
           </div>
@@ -49,7 +49,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       <div className="mx-auto flex max-w-[1500px] items-start gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:gap-8 lg:px-8">
         <aside className="sticky top-[92px] hidden w-[230px] shrink-0 rounded-[22px] border-[2.5px] border-ink bg-papier p-3 text-ink shadow-[4px_4px_0_#0F1E3D] lg:block">
-          <p className="mb-3 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.15em] text-hibiscus">Gestion de Jaayma</p>
+          <p className="mb-3 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.15em] text-hibiscus">Gestion de Jaaymaa</p>
           <AdminNavigation />
           <div className="mt-4 border-t border-ink/10 px-3 pt-4 text-[11px] leading-5 text-muted">Données privées · accès réservé</div>
         </aside>

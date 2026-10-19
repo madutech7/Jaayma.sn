@@ -10,7 +10,7 @@ import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
 
 export const metadata = {
-  title: "Commande envoyée | Jaayma",
+  title: "Commande envoyée | Jaaymaa",
 };
 
 const STATUS_LABELS: Record<OrderStatus, string> = {

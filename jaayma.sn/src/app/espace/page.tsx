@@ -26,7 +26,7 @@ import ShareShopButton from "./ShareShopButton";
 import ShopQrCode from "./ShopQrCode";
 
 export const metadata = {
-  title: "Accueil - Espace Vendeur Jaayma",
+  title: "Accueil - Espace Vendeur Jaaymaa",
 };
 
 const CARD_CLASS =
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
                 <Store size={14} /> Espace vendeur
               </span>
               <h1 className="mt-5 font-bricolage text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl">
-                Bienvenue sur Jaayma.
+                Bienvenue sur Jaaymaa.
               </h1>
               <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-[#273756] sm:text-base">
                 Crée ta boutique pour publier tes produits, recevoir tes commandes et partager ton lien avec tes clients.

@@ -44,10 +44,10 @@ async function bootstrap() {
 
   const port = Number(configService.get<string>('PORT') ?? process.env.PORT ?? 4000);
   await app.listen(port, '0.0.0.0');
-  console.log(`[Jaayma API] Server running on http://localhost:${port}`);
+  console.log(`[Jaaymaa API] Server running on http://localhost:${port}`);
 }
 
 bootstrap().catch((error: unknown) => {
-  console.error('Impossible de démarrer Jaayma API', error);
+  console.error('Impossible de démarrer Jaaymaa API', error);
   process.exit(1);
 });

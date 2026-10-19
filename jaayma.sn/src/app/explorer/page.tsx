@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import ExplorerFeed from "./ExplorerFeed";
 
 export const metadata = {
-  title: "Explorer les produits sénégalais | Jaayma",
+  title: "Explorer les produits sénégalais | Jaaymaa",
   description: "Découvrez des produits vendus par des commerçants et créateurs sénégalais.",
 };
 

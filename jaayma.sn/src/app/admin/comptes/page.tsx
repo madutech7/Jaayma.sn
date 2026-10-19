@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
 import AdminFilterForm from "../AdminFilterForm";
 
-export const metadata = { title: "Comptes vendeurs · Administration Jaayma" };
+export const metadata = { title: "Comptes vendeurs · Administration Jaaymaa" };
 type SearchParams = Promise<{ q?: string; hasShop?: string; page?: string }>;
 
 export default async function AdminAccountsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -26,7 +26,7 @@ export default async function AdminAccountsPage({ searchParams }: { searchParams
     };
     return (
       <>
-        <AdminPageTitle eyebrow="Commerçants Jaayma" title="Comptes vendeurs" description="Recherchez les comptes, vérifiez leur activité et accédez rapidement à leur boutique. Les mots de passe et données d’authentification ne sont jamais affichés." action={<span className="rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-bold text-muted"><Users size={14} className="mr-1.5 inline text-[#9A6500]" />{result.total} compte{result.total !== 1 ? "s" : ""}</span>} />
+        <AdminPageTitle eyebrow="Commerçants Jaaymaa" title="Comptes vendeurs" description="Recherchez les comptes, vérifiez leur activité et accédez rapidement à leur boutique. Les mots de passe et données d’authentification ne sont jamais affichés." action={<span className="rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-bold text-muted"><Users size={14} className="mr-1.5 inline text-[#9A6500]" />{result.total} compte{result.total !== 1 ? "s" : ""}</span>} />
         <AdminFilterForm action="/admin/comptes" className={`${adminPanelClass()} grid gap-3 p-4 sm:grid-cols-[minmax(240px,1fr)_190px_auto] sm:items-center sm:p-5`}>
           <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" /><input type="search" name="q" defaultValue={query} placeholder="Nom ou numéro de téléphone…" className="w-full rounded-xl border border-ink/15 bg-papier py-3 pl-10 pr-3 text-sm font-semibold text-ink outline-none focus:border-sun" /></label>
           <select name="hasShop" defaultValue={hasShop} aria-label="Filtrer par boutique" className="rounded-xl border border-ink/10 bg-[#FFFBF2] px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-sun"><option value="">Tous les comptes</option><option value="true">Avec boutique</option><option value="false">Sans boutique</option></select>

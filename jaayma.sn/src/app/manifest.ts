@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Jaay — Ta boutique en ligne, en un lien",
-    short_name: "Jaay",
+    name: "Jaaymaa — Ta boutique en ligne, en un lien",
+    short_name: "Jaaymaa",
     description:
       "Crée ta boutique en ligne en 2 minutes, partage-la sur WhatsApp et gère tes commandes simplement.",
     start_url: "/",

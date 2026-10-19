@@ -27,7 +27,7 @@ const endpointSchema = z.object({
 const broadcastSchema = z.object({
   title: z.string().trim().min(3).max(60),
   body: z.string().trim().min(3).max(180),
-  url: z.string().trim().regex(/^\/(?!\/)[^\s]*$/, 'Le lien doit rester sur Jaayma'),
+  url: z.string().trim().regex(/^\/(?!\/)[^\s]*$/, 'Le lien doit rester sur Jaaymaa'),
 });
 
 type NewOrder = {
@@ -172,7 +172,7 @@ export class NotificationsService {
 
     const sent = await this.sendToSubscription(subscription, {
       title: 'Tout est prêt !',
-      body: 'Jaayma vous préviendra dès qu’une nouvelle commande arrivera.',
+      body: 'Jaaymaa vous préviendra dès qu’une nouvelle commande arrivera.',
       url: '/espace/commandes',
       tag: 'jaay-notification-test',
     });

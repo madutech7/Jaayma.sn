@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { formatFcfa } from "@/lib/money";
 import { AdminError, AdminPageTitle, adminPanelClass } from "./AdminUI";
 
-export const metadata = { title: "Vue d’ensemble · Administration Jaayma" };
+export const metadata = { title: "Vue d’ensemble · Administration Jaaymaa" };
 
 export default async function AdminDashboardPage() {
   const token = await getSessionToken();
@@ -15,7 +15,7 @@ export default async function AdminDashboardPage() {
     const { metrics, recentOrders } = await api.getAdminOverview(token);
     return (
       <>
-        <AdminPageTitle eyebrow="Centre de pilotage" title="Vue d’ensemble" description="Les indicateurs clés et les dernières activités de la plateforme Jaayma." action={<span className="inline-flex items-center gap-2 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-semibold text-muted"><Activity size={15} className="text-baobab" /> Données en direct</span>} />
+        <AdminPageTitle eyebrow="Centre de pilotage" title="Vue d’ensemble" description="Les indicateurs clés et les dernières activités de la plateforme Jaaymaa." action={<span className="inline-flex items-center gap-2 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs font-semibold text-muted"><Activity size={15} className="text-baobab" /> Données en direct</span>} />
 
         <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Indicateurs globaux">
           <MetricCard label="Boutiques" value={metrics.totalShops} caption={`${metrics.activeShops} en ligne · ${metrics.suspendedShops} suspendue${metrics.suspendedShops !== 1 ? "s" : ""}`} icon={<Store size={18} />} tone="sun" />

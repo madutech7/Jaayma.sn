@@ -5,7 +5,7 @@ import { formatFcfa } from "@/lib/money";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
 import AdminFilterForm from "../AdminFilterForm";
 
-export const metadata = { title: "Commandes · Administration Jaayma" };
+export const metadata = { title: "Commandes · Administration Jaaymaa" };
 type SearchParams = Promise<{ q?: string; status?: string; payment?: string; page?: string }>;
 
 export default async function AdminOrdersPage({ searchParams }: { searchParams: SearchParams }) {

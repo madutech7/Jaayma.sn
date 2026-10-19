@@ -6,7 +6,7 @@ import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "..
 import AdminFilterForm from "../AdminFilterForm";
 import AdminShopRow from "../AdminShopRow";
 
-export const metadata = { title: "Abonnements Pro · Administration Jaayma" };
+export const metadata = { title: "Abonnements Pro · Administration Jaaymaa" };
 type SearchParams = Promise<{ q?: string; plan?: string; page?: string }>;
 
 export default async function AdminSubscriptionsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -56,7 +56,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
           </tbody></table></div>
           <AdminPagination page={overview.shops.page} totalPages={overview.shops.totalPages} total={overview.shops.total} pageSize={overview.shops.pageSize} noun="boutiques" hrefForPage={makeHref} />
         </section>
-        <p className="mt-4 text-xs leading-5 text-muted/65">L’activation Pro de cette page applique l’accès pendant 30 jours. Les paiements réels ne sont pas enregistrés dans Jaayma pour le moment.</p>
+        <p className="mt-4 text-xs leading-5 text-muted/65">L’activation Pro de cette page applique l’accès pendant 30 jours. Les paiements réels ne sont pas enregistrés dans Jaaymaa pour le moment.</p>
       </>
     );
   } catch (error) {

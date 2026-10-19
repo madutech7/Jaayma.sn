@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const res = await fetch(targetUrl, {
       cache: 'no-store',
       headers: {
-        'User-Agent': 'Jaayma-Keepalive-Route/1.0',
+        'User-Agent': 'Jaaymaa-Keepalive-Route/1.0',
       },
       signal: AbortSignal.timeout(15000),
     });

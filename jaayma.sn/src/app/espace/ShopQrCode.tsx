@@ -7,7 +7,7 @@ import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEMES } from "@/lib/s
 
 const BRAND_INK = "#0F1E3D";
 const CREAM = "#FFFBF2";
-const JAAYMA_ICON = "/icons/icon.svg";
+const JAAYMAA_ICON = "/icons/icon.svg";
 
 export default function ShopQrCode({
   shopName,
@@ -71,7 +71,7 @@ export default function ShopQrCode({
       if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: `QR code de ${shopName}`,
-          text: `Scanne ce QR code pour découvrir la boutique ${shopName} sur Jaayma.`,
+          text: `Scanne ce QR code pour découvrir la boutique ${shopName} sur Jaaymaa.`,
           files: [file],
         });
         setMessage("QR code partagé.");
@@ -94,7 +94,7 @@ export default function ShopQrCode({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
-    return `jaayma-qr-${safeName || "boutique"}.png`;
+    return `jaaymaa-qr-${safeName || "boutique"}.png`;
   }
 
   async function createShareCard(): Promise<Blob> {
@@ -106,7 +106,7 @@ export default function ShopQrCode({
     }));
     const [qrImage, brandImage, shopImage] = await Promise.all([
       loadImage(qr),
-      loadImage(JAAYMA_ICON),
+      loadImage(JAAYMAA_ICON),
       shopLogoUrl ? loadImage(shopLogoUrl, true).catch(() => null) : Promise.resolve(null),
     ]);
     const canvas = document.createElement("canvas");
@@ -122,13 +122,13 @@ export default function ShopQrCode({
     context.fillStyle = themeColor;
     context.fillRect(12, 12, canvas.width - 24, 260);
 
-    // Jaayma branding and the merchant's own logo share the header.
+    // Jaaymaa branding and the merchant's own logo share the header.
     context.drawImage(brandImage, 58, 48, 80, 80);
     context.textAlign = "left";
     context.textBaseline = "middle";
     context.fillStyle = themeForeground;
     context.font = "900 42px Arial, sans-serif";
-    context.fillText("JAAYMA", 155, 88);
+    context.fillText("JAAYMAA", 155, 88);
     context.font = "700 22px Arial, sans-serif";
     context.fillText("TA BOUTIQUE EN UN SCAN", 156, 128);
 
@@ -176,7 +176,7 @@ export default function ShopQrCode({
     context.fillRect(12, 1270, canvas.width - 24, 68);
     context.fillStyle = "#FFFBF2";
     context.font = "800 24px Arial, sans-serif";
-    context.fillText("Une boutique en ligne avec Jaayma", canvas.width / 2, 1304);
+    context.fillText("Une boutique en ligne avec Jaaymaa", canvas.width / 2, 1304);
 
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Image indisponible"))), "image/png");
@@ -220,7 +220,7 @@ export default function ShopQrCode({
             <img src={qrDataUrl} alt={`QR code pour ouvrir la boutique ${shopName}`} className="h-full w-full" />
             <span className="absolute flex h-[25%] w-[25%] items-center justify-center rounded-xl border-2 bg-white p-1 shadow-sm" style={{ borderColor: themeColor }} aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={JAAYMA_ICON} alt="" className="h-full w-full rounded-lg" />
+              <img src={JAAYMAA_ICON} alt="" className="h-full w-full rounded-lg" />
             </span>
           </>
         ) : (

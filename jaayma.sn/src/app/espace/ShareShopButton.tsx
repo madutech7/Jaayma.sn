@@ -15,7 +15,7 @@ export default function ShareShopButton({
   async function shareShop() {
     const shareData = {
       title: shopName,
-      text: `Découvre ma boutique ${shopName} sur Jaayma :`,
+      text: `Découvre ma boutique ${shopName} sur Jaaymaa :`,
       url: shopUrl,
     };
 

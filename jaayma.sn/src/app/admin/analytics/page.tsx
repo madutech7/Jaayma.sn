@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { AdminError } from "../AdminUI";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 
-export const metadata: Metadata = { title: "Google Analytics · Administration Jaayma" };
+export const metadata: Metadata = { title: "Google Analytics · Administration Jaaymaa" };
 
 export default async function AnalyticsPage({
   searchParams,

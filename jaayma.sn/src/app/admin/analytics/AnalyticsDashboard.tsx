@@ -28,7 +28,7 @@ export default function AnalyticsDashboard({
       <AdminPageTitle
         eyebrow="Audience · acquisition · conversion"
         title="Google Analytics"
-        description="Comprends comment les visiteurs découvrent Jaayma, explorent les boutiques et passent commande."
+        description="Comprends comment les visiteurs découvrent Jaaymaa, explorent les boutiques et passent commande."
       />
 
       {!measurementConfigured && (
@@ -111,7 +111,7 @@ export default function AnalyticsDashboard({
           </div>
 
           <div className="mt-4 rounded-2xl border border-ink/10 bg-white/60 p-3 text-[10px] leading-5 text-muted">
-            Les rapports GA4 peuvent arriver avec un délai. Les commandes suivies dans Analytics mesurent les achats terminés sur le site; les ventes et paiements réels restent consultables dans les indicateurs Jaayma. Identifiant de propriété : <code className="font-bold text-ink">{data.propertyId}</code>.
+            Les rapports GA4 peuvent arriver avec un délai. Les commandes suivies dans Analytics mesurent les achats terminés sur le site; les ventes et paiements réels restent consultables dans les indicateurs Jaaymaa. Identifiant de propriété : <code className="font-bold text-ink">{data.propertyId}</code>.
           </div>
         </>
       )}
@@ -221,7 +221,7 @@ function SetupGuide({ status, measurementConfigured }: { status: Exclude<AdminAn
       <div className="grid gap-0 lg:grid-cols-2">
         <div className="space-y-5 p-5 sm:p-7">
           <SetupStep number="01" title="Créer ou choisir la propriété GA4" description="Dans Google Analytics, créez une propriété Google Analytics 4, choisissez le franc CFA (XOF) comme devise, puis ajoutez un flux Web pour jaayma.sn. Copiez l’ID de mesure G-… et l’ID numérique de la propriété." />
-          <SetupStep number="02" title="Activer la mesure du site" description="Ajoutez la variable GA_MEASUREMENT_ID dans les variables Cloudflare de Jaayma avec l’ID de mesure G-… Les parcours produit, panier et achat seront ensuite envoyés automatiquement." />
+          <SetupStep number="02" title="Activer la mesure du site" description="Ajoutez la variable GA_MEASUREMENT_ID dans les variables Cloudflare de Jaaymaa avec l’ID de mesure G-… Les parcours produit, panier et achat seront ensuite envoyés automatiquement." />
           <SetupStep number="03" title="Autoriser les rapports" description="Dans Google Cloud, activez Google Analytics Data API v1 et créez un compte de service. Dans l’accès à la propriété GA4, ajoutez son adresse e-mail avec le rôle Lecteur." />
           <SetupStep number="04" title="Brancher les identifiants serveur" description="Dans les variables d’environnement du service jaayma-api sur Render, ajoutez l’ID numérique de propriété et le JSON complet de la clé du compte de service. Gardez cette clé secrète et ne la mettez jamais dans Cloudflare côté public." />
         </div>

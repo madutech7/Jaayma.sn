@@ -66,9 +66,9 @@ export async function GET(
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
-    <title><![CDATA[${shop.name} | Catalogue Jaayma]]></title>
+    <title><![CDATA[${shop.name} | Catalogue Jaaymaa]]></title>
     <link>${escapeXml(shopUrl)}</link>
-    <description><![CDATA[Catalogue produits de ${shop.name} sur Jaayma]]></description>
+    <description><![CDATA[Catalogue produits de ${shop.name} sur Jaaymaa]]></description>
 ${itemsXml}
   </channel>
 </rss>`;

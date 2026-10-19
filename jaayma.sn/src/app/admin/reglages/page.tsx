@@ -5,7 +5,7 @@ import { AdminError, AdminPageTitle, adminPanelClass } from "../AdminUI";
 import ExplorerVisibilityControl from "./ExplorerVisibilityControl";
 import MaintenanceModeControl from "./MaintenanceModeControl";
 
-export const metadata = { title: "Réglages · Administration Jaayma" };
+export const metadata = { title: "Réglages · Administration Jaaymaa" };
 
 export default async function AdminSettingsPage() {
   const token = await getSessionToken();
@@ -36,7 +36,7 @@ export default async function AdminSettingsPage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-ink/10 bg-ink/5 text-[#9A6500]"><Mail size={18} /></span>
             <h2 className="mt-4 font-bricolage text-base font-black">Appareils abonnés</h2>
             <p className="mt-1 font-bricolage text-3xl font-black text-[#9A6500]">{settings.pushSubscriptions}</p>
-            <p className="mt-1 text-xs leading-5 text-muted">Appareils de vendeurs ayant activé les alertes Jaayma.</p>
+            <p className="mt-1 text-xs leading-5 text-muted">Appareils de vendeurs ayant activé les alertes Jaaymaa.</p>
           </article>
         </section>
 

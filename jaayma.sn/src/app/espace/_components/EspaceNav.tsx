@@ -97,7 +97,7 @@ export default function EspaceNav() {
           <Link href="/espace" className="mb-7 flex items-center gap-3 rounded-2xl px-2 py-2">
             <LogoMark size={42} />
             <span>
-              <span className="block font-bricolage text-lg font-black leading-tight tracking-tight">Jaayma</span>
+              <span className="block font-bricolage text-lg font-black leading-tight tracking-tight">Jaaymaa</span>
               <span className="mt-1 block text-[11px] font-semibold text-[#65708A]">Espace vendeur</span>
             </span>
           </Link>
@@ -138,7 +138,7 @@ export default function EspaceNav() {
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
             </svg>
-            Voir le site Jaayma
+            Voir le site Jaaymaa
           </Link>
           <button
             type="button"
@@ -158,7 +158,7 @@ export default function EspaceNav() {
           <Link href="/espace" prefetch={true} className="flex items-center gap-2.5">
             <LogoMark size={32} />
             <span>
-              <span className="block font-bricolage text-sm font-black leading-tight">Jaayma</span>
+              <span className="block font-bricolage text-sm font-black leading-tight">Jaaymaa</span>
               <span className="block text-[10px] font-semibold text-[#65708A]">Espace vendeur</span>
             </span>
           </Link>

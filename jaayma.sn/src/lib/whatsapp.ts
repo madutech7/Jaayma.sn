@@ -1,5 +1,5 @@
 /**
- * WhatsApp utilities for Jaay.
+ * WhatsApp utilities for Jaaymaa.
  * Generates wa.me links and pre-filled message templates.
  */
 
@@ -33,7 +33,7 @@ Merci pour ta commande chez *${opts.shopName}* !
 
 On va te recontacter très bientôt pour les détails de la livraison. 🛵
 
-_Jaay — jaayma.sn_`;
+_Jaaymaa — jaayma.sn_`;
 }
 
 /**
@@ -44,7 +44,7 @@ export function shopShareMessage(opts: {
   shopUrl: string;
   tagline?: string;
 }): string {
-  return `Découvre *${opts.shopName}* sur Jaay ! 🛍️${opts.tagline ? `\n_${opts.tagline}_` : ""}
+  return `Découvre *${opts.shopName}* sur Jaaymaa ! 🛍️${opts.tagline ? `\n_${opts.tagline}_` : ""}
 
 👉 ${opts.shopUrl}
 

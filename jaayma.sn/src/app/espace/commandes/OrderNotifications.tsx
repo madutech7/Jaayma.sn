@@ -265,9 +265,9 @@ export default function OrderNotifications({ sellerId }: { sellerId: string }) {
 
   const unavailableMessage =
     support === "unsupported"
-      ? "Ce navigateur ne prend pas en charge les notifications push. Ouvrez Jaayma dans Safari sur iPhone ou Chrome sur Android."
+      ? "Ce navigateur ne prend pas en charge les notifications push. Ouvrez Jaaymaa dans Safari sur iPhone ou Chrome sur Android."
       : support === "ios-install"
-        ? "Sur iPhone, ajoutez d’abord Jaayma à l’écran d’accueil depuis Safari, puis ouvrez l’application installée pour activer les alertes."
+        ? "Sur iPhone, ajoutez d’abord Jaaymaa à l’écran d’accueil depuis Safari, puis ouvrez l’application installée pour activer les alertes."
         : null;
 
   return (
@@ -280,7 +280,7 @@ export default function OrderNotifications({ sellerId }: { sellerId: string }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="order-notifications-title" className="font-bricolage text-base font-black text-white">
-                Notifications Jaayma
+                Notifications Jaaymaa
               </h2>
               {isEnabled && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-200">

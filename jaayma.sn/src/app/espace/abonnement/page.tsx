@@ -17,7 +17,7 @@ export default async function AbonnementPage() {
   const isPro = effectivePlan === "pro";
 
   const supportWhatsapp = process.env.SUPPORT_WHATSAPP || "221770000000";
-  const upgradeMessage = `Bonjour Jaayma ! \nJe souhaite passer au plan PRO pour ma boutique "${shop.name}" (slug: ${shop.slug}).`;
+  const upgradeMessage = `Bonjour Jaaymaa ! \nJe souhaite passer au plan PRO pour ma boutique "${shop.name}" (slug: ${shop.slug}).`;
 
   return (
     <div className="p-5 max-w-xl mx-auto lg:max-w-2xl min-h-screen" style={{ backgroundColor: "#0F1E3D" }}>

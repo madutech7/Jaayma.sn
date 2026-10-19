@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
 import AdminBroadcastForm from "./AdminBroadcastForm";
 
-export const metadata = { title: "Notifications · Administration Jaayma" };
+export const metadata = { title: "Notifications · Administration Jaaymaa" };
 type SearchParams = Promise<{ page?: string }>;
 
 export default async function AdminNotificationsPage({ searchParams }: { searchParams: SearchParams }) {

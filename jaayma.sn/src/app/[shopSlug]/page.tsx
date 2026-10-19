@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ shopSlug:
   const shop = await getShopBySlug(shopSlug);
   if (!shop || !shop.isPublished) return { title: "Boutique introuvable" };
   return {
-    title: `${shop.name} | Jaayma`,
+    title: `${shop.name} | Jaaymaa`,
     description: shop.tagline || `Bienvenue sur la boutique ${shop.name}`,
   };
 }

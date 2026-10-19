@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="jaayma.sn/public/logo.svg" alt="Jaayma.sn" width="160" />
+  <img src="jaayma.sn/public/logo.svg" alt="Jaaymaa" width="160" />
 
-  <h1>Jaayma.sn</h1>
+  <h1>Jaaymaa</h1>
   <p><strong>La plateforme e-commerce des vendeurs senegalais</strong></p>
 
   <p>
@@ -26,7 +26,7 @@
 
 ## Presentation
 
-**Jaayma.sn** (du wolof *jaay* — vendre) est une plateforme SaaS qui permet a chaque vendeur senegalais de creer sa boutique en ligne en quelques minutes, gerer ses produits et recevoir des commandes via WhatsApp, sans connaissances techniques.
+**Jaaymaa** (du wolof *jaay* — vendre) est une plateforme SaaS qui permet a chaque vendeur senegalais de creer sa boutique en ligne en quelques minutes, gerer ses produits et recevoir des commandes via WhatsApp, sans connaissances techniques.
 
 ### Fonctionnalites principales
 
@@ -232,7 +232,7 @@ Les variables d'environnement sont a renseigner manuellement dans le dashboard R
 
 ### Notifications push des commandes
 
-Les vendeurs peuvent activer une alerte sur chaque téléphone depuis **Espace vendeur → Commandes**. Le navigateur doit prendre en charge les notifications et l'utilisateur doit les autoriser. Sur iPhone/iPad, Jaayma doit d'abord être ajouté à l'écran d'accueil et ouvert depuis cette icône (iOS/iPadOS 16.4 ou plus récent).
+Les vendeurs peuvent activer une alerte sur chaque téléphone depuis **Espace vendeur → Commandes**. Le navigateur doit prendre en charge les notifications et l'utilisateur doit les autoriser. Sur iPhone/iPad, Jaaymaa doit d'abord être ajouté à l'écran d'accueil et ouvert depuis cette icône (iOS/iPadOS 16.4 ou plus récent).
 
 Configurez une paire VAPID une seule fois pour le backend et conservez les mêmes clés lors des déploiements :
 
@@ -286,5 +286,5 @@ Distribue sous licence MIT.
 
 <div align="center">
   <p>Fait au Senegal</p>
-  <p><strong>Jaayma.sn</strong> — <em>Vendez en ligne, simplement.</em></p>
+  <p><strong>Jaaymaa</strong> — <em>Vendez en ligne, simplement.</em></p>
 </div>

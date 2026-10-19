@@ -70,7 +70,7 @@ export default function ProductImageFrame({
             {(alt || "P").charAt(0).toUpperCase()}
           </span>
           <span className="text-[9px] font-black text-[#65708A] mt-1 tracking-wider uppercase">
-            Jaayma
+            Jaaymaa
           </span>
         </div>
       )}

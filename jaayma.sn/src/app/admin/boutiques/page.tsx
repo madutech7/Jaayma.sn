@@ -5,7 +5,7 @@ import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "..
 import AdminFilterForm from "../AdminFilterForm";
 import AdminShopRow from "../AdminShopRow";
 
-export const metadata = { title: "Boutiques · Administration Jaayma" };
+export const metadata = { title: "Boutiques · Administration Jaaymaa" };
 type SearchParams = Promise<{ q?: string; status?: string; plan?: string; page?: string }>;
 
 export default async function AdminShopsPage({ searchParams }: { searchParams: SearchParams }) {
