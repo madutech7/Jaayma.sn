@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import express from 'express';
+import { json, urlencoded } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { rateLimitMiddleware } from './security/rate-limit.middleware';
@@ -36,8 +36,8 @@ async function bootstrap() {
     }
     next();
   });
-  app.use(express.json({ limit: '100kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+  app.use(json({ limit: '100kb' }));
+  app.use(urlencoded({ extended: true, limit: '100kb' }));
   app.use(rateLimitMiddleware);
 
   app.enableCors({
