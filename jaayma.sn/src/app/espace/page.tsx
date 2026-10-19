@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatFcfa } from "@/lib/money";
 import { getRequestOrigin } from "@/lib/site-url";
+import { getImageUrl } from "@/lib/images";
 import { api } from "@/lib/api";
 import type { Order } from "@/types/schema";
 import ShareShopButton from "./ShareShopButton";
@@ -498,7 +499,12 @@ export default async function DashboardPage() {
 
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
         <article className={`${CARD_CLASS} grid gap-4 p-4 sm:grid-cols-[164px_minmax(0,1fr)] sm:p-5`}>
-          <ShopQrCode shopName={shop.name} shopUrl={fullUrl} />
+          <ShopQrCode
+            shopName={shop.name}
+            shopUrl={fullUrl}
+            themeColor={shop.themeColor}
+            shopLogoUrl={getImageUrl(shop.logoKey ?? shop.logoUrl)}
+          />
           <div className="flex min-w-0 flex-col justify-center py-1 sm:py-2">
             <div className="min-w-0">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-[#C8265A]">À partager</p>
