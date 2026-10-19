@@ -228,7 +228,26 @@ Render detecte automatiquement la configuration :
 | Health check | `/health` |
 | URL de production | https://jaayma-sn.onrender.com |
 
-Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN et les cles VAPID pour les notifications push).
+Les variables d'environnement sont a renseigner manuellement dans le dashboard Render (DATABASE_URL, JWT_SECRET, R2_*, CORS_ORIGIN, les cles VAPID pour les notifications push et `UNITECHPAY_API_KEY` pour les paiements Pro). `FRONTEND_URL` doit correspondre au domaine public actuel du site.
+
+### Paiement des abonnements Pro avec UnitechPay
+
+Le vendeur peut payer l'abonnement Pro (1 000 FCFA / 30 jours) avec Wave ou Orange Money depuis **Espace vendeur → Abonnement**. L'API ne reçoit jamais la clé UnitechPay du navigateur. Le plan Pro est activé uniquement après un webhook signé et vérifié.
+
+1. Créez un compte marchand UnitechPay et générez une clé API dans son tableau de bord.
+2. Dans Render → `jaayma-api` → **Environment**, ajoutez `UNITECHPAY_API_KEY` avec cette clé. Gardez-la secrète et ne la mettez pas dans Cloudflare ni dans le frontend.
+3. Réglez `FRONTEND_URL` sur l'adresse de production actuelle, par exemple `https://jaayma-sn.madutech0.workers.dev` tant que le domaine `jaayma.sn` n'est pas utilisé.
+4. Configurez une seule fois le webhook UnitechPay vers `https://jaayma-sn.onrender.com/subscriptions/unitechpay/webhook`, avec les événements `payment_completed`, `payment_failed` et `payment_expired`. Si le tableau de bord ne permet pas cette configuration, l'API UnitechPay l'accepte ainsi :
+
+```http
+POST https://api.unitech.sn/api.php?action=configure_webhook
+Authorization: Bearer VOTRE_CLE_API
+Content-Type: application/json
+
+{"webhook_url":"https://jaayma-sn.onrender.com/subscriptions/unitechpay/webhook","events":["payment_completed","payment_failed","payment_expired"]}
+```
+
+Le déploiement Render applique automatiquement le nouveau modèle de paiement avec `prisma db push`. Les retours depuis Wave/Orange Money affichent l'état de confirmation; seul le webhook active réellement le mois Pro.
 
 ### Notifications push des commandes
 

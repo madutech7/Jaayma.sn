@@ -39,6 +39,12 @@ function rulesFor(request: Request): RateLimitRule[] {
         : []),
     ];
   }
+  if (method === 'POST' && path === '/subscriptions/payments') {
+    return [
+      { key: `subscription-payment-ip:${clientIp}`, name: 'subscription-payment-ip', limit: 30, windowMs: MINUTE },
+      { key: `subscription-payment:${sessionIdentifier(request)}`, name: 'subscription-payment', limit: 5, windowMs: 15 * MINUTE },
+    ];
+  }
   if (method === 'GET' && path.startsWith('/orders/reference/')) {
     return [
       { key: `order-lookup-ip:${clientIp}`, name: 'order-lookup', limit: 300, windowMs: MINUTE },

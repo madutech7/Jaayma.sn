@@ -1,23 +1,33 @@
-import { getCurrentSellerContext } from "@/lib/auth";
+import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getEffectivePlan } from "@/lib/plans";
-import { waLink } from "@/lib/whatsapp";
+import { api } from "@/lib/api";
+import { startProSubscriptionPayment } from "@/app/actions/subscription";
+import { SubscriptionPaymentNotice } from "./SubscriptionPaymentNotice";
 
 export const metadata = {
   title: "Mon Abonnement - Espace Vendeur",
 };
 
-export default async function AbonnementPage() {
+export default async function AbonnementPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paiement?: string; erreur?: string }>;
+}) {
   const sellerContext = await getCurrentSellerContext();
   if (!sellerContext) redirect("/connexion");
   const { shop } = sellerContext;
   if (!shop) redirect("/espace/boutique");
 
+  const params = await searchParams;
+  const paymentId = params.paiement?.trim() || "";
+  const token = paymentId ? await getSessionToken() : null;
+  const payment = token && paymentId
+    ? await api.getSubscriptionPayment(token, paymentId).catch(() => null)
+    : null;
+
   const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
   const isPro = effectivePlan === "pro";
-
-  const supportWhatsapp = process.env.SUPPORT_WHATSAPP || "221770000000";
-  const upgradeMessage = `Bonjour Jaaymaa ! \nJe souhaite passer au plan PRO pour ma boutique "${shop.name}" (slug: ${shop.slug}).`;
 
   return (
     <div className="p-5 max-w-xl mx-auto lg:max-w-2xl min-h-screen" style={{ backgroundColor: "#0F1E3D" }}>
@@ -28,6 +38,17 @@ export default async function AbonnementPage() {
           Abonnement
         </h1>
       </div>
+
+      {params.erreur === "paiement" && (
+        <div className="mb-5 rounded-2xl border-2 border-ink bg-[#FFFBF2] p-4" role="alert">
+          <p className="font-bricolage font-black text-[#C8265A]">Le paiement n’a pas pu démarrer</p>
+          <p className="mt-1 text-sm font-medium text-ink/75">Réessayez dans un instant. Si le problème persiste, le paiement en ligne doit peut-être encore être configuré.</p>
+        </div>
+      )}
+
+      {paymentId && payment && (
+        <SubscriptionPaymentNotice paymentId={paymentId} initialStatus={payment.status} />
+      )}
 
       <div className="space-y-4">
         {/* CARTE GRATUIT */}
@@ -86,17 +107,31 @@ export default async function AbonnementPage() {
             </li>
           </ul>
 
-          {/* BOUTON ACTION PRO */}
+          {/* PAIEMENT DE L'ABONNEMENT */}
           {!isPro ? (
-            <a
-              href={waLink(supportWhatsapp, upgradeMessage)}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              style={{ backgroundColor: "#0E7C66", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
-            >
-              Passer Pro (1 000 F / mois)
-            </a>
+            <div className="space-y-3">
+              <form action={startProSubscriptionPayment}>
+                <input type="hidden" name="method" value="wave" />
+                <button
+                  type="submit"
+                  className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
+                >
+                  Payer avec Wave · 1 000 F
+                </button>
+              </form>
+              <form action={startProSubscriptionPayment}>
+                <input type="hidden" name="method" value="orange_money" />
+                <button
+                  type="submit"
+                  className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
+                >
+                  Payer avec Orange Money · 1 000 F
+                </button>
+              </form>
+              <p className="text-center text-xs font-medium text-[#C3CCE6]">Paiement sécurisé · Pro activé après confirmation</p>
+            </div>
           ) : (
             <div
               className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2"

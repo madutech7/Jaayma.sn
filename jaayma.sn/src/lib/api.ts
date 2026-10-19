@@ -550,6 +550,35 @@ export const api = {
     return normalizeOrder(res);
   },
 
+  // ─── SUBSCRIPTIONS ───
+  async createSubscriptionPayment(token: string, method: "wave" | "orange_money") {
+    return request<{
+      id: string;
+      paymentUrl: string;
+      amount: number;
+      method: "wave" | "orange_money";
+    }>("/subscriptions/payments", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ method }),
+    });
+  },
+
+  async getSubscriptionPayment(token: string, id: string) {
+    return request<{
+      id: string;
+      status: "pending" | "paid" | "failed" | "expired";
+      amount: number;
+      currency: string;
+      method: "wave" | "orange_money";
+      createdAt: string;
+      paidAt: string | null;
+    }>(`/subscriptions/payments/${encodeURIComponent(id)}`, {
+      token,
+      cache: "no-store",
+    });
+  },
+
   // ─── AUTH ───
   async register(data: { phone: string; password: string; name?: string }): Promise<{
     user: User;

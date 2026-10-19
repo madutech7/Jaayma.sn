@@ -10,6 +10,7 @@ import { ShopsModule } from './shops/shops.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AdminModule } from './admin/admin.module';
     UploadsModule,
     NotificationsModule,
     AdminModule,
+    SubscriptionsModule,
   ],
   controllers: [HealthController],
 })
