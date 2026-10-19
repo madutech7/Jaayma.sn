@@ -1,9 +1,13 @@
-import { Body, Controller, Get, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
 import { ShopsService } from './shops.service';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('shops')
 export class ShopsController {
-  constructor(@Inject(ShopsService) private readonly shopsService: ShopsService) {}
+  constructor(
+    @Inject(ShopsService) private readonly shopsService: ShopsService,
+    @Inject(AuthService) private readonly auth: AuthService,
+  ) {}
 
   @Get()
   findAll(@Query('q') q?: string, @Query('category') category?: string) {
@@ -26,13 +30,15 @@ export class ShopsController {
   }
 
   @Post()
-  create(@Body() body: unknown) {
-    return this.shopsService.create(body);
+  create(@Body() body: unknown, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.shopsService.create(body, userId);
   }
 
   @Get('by-owner/:ownerId')
-  findByOwner(@Param('ownerId') ownerId: string) {
-    return this.shopsService.findByOwnerId(ownerId);
+  findByOwner(@Param('ownerId') ownerId: string, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.shopsService.findByOwnerId(userId, ownerId);
   }
 
   @Get(':slug')
@@ -41,7 +47,12 @@ export class ShopsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: unknown) {
-    return this.shopsService.update(id, body);
+  update(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.shopsService.update(id, body, userId);
   }
 }

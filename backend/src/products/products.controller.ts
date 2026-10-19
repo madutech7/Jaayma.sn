@@ -1,13 +1,18 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
+import { AuthService } from '../auth/auth.service';
 
 @Controller()
 export class ProductsController {
-  constructor(@Inject(ProductsService) private readonly productsService: ProductsService) {}
+  constructor(
+    @Inject(ProductsService) private readonly productsService: ProductsService,
+    @Inject(AuthService) private readonly auth: AuthService,
+  ) {}
 
   @Get('shops/:shopId/products')
-  findByShop(@Param('shopId') shopId: string) {
-    return this.productsService.findByShop(shopId);
+  findByShop(@Param('shopId') shopId: string, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.productsService.findByShop(shopId, userId);
   }
 
   @Get('shops/:shopSlug/products/:productId')
@@ -16,8 +21,13 @@ export class ProductsController {
   }
 
   @Post('shops/:shopId/products')
-  create(@Param('shopId') shopId: string, @Body() body: unknown) {
-    return this.productsService.create(shopId, body);
+  create(
+    @Param('shopId') shopId: string,
+    @Body() body: unknown,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.productsService.create(shopId, body, userId);
   }
 
   @Get('products/explore')
@@ -36,17 +46,24 @@ export class ProductsController {
   }
 
   @Get('products/:id')
-  findById(@Param('id') id: string) {
-    return this.productsService.findById(id);
+  findById(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.productsService.findById(id, userId);
   }
 
   @Put('products/:id')
-  update(@Param('id') id: string, @Body() body: unknown) {
-    return this.productsService.update(id, body);
+  update(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.productsService.update(id, body, userId);
   }
 
   @Delete('products/:id')
-  delete(@Param('id') id: string) {
-    return this.productsService.delete(id);
+  delete(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.productsService.delete(id, userId);
   }
 }

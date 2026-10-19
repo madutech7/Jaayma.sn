@@ -157,7 +157,7 @@ export class UploadsService {
     };
   }
 
-  async createProductImageUpload(input: unknown) {
+  async createProductImageUpload(input: unknown, ownerId: string) {
     const parsed = uploadSchema.safeParse(input);
 
     if (!parsed.success) {
@@ -167,7 +167,7 @@ export class UploadsService {
     const { s3Client, bucket, publicBaseUrl } = this.getS3Config();
 
     const shop = await this.prisma.shop.findFirst({
-      where: { id: parsed.data.shopId, status: 'ACTIVE' },
+      where: { id: parsed.data.shopId, ownerId, status: { not: 'SUSPENDED' } },
       select: { id: true },
     });
 

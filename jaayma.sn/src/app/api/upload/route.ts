@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentSellerId } from "@/lib/auth";
+import { getCurrentSellerId, getSessionToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 
 export const runtime = "nodejs";
@@ -44,8 +44,8 @@ function resolveImageType(file: File): { mimeType: string; extension: string } {
 
 export async function POST(request: NextRequest) {
   try {
-    const sellerId = await getCurrentSellerId();
-    if (!sellerId) {
+    const [sellerId, token] = await Promise.all([getCurrentSellerId(), getSessionToken()]);
+    if (!sellerId || !token) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
     }
 
@@ -76,11 +76,10 @@ export async function POST(request: NextRequest) {
     }
 
     const upload = await api.createImageUpload({
-      ownerId: sellerId,
       folder,
       fileName: file.name || `image.${imageMeta.extension}`,
       contentType: imageMeta.mimeType,
-    });
+    }, token);
 
     const uploadResponse = await fetch(upload.uploadUrl, {
       method: upload.method,

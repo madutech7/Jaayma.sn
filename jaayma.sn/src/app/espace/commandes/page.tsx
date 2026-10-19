@@ -1,4 +1,4 @@
-import { getCurrentSellerContext } from "@/lib/auth";
+import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatFcfa } from "@/lib/money";
@@ -17,9 +17,10 @@ export default async function CommandesPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const [params, sellerContext] = await Promise.all([
+  const [params, sellerContext, token] = await Promise.all([
     searchParams,
     getCurrentSellerContext(),
+    getSessionToken(),
   ]);
   const currentPage = Math.max(1, parseInt(params.page || "1", 10) || 1);
   if (!sellerContext) redirect("/connexion");
@@ -36,7 +37,7 @@ export default async function CommandesPage({
     );
   }
 
-  const ordersList: Order[] = await api.getOrdersByShop(shop.id);
+  const ordersList: Order[] = await api.getOrdersByShop(shop.id, token ?? "");
   const startOfTodayUnix = Math.floor(Date.now() / 86_400_000) * 86_400;
   const todayCount = ordersList.filter((o) => {
     const u = Math.floor(new Date(o.createdAt).getTime() / 1000);

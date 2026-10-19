@@ -1,9 +1,12 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import express from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
+import { rateLimitMiddleware } from './security/rate-limit.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const configService = app.get(ConfigService);
 
   const corsOrigin = configService.get<string>('CORS_ORIGIN') ?? process.env.CORS_ORIGIN;
@@ -15,21 +18,37 @@ async function bootstrap() {
   const defaultOrigins = [
     'https://jaayma.sn',
     'https://www.jaayma.sn',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
+    'https://jaayma-sn.madutech0.workers.dev',
   ];
+
+  // Render sits behind one trusted reverse proxy; this lets Express rate-limit
+  // by the originating client's forwarded address instead of the proxy itself.
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+  expressApp.disable('x-powered-by');
+  app.use((_request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (process.env.NODE_ENV === 'production') {
+      response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+  });
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+  app.use(rateLimitMiddleware);
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins?.length && (allowedOrigins.includes(origin) || allowedOrigins.includes('*'))) {
+      if (allowedOrigins?.length && allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
       if (
-        origin.endsWith('.workers.dev') ||
-        origin.endsWith('.pages.dev') ||
         defaultOrigins.includes(origin) ||
         process.env.NODE_ENV !== 'production'
       ) {

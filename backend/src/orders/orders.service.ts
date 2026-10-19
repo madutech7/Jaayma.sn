@@ -7,21 +7,21 @@ import { NotificationsService } from '../notifications/notifications.service';
 
 const orderSchema = z.object({
   shopId: z.string().min(1),
-  customerName: z.string().min(2),
-  customerPhone: z.string().min(8),
-  deliveryAddress: z.string().min(3),
-  note: z.string().optional(),
-  paymentMethod: z.string().optional().default('cash'),
-  paymentStatus: z.string().optional().default('pending'),
+  customerName: z.string().min(2).max(100),
+  customerPhone: z.string().min(8).max(24),
+  deliveryAddress: z.string().min(3).max(500),
+  note: z.string().max(500).optional(),
+  paymentMethod: z.enum(['wave', 'orange_money', 'cash']).optional().default('cash'),
   items: z
     .array(
       z.object({
         productId: z.string().min(1),
-        quantity: z.number().int().positive(),
-        options: z.string().optional().nullable(),
+        quantity: z.number().int().positive().max(50),
+        options: z.string().max(300).optional().nullable(),
       }),
     )
-    .min(1),
+    .min(1)
+    .max(20),
 });
 
 @Injectable()
@@ -31,9 +31,9 @@ export class OrdersService {
     @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
-  async findByShop(shopId: string) {
+  async findByShop(shopId: string, ownerId: string) {
     return this.prisma.order.findMany({
-      where: { shopId },
+      where: { shopId, shop: { ownerId } },
       orderBy: { createdAt: 'desc' },
       include: {
         items: {
@@ -47,9 +47,9 @@ export class OrdersService {
     });
   }
 
-  async findById(id: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+  async findById(id: string, ownerId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, shop: { ownerId } },
       include: {
         items: {
           include: {
@@ -91,8 +91,16 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, status?: OrderStatus, paymentStatus?: string) {
-    const existing = await this.prisma.order.findUnique({ where: { id } });
+  async updateStatus(
+    id: string,
+    status: OrderStatus | undefined,
+    paymentStatus: 'pending' | 'paid' | undefined,
+    ownerId: string,
+  ) {
+    const existing = await this.prisma.order.findFirst({
+      where: { id, shop: { ownerId } },
+      select: { id: true },
+    });
     if (!existing) {
       throw new NotFoundException('Commande introuvable');
     }
@@ -188,7 +196,7 @@ export class OrdersService {
           deliveryAddress: parsed.data.deliveryAddress,
           note: parsed.data.note,
           paymentMethod: parsed.data.paymentMethod,
-          paymentStatus: parsed.data.paymentStatus,
+          paymentStatus: 'pending',
           subtotal,
           deliveryFee,
           total: subtotal + deliveryFee,
@@ -218,5 +226,5 @@ export class OrdersService {
 }
 
 function createOrderReference() {
-  return `JY-${randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`;
+  return `JY-${randomUUID().replaceAll('-', '').toUpperCase()}`;
 }

@@ -1,20 +1,27 @@
-import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Readable } from 'node:stream';
 import { UploadsService } from './uploads.service';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('uploads')
 export class UploadsController {
-  constructor(@Inject(UploadsService) private readonly uploadsService: UploadsService) {}
+  constructor(
+    @Inject(UploadsService) private readonly uploadsService: UploadsService,
+    @Inject(AuthService) private readonly auth: AuthService,
+  ) {}
 
   @Post('image')
-  createImageUpload(@Body() body: unknown) {
-    return this.uploadsService.createImageUpload(body);
+  createImageUpload(@Body() body: unknown, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    const input = body && typeof body === 'object' ? { ...body, ownerId: userId } : body;
+    return this.uploadsService.createImageUpload(input);
   }
 
   @Post('product-image')
-  createProductImageUpload(@Body() body: unknown) {
-    return this.uploadsService.createProductImageUpload(body);
+  createProductImageUpload(@Body() body: unknown, @Headers('authorization') authHeader?: string) {
+    const userId = this.auth.requireSessionUserId(authHeader);
+    return this.uploadsService.createProductImageUpload(body, userId);
   }
 
   @Get('file/*')

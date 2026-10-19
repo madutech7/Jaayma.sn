@@ -406,44 +406,51 @@ export const api = {
     }
   },
 
-  async getShopByOwner(ownerId: string): Promise<Shop | null> {
+  async getShopByOwner(ownerId: string, token: string): Promise<Shop | null> {
     try {
-      const data = await request<any>(`/shops/by-owner/${encodeURIComponent(ownerId)}`);
+      const data = await request<any>(`/shops/by-owner/${encodeURIComponent(ownerId)}`, {
+        token,
+        cache: "no-store",
+      });
       return data ? normalizeShop(data) : null;
     } catch {
       return null;
     }
   },
 
-  async createShop(data: Record<string, unknown>): Promise<Shop> {
+  async createShop(data: Record<string, unknown>, token: string): Promise<Shop> {
     const res = await request<any>("/shops", {
       method: "POST",
+      token,
       body: JSON.stringify(data),
     });
     return normalizeShop(res);
   },
 
-  async updateShop(id: string, data: Record<string, unknown>): Promise<Shop> {
+  async updateShop(id: string, data: Record<string, unknown>, token: string): Promise<Shop> {
     const res = await request<any>(`/shops/${encodeURIComponent(id)}`, {
       method: "PUT",
+      token,
       body: JSON.stringify(data),
     });
     return normalizeShop(res);
   },
 
   // ─── PRODUCTS ───
-  async getProductsByShop(shopId: string): Promise<Product[]> {
+  async getProductsByShop(shopId: string, token: string): Promise<Product[]> {
     const data = await request<any[]>(`/shops/${encodeURIComponent(shopId)}/products`, {
-      next: { revalidate: 30, tags: ["products", `shop-${shopId}-products`] },
-    } as any);
+      token,
+      cache: "no-store",
+    });
     return data.map(normalizeProduct);
   },
 
-  async getProductById(id: string): Promise<Product | null> {
+  async getProductById(id: string, token: string): Promise<Product | null> {
     try {
       const data = await request<any>(`/products/${encodeURIComponent(id)}`, {
-        next: { revalidate: 30, tags: ["products", `product-${id}`] },
-      } as any);
+        token,
+        cache: "no-store",
+      });
       return normalizeProduct(data);
     } catch {
       return null;
@@ -461,25 +468,28 @@ export const api = {
     }
   },
 
-  async createProduct(shopId: string, data: Record<string, unknown>): Promise<Product> {
+  async createProduct(shopId: string, data: Record<string, unknown>, token: string): Promise<Product> {
     const res = await request<any>(`/shops/${encodeURIComponent(shopId)}/products`, {
       method: "POST",
+      token,
       body: JSON.stringify(data),
     });
     return normalizeProduct(res);
   },
 
-  async updateProduct(id: string, data: Record<string, unknown>): Promise<Product> {
+  async updateProduct(id: string, data: Record<string, unknown>, token: string): Promise<Product> {
     const res = await request<any>(`/products/${encodeURIComponent(id)}`, {
       method: "PUT",
+      token,
       body: JSON.stringify(data),
     });
     return normalizeProduct(res);
   },
 
-  async deleteProduct(id: string): Promise<{ success: boolean }> {
+  async deleteProduct(id: string, token: string): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(`/products/${encodeURIComponent(id)}`, {
       method: "DELETE",
+      token,
     });
   },
 
@@ -492,11 +502,12 @@ export const api = {
     return normalizeOrder(res);
   },
 
-  async getOrderById(id: string): Promise<Order | null> {
+  async getOrderById(id: string, token: string): Promise<Order | null> {
     try {
       const data = await request<any>(`/orders/${encodeURIComponent(id)}`, {
-        next: { revalidate: 15, tags: ["orders", `order-${id}`] },
-      } as any);
+        token,
+        cache: "no-store",
+      });
       return normalizeOrder(data);
     } catch {
       return null;
@@ -514,20 +525,23 @@ export const api = {
     }
   },
 
-  async getOrdersByShop(shopId: string): Promise<Order[]> {
+  async getOrdersByShop(shopId: string, token: string): Promise<Order[]> {
     const data = await request<any[]>(`/orders/shops/${encodeURIComponent(shopId)}`, {
-      next: { revalidate: 15, tags: ["orders", `shop-${shopId}-orders`] },
-    } as any);
+      token,
+      cache: "no-store",
+    });
     return data.map(normalizeOrder);
   },
 
   async updateOrderStatus(
     id: string,
+    token: string,
     status?: string,
-    paymentStatus?: string
+    paymentStatus?: string,
   ): Promise<Order> {
     const res = await request<any>(`/orders/${encodeURIComponent(id)}/status`, {
       method: "PATCH",
+      token,
       body: JSON.stringify({
         ...(status ? { status } : {}),
         ...(paymentStatus ? { paymentStatus } : {}),
@@ -567,8 +581,8 @@ export const api = {
   async getMe(token: string): Promise<{ user: User; shop: Shop | null }> {
     const res = await request<any>("/auth/me", {
       token,
-      next: { revalidate: 60, tags: ["seller-context", "seller-me"] },
-    } as any);
+      cache: "no-store",
+    });
     return {
       user: res.user,
       shop: res.shop ? normalizeShop(res.shop) : null,
@@ -580,7 +594,7 @@ export const api = {
     shopId: string;
     fileName: string;
     contentType: string;
-  }): Promise<{
+  }, token: string): Promise<{
     key: string;
     uploadUrl: string;
     publicUrl: string;
@@ -590,16 +604,16 @@ export const api = {
   }> {
     return request("/uploads/product-image", {
       method: "POST",
+      token,
       body: JSON.stringify(data),
     });
   },
 
   async createImageUpload(data: {
-    ownerId: string;
     folder: string;
     fileName: string;
     contentType: string;
-  }): Promise<{
+  }, token: string): Promise<{
     key: string;
     uploadUrl: string;
     publicUrl: string;
@@ -609,6 +623,7 @@ export const api = {
   }> {
     return request("/uploads/image", {
       method: "POST",
+      token,
       body: JSON.stringify(data),
     });
   },

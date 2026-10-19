@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentSellerContext, getCurrentSellerId } from "@/lib/auth";
+import { getCurrentSellerContext, getCurrentSellerId, getSessionToken } from "@/lib/auth";
 import { isAvailableSlug, suggestSlug } from "@/lib/slug";
 import { normalizePhone } from "@/lib/phone";
 import { DEFAULT_SHOP_THEME, SHOP_THEME_COLORS } from "@/lib/shop-theme";
@@ -11,8 +11,8 @@ export async function upsertShop(
   _prevState: unknown,
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  const sellerId = await getCurrentSellerId();
-  if (!sellerId) {
+  const [sellerId, token] = await Promise.all([getCurrentSellerId(), getSessionToken()]);
+  if (!sellerId || !token) {
     return { error: "Non autorisé. Veuillez vous connecter." };
   }
 
@@ -74,7 +74,7 @@ export async function upsertShop(
 
   try {
     const ctx = await getCurrentSellerContext();
-    const existingShop = ctx?.shop ?? (await api.getShopByOwner(sellerId));
+    const existingShop = ctx?.shop ?? (await api.getShopByOwner(sellerId, token));
 
     const shopData = {
       ownerId: sellerId,
@@ -99,9 +99,9 @@ export async function upsertShop(
     };
 
     if (existingShop) {
-      await api.updateShop(existingShop.id, shopData);
+      await api.updateShop(existingShop.id, shopData, token);
     } else {
-      await api.createShop(shopData);
+      await api.createShop(shopData, token);
     }
 
     revalidateTag("seller-context");

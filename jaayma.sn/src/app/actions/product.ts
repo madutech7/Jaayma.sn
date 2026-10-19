@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentSellerContext, getCurrentSellerId } from "@/lib/auth";
+import { getCurrentSellerContext, getCurrentSellerId, getSessionToken } from "@/lib/auth";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { canActivateProduct, getEffectivePlan } from "@/lib/plans";
 import { parseFcfa } from "@/lib/money";
@@ -11,8 +11,8 @@ export async function createProduct(
   _prevState: unknown,
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  const sellerId = await getCurrentSellerId();
-  if (!sellerId) return { error: "Non autorisé." };
+  const [sellerId, token] = await Promise.all([getCurrentSellerId(), getSessionToken()]);
+  if (!sellerId || !token) return { error: "Non autorisé." };
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -36,14 +36,14 @@ export async function createProduct(
 
   try {
     const ctx = await getCurrentSellerContext();
-    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId));
+    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId, token));
     if (!shop) {
       return { error: "Vous devez d'abord configurer votre boutique." };
     }
 
     // Check plan limits if making active
     if (isActive) {
-      const activeProducts = (await api.getProductsByShop(shop.id)).filter((p) => p.isActive);
+      const activeProducts = (await api.getProductsByShop(shop.id, token)).filter((p) => p.isActive);
       const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
       if (!canActivateProduct(effectivePlan, activeProducts.length)) {
         return { error: "Limite de produits actifs atteinte pour votre plan actuel." };
@@ -67,7 +67,7 @@ export async function createProduct(
       status: isActive ? "ACTIVE" : "DRAFT",
       optionsJson,
       images,
-    });
+    }, token);
 
     revalidateTag("products");
     revalidatePath("/espace", "layout");
@@ -86,8 +86,8 @@ export async function updateProduct(
   _prevState: unknown,
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  const sellerId = await getCurrentSellerId();
-  if (!sellerId) return { error: "Non autorisé." };
+  const [sellerId, token] = await Promise.all([getCurrentSellerId(), getSessionToken()]);
+  if (!sellerId || !token) return { error: "Non autorisé." };
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -111,7 +111,7 @@ export async function updateProduct(
 
   try {
     const ctx = await getCurrentSellerContext();
-    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId));
+    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId, token));
     if (!shop) return { error: "Boutique introuvable." };
 
     const imageKeys = parseImageKeys(formData);
@@ -131,7 +131,7 @@ export async function updateProduct(
       status: isActive ? "ACTIVE" : "DRAFT",
       optionsJson,
       ...(imageKeys.length > 0 ? { images } : {}),
-    });
+    }, token);
 
     revalidateTag("products");
     revalidatePath("/espace", "layout");
@@ -146,14 +146,14 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string) {
-  const sellerId = await getCurrentSellerId();
-  if (!sellerId) return { error: "Non autorisé." };
+  const [sellerId, token] = await Promise.all([getCurrentSellerId(), getSessionToken()]);
+  if (!sellerId || !token) return { error: "Non autorisé." };
 
   try {
     const ctx = await getCurrentSellerContext();
-    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId));
+    const shop = ctx?.shop ?? (await api.getShopByOwner(sellerId, token));
 
-    await api.deleteProduct(id);
+    await api.deleteProduct(id, token);
 
     revalidateTag("products");
     revalidatePath("/espace", "layout");

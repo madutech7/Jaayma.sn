@@ -11,14 +11,14 @@ import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
 const registerSchema = z.object({
-  phone: z.string().min(8),
-  password: z.string().min(6),
-  name: z.string().optional().default(''),
+  phone: z.string().min(8).max(24),
+  password: z.string().min(6).max(128),
+  name: z.string().max(80).optional().default(''),
 });
 
 const loginSchema = z.object({
-  phone: z.string().min(8),
-  password: z.string().min(1),
+  phone: z.string().min(8).max(24),
+  password: z.string().min(1).max(128),
 });
 
 @Injectable()
@@ -36,7 +36,7 @@ export class AuthService {
     return `usr_${userId}_${timestamp}_${signature}`;
   }
 
-  verifySessionToken(token: string, requireSignature = false): string | null {
+  verifySessionToken(token: string): string | null {
     const match = token.match(/^usr_([^_]+)_(\d+)(?:_([a-f0-9]{64}))?$/i);
     if (!match) return null;
 
@@ -48,7 +48,7 @@ export class AuthService {
       return null;
     }
 
-    if (!signature) return requireSignature ? null : userId;
+    if (!signature) return null;
 
     const expected = createHmac('sha256', this.getSessionSecret())
       .update(`${userId}.${timestamp}`)
@@ -57,6 +57,15 @@ export class AuthService {
     return received.length === expected.length && timingSafeEqual(received, expected)
       ? userId
       : null;
+  }
+
+  requireSessionUserId(authHeader?: string): string {
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+    const userId = token ? this.verifySessionToken(token) : null;
+    if (!userId) {
+      throw new UnauthorizedException('Session invalide ou expirée. Reconnectez-vous.');
+    }
+    return userId;
   }
 
   private getSessionSecret(): string {

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -109,11 +109,19 @@ export class ShopsService {
     return { items, hasNextPage };
   }
 
-  async create(input: unknown) {
+  async create(input: unknown, ownerId: string) {
     const parsed = shopSchema.safeParse(input);
 
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
+    }
+
+    const existingShopForOwner = await this.prisma.shop.findFirst({
+      where: { ownerId },
+      select: { id: true },
+    });
+    if (existingShopForOwner) {
+      throw new BadRequestException('Un compte vendeur ne peut créer qu’une seule boutique.');
     }
 
     const existingSlug = await this.prisma.shop.findUnique({
@@ -126,6 +134,7 @@ export class ShopsService {
     return this.prisma.shop.create({
       data: {
         ...parsed.data,
+        ownerId,
       },
       include: {
         products: {
@@ -136,7 +145,7 @@ export class ShopsService {
     });
   }
 
-  async update(id: string, input: unknown) {
+  async update(id: string, input: unknown, ownerId: string) {
     const parsed = updateShopSchema.safeParse(input);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
@@ -145,6 +154,9 @@ export class ShopsService {
     const shop = await this.prisma.shop.findUnique({ where: { id } });
     if (!shop) {
       throw new NotFoundException('Boutique introuvable');
+    }
+    if (shop.ownerId !== ownerId) {
+      throw new ForbiddenException('Vous ne pouvez modifier que votre boutique.');
     }
 
     const updated = await this.prisma.shop.update({
@@ -213,7 +225,10 @@ export class ShopsService {
     return shop;
   }
 
-  async findByOwnerId(ownerId: string) {
+  async findByOwnerId(ownerId: string, requestedOwnerId: string) {
+    if (ownerId !== requestedOwnerId) {
+      throw new ForbiddenException('Accès réservé au propriétaire de la boutique.');
+    }
     return this.prisma.shop.findFirst({
       where: { ownerId },
       include: {

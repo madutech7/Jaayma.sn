@@ -1,4 +1,4 @@
-import { getCurrentSellerContext } from "@/lib/auth";
+import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -80,9 +80,10 @@ function toDate(value: string | number | Date) {
 }
 
 export default async function DashboardPage() {
-  const [sellerContext, siteOrigin] = await Promise.all([
+  const [sellerContext, siteOrigin, token] = await Promise.all([
     getCurrentSellerContext(),
     getRequestOrigin(),
+    getSessionToken(),
   ]);
   if (!sellerContext) redirect("/connexion");
   const { shop } = sellerContext;
@@ -121,8 +122,8 @@ export default async function DashboardPage() {
   }
 
   const [ordersList, products] = await Promise.all([
-    api.getOrdersByShop(shop.id),
-    api.getProductsByShop(shop.id),
+    api.getOrdersByShop(shop.id, token ?? ""),
+    api.getProductsByShop(shop.id, token ?? ""),
   ]);
 
   // Dakar is UTC+0, so UTC midnight gives the correct Senegal business day.

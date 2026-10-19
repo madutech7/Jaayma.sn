@@ -207,7 +207,7 @@ export class AdminController {
 
   private async requireAdmin(authHeader?: string) {
     const token = authHeader?.replace(/^Bearer\s+/i, '');
-    const userId = token ? this.auth.verifySessionToken(token, true) : null;
+    const userId = token ? this.auth.verifySessionToken(token) : null;
     if (!userId) throw new UnauthorizedException('Session invalide ou expirée. Reconnectez-vous.');
 
     const user = await this.prisma.user.findUnique({

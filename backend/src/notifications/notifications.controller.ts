@@ -40,7 +40,7 @@ export class NotificationsController {
 
   private getUserId(authHeader?: string): string {
     const token = authHeader?.replace(/^Bearer\s+/i, '');
-    const userId = token ? this.auth.verifySessionToken(token, true) : null;
+    const userId = token ? this.auth.verifySessionToken(token) : null;
     if (!userId) {
       throw new UnauthorizedException('Session expirée. Reconnectez-vous.');
     }

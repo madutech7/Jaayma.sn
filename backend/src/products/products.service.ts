@@ -17,7 +17,7 @@ const productSchema = z.object({
   position: z.number().int().optional().default(0),
   status: z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']).optional().default('ACTIVE'),
   optionsJson: z.string().optional().nullable(),
-  images: z.array(productImageSchema).max(8).optional().default([]),
+  images: z.array(productImageSchema).max(4).optional().default([]),
 });
 
 const updateProductSchema = productSchema.partial();
@@ -29,9 +29,9 @@ export class ProductsService {
     @Inject(UploadsService) private readonly uploads: UploadsService,
   ) {}
 
-  async findByShop(shopId: string) {
+  async findByShop(shopId: string, ownerId: string) {
     return this.prisma.product.findMany({
-      where: { shopId },
+      where: { shopId, shop: { ownerId } },
       orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
       include: { images: { orderBy: { position: 'asc' } } },
     });
@@ -107,17 +107,18 @@ export class ProductsService {
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, ownerId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { images: { orderBy: { position: 'asc' } } },
+      include: { images: { orderBy: { position: 'asc' } }, shop: { select: { ownerId: true } } },
     });
 
-    if (!product) {
+    if (!product || product.shop.ownerId !== ownerId) {
       throw new NotFoundException('Produit introuvable');
     }
 
-    return product;
+    const { shop: _shop, ...result } = product;
+    return result;
   }
 
   async findPublicByShopSlug(shopSlug: string, productId: string) {
@@ -131,7 +132,7 @@ export class ProductsService {
     });
   }
 
-  async create(shopId: string, input: unknown) {
+  async create(shopId: string, input: unknown, ownerId: string) {
     const parsed = productSchema.safeParse(input);
 
     if (!parsed.success) {
@@ -140,11 +141,24 @@ export class ProductsService {
 
     const shop = await this.prisma.shop.findUnique({
       where: { id: shopId },
-      select: { id: true },
+      select: { id: true, ownerId: true, plan: true, planExpiresAt: true },
     });
 
-    if (!shop) {
+    if (!shop || shop.ownerId !== ownerId) {
       throw new BadRequestException('Boutique introuvable');
+    }
+
+    const limits = planLimits(shop.plan, shop.planExpiresAt);
+    if (parsed.data.images.length > limits.maxPhotos) {
+      throw new BadRequestException(`Votre formule autorise ${limits.maxPhotos} photo(s) par produit.`);
+    }
+    if (parsed.data.status === 'ACTIVE') {
+      const activeCount = await this.prisma.product.count({
+        where: { shopId, status: 'ACTIVE' },
+      });
+      if (activeCount >= limits.maxActiveProducts) {
+        throw new BadRequestException('La limite de produits actifs de votre formule est atteinte.');
+      }
     }
 
     return this.prisma.product.create({
@@ -169,16 +183,42 @@ export class ProductsService {
     });
   }
 
-  async update(id: string, input: unknown) {
+  async update(id: string, input: unknown, ownerId: string) {
     const parsed = updateProductSchema.safeParse(input);
 
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
     }
 
-    const existing = await this.prisma.product.findUnique({ where: { id } });
+    const existing = await this.prisma.product.findFirst({
+      where: { id, shop: { ownerId } },
+      include: {
+        images: { select: { url: true } },
+        shop: { select: { id: true, plan: true, planExpiresAt: true } },
+      },
+    });
     if (!existing) {
       throw new NotFoundException('Produit introuvable');
+    }
+
+    const limits = planLimits(existing.shop.plan, existing.shop.planExpiresAt);
+    const imageCount = parsed.data.images?.length ?? existing.images.length;
+    const currentImageUrls = existing.images.map((image) => image.url);
+    const requestedImageUrls = parsed.data.images?.map((image) => image.url);
+    const imagesChanged =
+      requestedImageUrls !== undefined &&
+      (requestedImageUrls.length !== currentImageUrls.length ||
+        requestedImageUrls.some((url, index) => url !== currentImageUrls[index]));
+    if (imagesChanged && imageCount > limits.maxPhotos) {
+      throw new BadRequestException(`Votre formule autorise ${limits.maxPhotos} photo(s) par produit.`);
+    }
+    if (parsed.data.status === 'ACTIVE' && existing.status !== 'ACTIVE') {
+      const activeCount = await this.prisma.product.count({
+        where: { shopId: existing.shop.id, status: 'ACTIVE' },
+      });
+      if (activeCount >= limits.maxActiveProducts) {
+        throw new BadRequestException('La limite de produits actifs de votre formule est atteinte.');
+      }
     }
 
     const { images, ...data } = parsed.data;
@@ -216,9 +256,9 @@ export class ProductsService {
     });
   }
 
-  async delete(id: string) {
-    const existing = await this.prisma.product.findUnique({
-      where: { id },
+  async delete(id: string, ownerId: string) {
+    const existing = await this.prisma.product.findFirst({
+      where: { id, shop: { ownerId } },
       include: { images: { select: { url: true } } },
     });
     if (!existing) {
@@ -233,4 +273,11 @@ export class ProductsService {
 
     return { success: true };
   }
+}
+
+function planLimits(plan: string, expiresAt: Date | null) {
+  const isPro = plan === 'pro' && (!expiresAt || expiresAt.getTime() >= Date.now());
+  return isPro
+    ? { maxActiveProducts: 200, maxPhotos: 4 }
+    : { maxActiveProducts: 10, maxPhotos: 1 };
 }

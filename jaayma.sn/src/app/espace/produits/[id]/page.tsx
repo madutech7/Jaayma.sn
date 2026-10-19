@@ -1,4 +1,4 @@
-import { getCurrentSellerContext } from "@/lib/auth";
+import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import ProductForm from "../ProductForm";
 import { api } from "@/lib/api";
@@ -8,15 +8,16 @@ export const metadata = {
 };
 
 export default async function ModifierProduitPage({ params }: { params: Promise<{ id: string }> }) {
-  const [sellerContext, { id }] = await Promise.all([
+  const [sellerContext, token, { id }] = await Promise.all([
     getCurrentSellerContext(),
+    getSessionToken(),
     params,
   ]);
   if (!sellerContext) redirect("/connexion");
   const { shop } = sellerContext;
   if (!shop) redirect("/espace/boutique");
 
-  const product = await api.getProductById(id);
+  const product = await api.getProductById(id, token ?? "");
   if (!product || product.shopId !== shop.id) {
     notFound();
   }

@@ -1,4 +1,4 @@
-import { getCurrentSellerContext } from "@/lib/auth";
+import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatFcfa } from "@/lib/money";
@@ -12,7 +12,7 @@ export const metadata = {
 };
 
 export default async function ProduitsPage() {
-  const sellerContext = await getCurrentSellerContext();
+  const [sellerContext, token] = await Promise.all([getCurrentSellerContext(), getSessionToken()]);
   if (!sellerContext) redirect("/connexion");
   const { shop } = sellerContext;
 
@@ -27,7 +27,7 @@ export default async function ProduitsPage() {
     );
   }
 
-  const shopProducts = await api.getProductsByShop(shop.id);
+  const shopProducts = await api.getProductsByShop(shop.id, token ?? "");
   const imageUrls: Record<string, string> = {};
   for (const product of shopProducts) {
     const img = product.imageUrl ?? product.images?.[0]?.url;
