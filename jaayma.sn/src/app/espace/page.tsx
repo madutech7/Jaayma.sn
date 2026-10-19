@@ -22,6 +22,7 @@ import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
 import type { Order } from "@/types/schema";
 import ShareShopButton from "./ShareShopButton";
+import ShopQrCode from "./ShopQrCode";
 
 export const metadata = {
   title: "Accueil - Espace Vendeur Jaayma",
@@ -496,24 +497,27 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className={`${CARD_CLASS} flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}>
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#C8265A]">À partager</p>
-            <h2 className="mt-1 font-bricolage text-xl font-black">Le lien de ta boutique</h2>
-            <p className="mt-2 break-all rounded-xl border border-ink/15 bg-white/70 px-3 py-2 text-sm font-bold text-[#3F4B69]">
-              {shopUrl}
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <ShareShopButton shopName={shop.name} shopUrl={fullUrl} />
-            <a
-              href={`${fullUrl}?from=seller`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-white px-4 py-3 text-sm font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"
-            >
-              Voir ma boutique <ExternalLink size={15} />
-            </a>
+        <article className={`${CARD_CLASS} grid gap-4 p-4 sm:grid-cols-[164px_minmax(0,1fr)] sm:p-5`}>
+          <ShopQrCode shopName={shop.name} shopUrl={fullUrl} />
+          <div className="flex min-w-0 flex-col justify-center py-1 sm:py-2">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#C8265A]">À partager</p>
+              <h2 className="mt-1 font-bricolage text-xl font-black">Le lien de ta boutique</h2>
+              <p className="mt-2 break-all rounded-xl border border-ink/15 bg-white/70 px-3 py-2 text-sm font-bold text-[#3F4B69]">
+                {shopUrl}
+              </p>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ShareShopButton shopName={shop.name} shopUrl={fullUrl} />
+              <a
+                href={`${fullUrl}?from=seller`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-white px-4 py-3 text-sm font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"
+              >
+                Voir ma boutique <ExternalLink size={15} />
+              </a>
+            </div>
           </div>
         </article>
 
