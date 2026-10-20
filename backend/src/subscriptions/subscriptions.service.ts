@@ -8,6 +8,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
@@ -43,11 +44,22 @@ type UnitechPayResponse = {
   };
 };
 
+type ProviderTransaction = {
+  reference?: unknown;
+  amount?: unknown;
+  status?: unknown;
+  transaction_id?: unknown;
+};
+
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
   private webhookConfigured = false;
   private webhookConfiguration: Promise<void> | null = null;
+  private readonly paymentReconciliationAttempts = new Map<string, number>();
+  private providerTransactionsCheckedAt = 0;
+  private providerTransactionsCache: ProviderTransaction[] | null = null;
+  private providerTransactionsRequest: Promise<ProviderTransaction[] | null> | null = null;
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
@@ -170,10 +182,73 @@ export class SubscriptionsService {
   async getPayment(userId: string, id: string) {
     const payment = await this.prisma.subscriptionPayment.findFirst({
       where: { id, shop: { ownerId: userId } },
-      select: { id: true, status: true, amount: true, currency: true, method: true, createdAt: true, paidAt: true },
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currency: true,
+        method: true,
+        createdAt: true,
+        paidAt: true,
+        shopId: true,
+        reference: true,
+        providerTransactionId: true,
+      },
     });
     if (!payment) throw new NotFoundException('Paiement introuvable.');
-    return payment;
+
+    if (payment.status === 'pending' && payment.reference) {
+      void this.reconcileOnePendingPayment(payment).catch((error) => {
+        this.logger.warn(`UnitechPay payment status check failed: ${this.safeErrorMessage(error)}`);
+      });
+    }
+
+    return {
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+      currency: payment.currency,
+      method: payment.method,
+      createdAt: payment.createdAt,
+      paidAt: payment.paidAt,
+    };
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async reconcilePendingPayments() {
+    const apiKey = this.getOptionalApiKey();
+    if (!apiKey) return;
+
+    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    const payments = await this.prisma.subscriptionPayment.findMany({
+      where: {
+        status: 'pending',
+        reference: { not: null },
+        createdAt: { gte: cutoff },
+      },
+      select: {
+        id: true,
+        shopId: true,
+        reference: true,
+        providerTransactionId: true,
+        amount: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    if (!payments.length) return;
+
+    const transactions = await this.getProviderTransactionSnapshot(apiKey);
+    if (!transactions) return;
+
+    for (const payment of payments) {
+      if (!transactions.some((transaction) => this.matchesPaidTransaction(transaction, payment))) continue;
+      try {
+        await this.activatePaidPayment(payment.id, payment.shopId);
+      } catch (error) {
+        this.logger.error(`Could not activate subscription payment ${payment.id}: ${this.safeErrorMessage(error)}`);
+      }
+    }
   }
 
   async handleWebhook(input: unknown, headerSignature?: string, rawBody?: Buffer) {
@@ -232,15 +307,144 @@ export class SubscriptionsService {
         : event.event === 'payment_failed'
           ? 'failed'
           : 'expired';
-    const result = await this.prisma.$transaction(async (tx) => {
-      const claimed = await tx.subscriptionPayment.updateMany({
-        where: { id: payment.id, status: 'pending' },
-        data: { status: targetStatus, ...(targetStatus === 'paid' ? { paidAt: new Date() } : {}) },
+    if (targetStatus === 'paid') {
+      return {
+        received: true,
+        processed: await this.activatePaidPayment(payment.id, payment.shopId),
+      };
+    }
+
+    const claimed = await this.prisma.subscriptionPayment.updateMany({
+      where: { id: payment.id, status: 'pending' },
+      data: { status: targetStatus },
+    });
+
+    return { received: true, processed: claimed.count > 0 };
+  }
+
+  private getApiKey() {
+    const apiKey = this.config.get<string>('UNITECHPAY_API_KEY') ?? process.env.UNITECHPAY_API_KEY;
+    if (!apiKey?.trim()) {
+      throw new ServiceUnavailableException('Le paiement en ligne n’est pas encore configuré.');
+    }
+    return apiKey.trim();
+  }
+
+  private getOptionalApiKey() {
+    const apiKey = this.config.get<string>('UNITECHPAY_API_KEY') ?? process.env.UNITECHPAY_API_KEY;
+    return apiKey?.trim() || null;
+  }
+
+  private async reconcileOnePendingPayment(payment: {
+    id: string;
+    shopId: string;
+    reference: string | null;
+    providerTransactionId: string | null;
+    amount: number;
+  }) {
+    if (!payment.reference) return false;
+    const now = Date.now();
+    const lastAttemptAt = this.paymentReconciliationAttempts.get(payment.id) ?? 0;
+    if (now - lastAttemptAt < 20_000) return false;
+    this.paymentReconciliationAttempts.set(payment.id, now);
+    if (this.paymentReconciliationAttempts.size > 500) {
+      for (const [paymentId, attemptedAt] of this.paymentReconciliationAttempts) {
+        if (now - attemptedAt > 10 * 60_000) this.paymentReconciliationAttempts.delete(paymentId);
+      }
+    }
+
+    const apiKey = this.getOptionalApiKey();
+    if (!apiKey) return false;
+    try {
+      const transactions = await this.getProviderTransactionSnapshot(apiKey);
+      if (!transactions) return false;
+      if (!transactions.some((transaction) => this.matchesPaidTransaction(transaction, payment))) return false;
+      return this.activatePaidPayment(payment.id, payment.shopId);
+    } catch (error) {
+      this.logger.warn(`UnitechPay payment status check failed: ${this.safeErrorMessage(error)}`);
+      return false;
+    }
+  }
+
+  private async getProviderTransactionSnapshot(apiKey: string): Promise<ProviderTransaction[] | null> {
+    const now = Date.now();
+    if (now - this.providerTransactionsCheckedAt < 20_000) {
+      if (this.providerTransactionsRequest) return this.providerTransactionsRequest;
+      return this.providerTransactionsCache;
+    }
+    if (this.providerTransactionsRequest) return this.providerTransactionsRequest;
+
+    this.providerTransactionsCheckedAt = now;
+    this.providerTransactionsRequest = this.listProviderTransactions(apiKey)
+      .then((transactions) => {
+        this.providerTransactionsCache = transactions;
+        return transactions;
+      })
+      .catch((error: unknown) => {
+        this.logger.warn(`UnitechPay transaction reconciliation unavailable: ${this.safeErrorMessage(error)}`);
+        return null;
+      })
+      .finally(() => {
+        this.providerTransactionsRequest = null;
       });
-      if (claimed.count === 0 || targetStatus !== 'paid') return { processed: claimed.count > 0 };
+    return this.providerTransactionsRequest;
+  }
+
+  private async listProviderTransactions(apiKey: string): Promise<ProviderTransaction[]> {
+    const response = await fetch(`${UNITECHPAY_API_URL}?action=transactions`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    const result = (await response.json().catch(() => null)) as unknown;
+    if (!response.ok || !this.isRecord(result) || result.success !== true) {
+      throw new Error(`provider returned HTTP ${response.status}`);
+    }
+
+    const data = result.data;
+    const candidates = [
+      Array.isArray(data) ? data : null,
+      this.isRecord(data) && Array.isArray(data.transactions) ? data.transactions : null,
+      this.isRecord(data) && Array.isArray(data.items) ? data.items : null,
+      Array.isArray(result.transactions) ? result.transactions : null,
+    ];
+    const rows = candidates.find((candidate): candidate is unknown[] => candidate !== null);
+    return (rows ?? []).filter((row): row is ProviderTransaction => this.isRecord(row));
+  }
+
+  private matchesPaidTransaction(
+    transaction: ProviderTransaction,
+    payment: { reference: string | null; providerTransactionId: string | null; amount: number },
+  ) {
+    if (
+      !payment.reference ||
+      transaction.reference !== payment.reference ||
+      Number(transaction.amount) !== payment.amount ||
+      typeof transaction.status !== 'string' ||
+      !['completed', 'paid'].includes(transaction.status.toLowerCase())
+    ) {
+      return false;
+    }
+    return !(
+      payment.providerTransactionId &&
+      transaction.transaction_id !== undefined &&
+      String(transaction.transaction_id) !== payment.providerTransactionId
+    );
+  }
+
+  private async activatePaidPayment(paymentId: string, shopId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.subscriptionPayment.updateMany({
+        where: { id: paymentId, status: 'pending' },
+        data: { status: 'paid', paidAt: new Date() },
+      });
+      if (claimed.count === 0) return false;
 
       const shop = await tx.shop.findUnique({
-        where: { id: payment.shopId },
+        where: { id: shopId },
         select: { plan: true, planExpiresAt: true },
       });
       if (!shop) throw new NotFoundException('Boutique introuvable pour ce paiement.');
@@ -252,7 +456,7 @@ export class SubscriptionsService {
           : now;
       const planExpiresAt = new Date(activeExpiry.getTime() + PRO_DURATION_DAYS * 24 * 60 * 60 * 1000);
       await tx.shop.update({
-        where: { id: payment.shopId },
+        where: { id: shopId },
         data: {
           plan: 'pro',
           planExpiresAt,
@@ -260,18 +464,16 @@ export class SubscriptionsService {
           proReminder1DaySentAt: null,
         },
       });
-      return { processed: true };
+      return true;
     });
-
-    return { received: true, processed: result.processed };
   }
 
-  private getApiKey() {
-    const apiKey = this.config.get<string>('UNITECHPAY_API_KEY') ?? process.env.UNITECHPAY_API_KEY;
-    if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException('Le paiement en ligne n’est pas encore configuré.');
-    }
-    return apiKey.trim();
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private safeErrorMessage(error: unknown) {
+    return error instanceof Error ? error.message.slice(0, 160) : 'unknown error';
   }
 
   private async ensureWebhookConfigured(apiKey: string) {

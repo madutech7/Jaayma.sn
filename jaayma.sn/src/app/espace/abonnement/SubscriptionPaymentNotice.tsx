@@ -34,7 +34,7 @@ export function SubscriptionPaymentNotice({
         if (payment.status !== "pending") return;
       }
       attempts += 1;
-      if (attempts < 15) timer = setTimeout(refresh, 4000);
+      if (attempts < 45) timer = setTimeout(refresh, 4000);
     };
 
     timer = setTimeout(refresh, 2500);
@@ -50,7 +50,7 @@ export function SubscriptionPaymentNotice({
       ? { title: "Paiement non abouti", body: "Le paiement a échoué. Vous pouvez réessayer avec Wave ou Orange Money.", color: "#C8265A" }
       : status === "expired"
         ? { title: "Session de paiement expirée", body: "Cette session a expiré. Relancez un paiement pour activer Pro.", color: "#8A5A00" }
-        : { title: "Confirmation du paiement en cours", body: "U‑NITech PAY nous confirme votre paiement de façon sécurisée. Cette vérification peut prendre quelques secondes.", color: "#8A5A00" };
+        : { title: "Confirmation du paiement en cours", body: "U‑NITech PAY nous confirme votre paiement de façon sécurisée. Cela peut prendre quelques minutes. Ne relancez pas le paiement pendant la vérification.", color: "#8A5A00" };
 
   return (
     <div className="mb-5 rounded-2xl border-2 border-ink p-4" style={{ backgroundColor: "#FFFBF2" }} role="status" aria-live="polite">
