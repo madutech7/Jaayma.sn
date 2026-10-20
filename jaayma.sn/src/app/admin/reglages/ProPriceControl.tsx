@@ -29,7 +29,7 @@ export default function ProPriceControl({ initialPrice }: { initialPrice: number
     try {
       const result = await setProSubscriptionPrice(amount);
       if ("error" in result) {
-        setError(result.error);
+        setError(result.error ?? "Impossible de modifier le prix Pro.");
       } else {
         setPrice(String(result.amount));
         setMessage("Le prix Pro a été mis à jour.");
