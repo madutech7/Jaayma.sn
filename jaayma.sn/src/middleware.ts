@@ -98,6 +98,16 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+
+  // En-têtes de sécurité de base pour toutes les réponses frontend
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+
   const firstSegment = pathname.split("/").filter(Boolean)[0] || "";
   const isPublicShopPage =
     /^\/[^/.]+$/.test(pathname) &&

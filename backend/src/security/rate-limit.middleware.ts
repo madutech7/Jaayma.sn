@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 
 type RateLimitPolicy = { limit: number; windowMs: number; name: string };
@@ -83,8 +84,24 @@ function normalizePhone(value: unknown) {
 
 function sessionIdentifier(request: Request) {
   const token = request.header('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
-  const match = token.match(/^usr_([^_]+)_\d+_[a-f0-9]{64}$/i);
-  return match?.[1] ?? request.ip ?? 'unknown';
+  const match = token.match(/^usr_([^_]+)_(\d+)_([a-f0-9]{64})$/i);
+  if (match) {
+    const [, userId, timestampRaw, signature] = match;
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'jaayma-local-session-secret' : '');
+    if (secret) {
+      try {
+        const expected = createHmac('sha256', secret).update(`${userId}.${timestampRaw}`).digest('hex');
+        const sigBuf = Buffer.from(signature, 'hex');
+        const expBuf = Buffer.from(expected, 'hex');
+        if (sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf)) {
+          return userId;
+        }
+      } catch {
+        // Fall back to IP on crypto error
+      }
+    }
+  }
+  return request.ip || request.socket.remoteAddress || 'unknown';
 }
 
 function pruneExpired(now: number) {

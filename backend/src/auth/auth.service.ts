@@ -75,18 +75,31 @@ export class AuthService {
     throw new InternalServerErrorException('JWT_SECRET doit être configuré pour les sessions.');
   }
 
+  private static readonly CURRENT_PBKDF2_ITERATIONS = 210_000;
+  private static readonly LEGACY_PBKDF2_ITERATIONS = 10_000;
+
   private hashPassword(password: string): string {
     const salt = randomBytes(16).toString('hex');
-    const hash = pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
-    return `${salt}:${hash}`;
+    const hash = pbkdf2Sync(password, salt, AuthService.CURRENT_PBKDF2_ITERATIONS, 64, 'sha512').toString('hex');
+    return `${salt}:${hash}:${AuthService.CURRENT_PBKDF2_ITERATIONS}`;
   }
 
-  private verifyPassword(password: string, stored: string): boolean {
-    const [salt, key] = stored.split(':');
-    if (!salt || !key) return false;
-    const hash = pbkdf2Sync(password, salt, 10000, 64, 'sha512');
+  private verifyPassword(password: string, stored: string): { isValid: boolean; needsRehash: boolean } {
+    const parts = stored.split(':');
+    const salt = parts[0];
+    const key = parts[1];
+    if (!salt || !key) return { isValid: false, needsRehash: false };
+
+    const iterations = parts.length >= 3 && /^\d+$/.test(parts[2])
+      ? Number(parts[2])
+      : AuthService.LEGACY_PBKDF2_ITERATIONS;
+
+    const hash = pbkdf2Sync(password, salt, iterations, 64, 'sha512');
     const keyBuf = Buffer.from(key, 'hex');
-    return hash.length === keyBuf.length && timingSafeEqual(hash, keyBuf);
+    const isValid = hash.length === keyBuf.length && timingSafeEqual(hash, keyBuf);
+    const needsRehash = isValid && iterations < AuthService.CURRENT_PBKDF2_ITERATIONS;
+
+    return { isValid, needsRehash };
   }
 
   async register(input: unknown) {
@@ -147,9 +160,20 @@ export class AuthService {
       throw new UnauthorizedException('Numéro ou mot de passe incorrect');
     }
 
-    const isValid = this.verifyPassword(parsed.data.password, user.passwordHash);
+    const { isValid, needsRehash } = this.verifyPassword(parsed.data.password, user.passwordHash);
     if (!isValid) {
       throw new UnauthorizedException('Numéro ou mot de passe incorrect');
+    }
+
+    // Migration transparente vers 210 000 itérations si ancien hash
+    if (needsRehash) {
+      const upgradedHash = this.hashPassword(parsed.data.password);
+      await this.prisma.user
+        .update({
+          where: { id: user.id },
+          data: { passwordHash: upgradedHash },
+        })
+        .catch(() => undefined);
     }
 
     const shop = user.shops[0] ?? null;
