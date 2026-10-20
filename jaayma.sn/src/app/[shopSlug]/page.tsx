@@ -139,7 +139,7 @@ export default async function ShopPage({ params, searchParams }: {
 
           {/* Shop name + info */}
           <div className="px-5 pt-6 pb-4 max-w-xl mx-auto">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
+            <div className="flex items-center gap-3 mb-1">
               {shop.logoKey && (
                 <div className="relative w-16 h-16 shrink-0 overflow-hidden rounded-full border-[3px] border-white bg-white shadow-[3px_3px_0_#0F1E3D]">
                   <Image
@@ -152,10 +152,9 @@ export default async function ShopPage({ params, searchParams }: {
                   />
                 </div>
               )}
-              <h1 className="min-w-0 flex-1 font-bricolage font-black leading-tight" style={{ color: themeForeground, fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
+              <h1 className="min-w-0 font-bricolage font-black leading-tight" style={{ color: themeForeground, fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
                 {shop.name}
               </h1>
-              {isProActive && <ProBadge variant="dark" />}
             </div>
             {(shop.headline || shop.tagline || shop.area || shop.quartier) && (
               <div className="flex flex-wrap items-center gap-x-2 text-sm font-medium mb-2.5" style={{ color: themeSecondaryText }}>
@@ -182,6 +181,7 @@ export default async function ShopPage({ params, searchParams }: {
 
             {/* Chips : avis + livraison + catégorie + note */}
             <div className="flex flex-wrap gap-2">
+              {isProActive && <ProBadge variant="dark" />}
               {shop.category && (
                 <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border-[2px] border-ink" style={{ backgroundColor: themeColor, color: themeForeground, boxShadow: "2px 2px 0 #0F1E3D" }}>
                   {shop.category}

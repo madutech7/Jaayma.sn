@@ -520,12 +520,10 @@ export default function ExplorerFeed({
                     ) : shop.name.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <p className="min-w-0 flex-1 truncate font-bricolage font-black text-ink text-base leading-tight">{shop.name}</p>
-                    {getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro" && <ProBadge compact />}
-                  </div>
+                    <p className="truncate font-bricolage font-black text-ink text-base leading-tight">{shop.name}</p>
                     <p className="mt-1 text-xs leading-snug line-clamp-2" style={{ color: "#3F4B69" }}>{shop.headline || shop.description || "Découvrez la boutique"}</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
+                      {getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro" && <ProBadge compact />}
                       {shop.category && <span className="rounded-full border border-ink/20 bg-[#FFC83D]/50 px-2 py-0.5 text-[10px] font-bold text-ink">{shop.category}</span>}
                       {(shop.area || shop.quartier) && <span className="rounded-full border border-ink/15 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink">{shop.area || shop.quartier}</span>}
                     </div>
