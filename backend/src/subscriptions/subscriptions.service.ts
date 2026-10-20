@@ -242,11 +242,12 @@ export class SubscriptionsService {
     if (!transactions) return;
 
     for (const payment of payments) {
-      if (!transactions.some((transaction) => this.matchesPaidTransaction(transaction, payment))) continue;
+      const transaction = transactions.find((row) => this.matchesProviderTransaction(row, payment));
+      if (!transaction) continue;
       try {
-        await this.activatePaidPayment(payment.id, payment.shopId);
+        await this.applyProviderTransactionStatus(payment.id, payment.shopId, transaction);
       } catch (error) {
-        this.logger.error(`Could not activate subscription payment ${payment.id}: ${this.safeErrorMessage(error)}`);
+        this.logger.error(`Could not update subscription payment ${payment.id}: ${this.safeErrorMessage(error)}`);
       }
     }
   }
@@ -358,8 +359,9 @@ export class SubscriptionsService {
     try {
       const transactions = await this.getProviderTransactionSnapshot(apiKey);
       if (!transactions) return false;
-      if (!transactions.some((transaction) => this.matchesPaidTransaction(transaction, payment))) return false;
-      return this.activatePaidPayment(payment.id, payment.shopId);
+      const transaction = transactions.find((row) => this.matchesProviderTransaction(row, payment));
+      if (!transaction) return false;
+      return this.applyProviderTransactionStatus(payment.id, payment.shopId, transaction);
     } catch (error) {
       this.logger.warn(`UnitechPay payment status check failed: ${this.safeErrorMessage(error)}`);
       return false;
@@ -415,7 +417,7 @@ export class SubscriptionsService {
     return (rows ?? []).filter((row): row is ProviderTransaction => this.isRecord(row));
   }
 
-  private matchesPaidTransaction(
+  private matchesProviderTransaction(
     transaction: ProviderTransaction,
     payment: { reference: string | null; providerTransactionId: string | null; amount: number },
   ) {
@@ -424,7 +426,7 @@ export class SubscriptionsService {
       transaction.reference !== payment.reference ||
       Number(transaction.amount) !== payment.amount ||
       typeof transaction.status !== 'string' ||
-      !['completed', 'paid'].includes(transaction.status.toLowerCase())
+      !['completed', 'paid', 'failed', 'expired'].includes(transaction.status.toLowerCase())
     ) {
       return false;
     }
@@ -435,10 +437,26 @@ export class SubscriptionsService {
     );
   }
 
+  private async applyProviderTransactionStatus(
+    paymentId: string,
+    shopId: string,
+    transaction: ProviderTransaction,
+  ) {
+    const status = typeof transaction.status === 'string' ? transaction.status.toLowerCase() : '';
+    if (['completed', 'paid'].includes(status)) return this.activatePaidPayment(paymentId, shopId);
+    if (status !== 'failed' && status !== 'expired') return false;
+
+    const updated = await this.prisma.subscriptionPayment.updateMany({
+      where: { id: paymentId, status: 'pending' },
+      data: { status },
+    });
+    return updated.count > 0;
+  }
+
   private async activatePaidPayment(paymentId: string, shopId: string) {
     return this.prisma.$transaction(async (tx) => {
       const claimed = await tx.subscriptionPayment.updateMany({
-        where: { id: paymentId, status: 'pending' },
+        where: { id: paymentId, status: { in: ['pending', 'failed', 'expired'] }, paidAt: null },
         data: { status: 'paid', paidAt: new Date() },
       });
       if (claimed.count === 0) return false;

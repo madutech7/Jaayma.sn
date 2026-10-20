@@ -12,7 +12,7 @@ export const metadata = {
 export default async function AbonnementPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paiement?: string; erreur?: string }>;
+  searchParams: Promise<{ paiement?: string; erreur?: string; retour?: string }>;
 }) {
   const sellerContext = await getCurrentSellerContext();
   if (!sellerContext) redirect("/connexion");
@@ -49,7 +49,11 @@ export default async function AbonnementPage({
       )}
 
       {paymentId && payment && (
-        <SubscriptionPaymentNotice paymentId={paymentId} initialStatus={payment.status} />
+        <SubscriptionPaymentNotice
+          paymentId={paymentId}
+          initialStatus={payment.status}
+          returnedCancelled={params.retour === "annule"}
+        />
       )}
 
       <div className="space-y-4">
