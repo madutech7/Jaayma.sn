@@ -46,10 +46,10 @@ export default function OrderDetailView({ order }: { order: Order }) {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </Link>
-        <div className="flex items-center gap-3">
-          <h1 className="font-bricolage font-black text-white text-2xl leading-none">{order.reference}</h1>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <h1 className="font-bricolage font-black text-white text-lg sm:text-2xl leading-tight break-all select-all">{order.reference}</h1>
           {status === "new" && (
-            <span className="text-[11px] font-black px-2.5 py-0.5 rounded border-[2px] border-[#C8265A] text-[#C8265A] bg-[#C8265A]/10">
+            <span className="text-[11px] font-black px-2.5 py-0.5 rounded border-[2px] border-[#C8265A] text-[#C8265A] bg-[#C8265A]/10 shrink-0">
               NOUVELLE
             </span>
           )}

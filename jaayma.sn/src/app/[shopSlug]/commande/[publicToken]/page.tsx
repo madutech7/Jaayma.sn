@@ -35,14 +35,14 @@ const STATUS_COLORS: Record<OrderStatus, { bg: string; color: string; border: st
 /* ─── Ticket card (haut et bas en dents de scie) ─── */
 function TicketCard({ children }: { children: React.ReactNode }) {
   return (
-    <div>
+    <div className="w-full">
       <svg viewBox="0 0 344 18" preserveAspectRatio="none" style={{ width: "100%", height: 18, display: "block" }}>
         <path
           d="M0 18H344V0L334.6 9L325.1 0L315.7 9L306.3 0L296.9 9L287.4 0L278.0 9L268.6 0L259.1 9L249.7 0L240.3 9L230.9 0L221.4 9L212.0 0L202.6 9L193.1 0L183.7 9L174.3 0L164.9 9L155.4 0L146.0 9L136.6 0L127.1 9L117.7 0L108.3 9L98.9 0L89.4 9L80.0 0L70.6 9L61.1 0L51.7 9L42.3 0L32.9 9L23.4 0L14.0 9L4.6 0L0 9Z"
           fill="#FFFBF2" stroke="#0F1E3D" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <div className="px-5 py-4" style={{ backgroundColor: "#FFFBF2" }}>{children}</div>
+      <div className="px-4 sm:px-5 py-4" style={{ backgroundColor: "#FFFBF2" }}>{children}</div>
       <svg viewBox="0 0 344 18" preserveAspectRatio="none" style={{ width: "100%", height: 18, display: "block" }}>
         <path
           d="M0 0H344V18L334.6 9L325.1 18L315.7 9L306.3 18L296.9 9L287.4 18L278.0 9L268.6 18L259.1 9L249.7 18L240.3 9L230.9 18L221.4 9L212.0 18L202.6 9L193.1 18L183.7 9L174.3 18L164.9 9L155.4 18L146.0 9L136.6 18L127.1 9L117.7 18L108.3 9L98.9 18L89.4 9L80.0 18L70.6 9L61.1 18L51.7 9L42.3 18L32.9 9L23.4 18L14.0 9L4.6 18L0 9Z"
@@ -87,7 +87,7 @@ export default async function OrderSuccessPage({
   const statusStyle = STATUS_COLORS[currentStatus] || STATUS_COLORS.new;
 
   return (
-    <div className="min-h-screen pb-10" style={{ backgroundColor: "#FFC83D" }}>
+    <div className="min-h-screen pb-10 overflow-x-hidden" style={{ backgroundColor: "#FFC83D" }}>
       <AutoRefresh intervalMs={30000} />
       <MarketingPixel
         facebookPixelId={isProActive ? shop.facebookPixelId : null}
@@ -104,7 +104,7 @@ export default async function OrderSuccessPage({
         }}
       />
 
-      <div className="max-w-xl mx-auto px-5">
+      <div className="w-full max-w-xl mx-auto px-4 sm:px-5">
         {/* ─── CHECK ICON ─── */}
         <div className="flex justify-center pt-14 pb-6">
           <div
@@ -129,9 +129,9 @@ export default async function OrderSuccessPage({
           <svg viewBox="0 0 140 10" className="mx-auto mb-4" style={{ width: 140, height: 10 }}>
             <path d="M10 5Q70 1 130 5" stroke="#C8265A" strokeWidth="5" fill="none" strokeLinecap="round" />
           </svg>
-          <p className="text-sm font-medium text-ink">
+          <p className="text-sm font-medium text-ink break-words">
             {shop.name} a reçu ta commande{" "}
-            <span className="font-bold">{order.number}</span>
+            <span className="font-bold break-all select-all">{order.number}</span>
             {shop.whatsapp ? " et te répond sur WhatsApp." : "."}
           </p>
           {isProActive && <ProBadge className="mx-auto mt-3" />}
@@ -151,38 +151,53 @@ export default async function OrderSuccessPage({
         <div className="mb-5">
           <TicketCard>
             {/* Numéro + total */}
-            <div className="flex items-end justify-between mb-1">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold" style={{ color: "#3F4B69" }}>Commande</p>
-                <p className="font-bricolage font-black text-ink text-2xl" style={{ letterSpacing: "-0.02em" }}>{order.number}</p>
+                <p
+                  className="font-bricolage font-black text-ink text-base sm:text-xl break-all select-all leading-tight mt-0.5"
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {order.number}
+                </p>
               </div>
-              <p className="font-bricolage font-black text-ink text-2xl" style={{ letterSpacing: "-0.02em" }}>{formatFcfa(order.total)}</p>
+              <div className="shrink-0 text-left sm:text-right">
+                <p className="text-xs font-semibold sm:hidden" style={{ color: "#3F4B69" }}>Total</p>
+                <p
+                  className="font-bricolage font-black text-ink text-2xl whitespace-nowrap leading-tight mt-0.5"
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {formatFcfa(order.total)}
+                </p>
+              </div>
             </div>
 
             <DottedDivider />
 
             {/* Articles */}
             {items.map((item) => (
-              <div key={item.id} className="flex justify-between py-1 text-sm">
-                <div>
+              <div key={item.id} className="flex justify-between items-start gap-3 py-1.5 text-sm">
+                <div className="min-w-0 flex-1 break-words">
                   <span className="font-medium text-ink">
                     {item.name}{" "}
-                    <span className="text-xs font-normal" style={{ color: "#3F4B69" }}>
+                    <span className="text-xs font-normal shrink-0" style={{ color: "#3F4B69" }}>
                       x{item.quantity}
                     </span>
                   </span>
                   {item.options && (
-                    <p className="text-xs text-[#0E7C66] font-semibold">{item.options}</p>
+                    <p className="text-xs text-[#0E7C66] font-semibold break-words">{item.options}</p>
                   )}
                 </div>
-                <span className="font-bold text-ink">{formatFcfa(item.unitPrice * item.quantity)}</span>
+                <span className="font-bold text-ink shrink-0 whitespace-nowrap">
+                  {formatFcfa(item.unitPrice * item.quantity)}
+                </span>
               </div>
             ))}
 
             {order.deliveryFee > 0 && (
-              <div className="flex justify-between py-1 text-sm">
+              <div className="flex justify-between items-center gap-3 py-1 text-sm">
                 <span style={{ color: "#3F4B69" }}>Livraison</span>
-                <span style={{ color: "#3F4B69" }}>{formatFcfa(order.deliveryFee)}</span>
+                <span className="shrink-0" style={{ color: "#3F4B69" }}>{formatFcfa(order.deliveryFee)}</span>
               </div>
             )}
 
