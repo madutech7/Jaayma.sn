@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Inject, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { OrderStatus } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
@@ -23,9 +23,17 @@ export class OrdersController {
   }
 
   @Get('shops/:shopId')
-  findByShop(@Param('shopId') shopId: string, @Headers('authorization') authHeader?: string) {
+  findByShop(
+    @Param('shopId') shopId: string,
+    @Headers('authorization') authHeader?: string,
+    @Query('take') take?: string,
+    @Query('skip') skip?: string,
+  ) {
     const userId = this.auth.requireSessionUserId(authHeader);
-    return this.ordersService.findByShop(shopId, userId);
+    return this.ordersService.findByShop(shopId, userId, {
+      take: take && /^\d+$/.test(take) ? Number(take) : undefined,
+      skip: skip && /^\d+$/.test(skip) ? Number(skip) : undefined,
+    });
   }
 
   @Get('reference/:reference')

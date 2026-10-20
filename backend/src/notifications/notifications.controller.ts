@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Headers,
   Inject,
   Post,
@@ -19,6 +20,7 @@ export class NotificationsController {
   ) {}
 
   @Get('vapid-public-key')
+  @Header('Cache-Control', 'public, max-age=3600, s-maxage=86400')
   getVapidPublicKey() {
     return { publicKey: this.notifications.getVapidPublicKey() };
   }

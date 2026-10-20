@@ -66,12 +66,20 @@ export class SubscriptionsService {
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
+  private cachedPrice: { amount: number; expiresAt: number } | null = null;
+
   async getPrice() {
+    const now = Date.now();
+    if (this.cachedPrice && this.cachedPrice.expiresAt > now) {
+      return { amount: this.cachedPrice.amount };
+    }
     const settings = await this.prisma.platformSetting.findUnique({
       where: { id: 'global' },
       select: { proPriceXof: true },
     });
-    return { amount: settings?.proPriceXof ?? DEFAULT_PRO_PRICE_XOF };
+    const amount = settings?.proPriceXof ?? DEFAULT_PRO_PRICE_XOF;
+    this.cachedPrice = { amount, expiresAt: now + 60_000 };
+    return { amount };
   }
 
   async createPayment(userId: string, input: unknown) {

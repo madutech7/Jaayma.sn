@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { AuthService } from '../auth/auth.service';
 
@@ -16,6 +16,7 @@ export class ProductsController {
   }
 
   @Get('shops/:shopSlug/products/:productId')
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   findPublicByShopSlug(@Param('shopSlug') shopSlug: string, @Param('productId') productId: string) {
     return this.productsService.findPublicByShopSlug(shopSlug, productId);
   }
@@ -31,6 +32,7 @@ export class ProductsController {
   }
 
   @Get('products/explore')
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   explore(
     @Query('q') q?: string,
     @Query('category') category?: string,

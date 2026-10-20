@@ -88,7 +88,10 @@ export default async function OrderSuccessPage({
 
   return (
     <div className="min-h-screen pb-10 overflow-x-hidden" style={{ backgroundColor: "#FFC83D" }}>
-      <AutoRefresh intervalMs={30000} />
+      <AutoRefresh
+        intervalMs={30000}
+        stopIfFinished={currentStatus === "delivered" || currentStatus === "cancelled"}
+      />
       <MarketingPixel
         facebookPixelId={isProActive ? shop.facebookPixelId : null}
         tiktokPixelId={isProActive ? shop.tiktokPixelId : null}

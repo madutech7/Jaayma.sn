@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, Inject, Param, Post, Put, Query } from '@nestjs/common';
 import { ShopsService } from './shops.service';
 import { AuthService } from '../auth/auth.service';
 
@@ -15,6 +15,7 @@ export class ShopsController {
   }
 
   @Get('explore')
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   explore(
     @Query('q') q?: string,
     @Query('category') category?: string,
@@ -42,6 +43,7 @@ export class ShopsController {
   }
 
   @Get(':slug')
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   findOne(@Param('slug') slug: string) {
     return this.shopsService.findBySlug(slug);
   }

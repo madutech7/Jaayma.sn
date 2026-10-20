@@ -96,15 +96,26 @@ export class AdminService {
     };
   }
 
+  private cachedPublicFeatures: {
+    data: { explorerEnabled: boolean; maintenanceEnabled: boolean };
+    expiresAt: number;
+  } | null = null;
+
   async getPublicFeatures() {
+    const now = Date.now();
+    if (this.cachedPublicFeatures && this.cachedPublicFeatures.expiresAt > now) {
+      return this.cachedPublicFeatures.data;
+    }
     const settings = await this.prisma.platformSetting.findUnique({
       where: { id: 'global' },
       select: { explorerEnabled: true, maintenanceEnabled: true },
     });
-    return {
+    const data = {
       explorerEnabled: settings?.explorerEnabled ?? true,
       maintenanceEnabled: settings?.maintenanceEnabled ?? false,
     };
+    this.cachedPublicFeatures = { data, expiresAt: now + 60_000 };
+    return data;
   }
 
   async setProPrice(proPriceXof: number) {
@@ -117,6 +128,7 @@ export class AdminService {
   }
 
   async setExplorerEnabled(explorerEnabled: boolean) {
+    this.cachedPublicFeatures = null;
     return this.prisma.platformSetting.upsert({
       where: { id: 'global' },
       create: { id: 'global', explorerEnabled },
@@ -126,6 +138,7 @@ export class AdminService {
   }
 
   async setMaintenanceEnabled(maintenanceEnabled: boolean) {
+    this.cachedPublicFeatures = null;
     return this.prisma.platformSetting.upsert({
       where: { id: 'global' },
       create: { id: 'global', maintenanceEnabled },

@@ -31,10 +31,19 @@ export class OrdersService {
     @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
-  async findByShop(shopId: string, ownerId: string) {
+  async findByShop(
+    shopId: string,
+    ownerId: string,
+    pagination?: { take?: number; skip?: number },
+  ) {
+    const take = Math.min(250, Math.max(1, pagination?.take ?? 100));
+    const skip = Math.max(0, pagination?.skip ?? 0);
+
     return this.prisma.order.findMany({
       where: { shopId, shop: { ownerId } },
       orderBy: { createdAt: 'desc' },
+      take,
+      skip,
       include: {
         items: {
           include: {

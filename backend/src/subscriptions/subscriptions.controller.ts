@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, Inject, Param, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionsService } from './subscriptions.service';
@@ -13,6 +13,7 @@ export class SubscriptionsController {
   ) {}
 
   @Get('price')
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600')
   getPrice() {
     return this.subscriptions.getPrice();
   }

@@ -4,6 +4,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Header,
   Headers,
   Inject,
   Post,
@@ -48,6 +49,7 @@ export class AdminController {
   ) {}
 
   @Get('public-features')
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600')
   publicFeatures() {
     return this.admin.getPublicFeatures();
   }
