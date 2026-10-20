@@ -96,7 +96,7 @@ export class OrdersService {
         createdAt: true,
         updatedAt: true,
         shop: {
-          select: { id: true, name: true, slug: true, logoUrl: true, phone: true },
+          select: { id: true, name: true, slug: true, logoUrl: true, whatsapp: true, waveNumber: true },
         },
         items: {
           include: {
