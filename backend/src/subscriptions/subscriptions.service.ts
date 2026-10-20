@@ -254,7 +254,9 @@ export class SubscriptionsService {
 
   private getFrontendUrl() {
     const configuredUrl = this.config.get<string>('FRONTEND_URL') ?? process.env.FRONTEND_URL;
-    const rawUrl = configuredUrl?.trim() || 'https://jaayma.sn';
+    // Keep payment callbacks on the currently deployed Cloudflare site until
+    // the custom jaayma.sn domain is actually configured and live.
+    const rawUrl = configuredUrl?.trim() || 'https://jaayma-sn.madutech0.workers.dev';
     try {
       const url = new URL(rawUrl);
       if (url.protocol !== 'https:' && url.hostname !== 'localhost') throw new Error('HTTPS required');
