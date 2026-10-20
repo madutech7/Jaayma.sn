@@ -39,6 +39,7 @@ export interface Shop {
   themeColor?: string | null;
   whatsapp?: string | null;
   waveNumber?: string | null;
+  wavePaymentLink?: string | null;
   orangeMoneyNumber?: string | null;
   acceptsCash?: boolean;
   deliveryFee: number;

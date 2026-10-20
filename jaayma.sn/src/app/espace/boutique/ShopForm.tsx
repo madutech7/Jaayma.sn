@@ -33,6 +33,7 @@ export default function ShopForm({ shop, publicOrigin, canUseMarketingTools }: {
   const [waveNumber, setWaveNumber] = useState(
     shop?.waveNumber ? formatPhone(shop.waveNumber) : ""
   );
+  const [wavePaymentLink, setWavePaymentLink] = useState(shop?.wavePaymentLink || "");
   const [orangeMoneyNumber, setOrangeMoneyNumber] = useState(
     shop?.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : ""
   );
@@ -41,7 +42,7 @@ export default function ShopForm({ shop, publicOrigin, canUseMarketingTools }: {
   const publicHost = new URL(publicOrigin).host;
   const paymentAndDeliveryReady = Boolean(
     shop &&
-      (shop.acceptsCash || shop.waveNumber || shop.orangeMoneyNumber) &&
+      (shop.acceptsCash || shop.wavePaymentLink || shop.waveNumber || shop.orangeMoneyNumber) &&
       shop.deliveryNote?.trim()
   );
 
@@ -52,6 +53,7 @@ export default function ShopForm({ shop, publicOrigin, canUseMarketingTools }: {
       setSelectedCategory(shop.category || "");
       setSelectedTheme(shop.themeColor || DEFAULT_SHOP_THEME);
       setWaveNumber(shop.waveNumber ? formatPhone(shop.waveNumber) : "");
+      setWavePaymentLink(shop.wavePaymentLink || "");
       setOrangeMoneyNumber(shop.orangeMoneyNumber ? formatPhone(shop.orangeMoneyNumber) : "");
     }
   }, [shop]);
@@ -303,9 +305,24 @@ export default function ShopForm({ shop, publicOrigin, canUseMarketingTools }: {
             />
           </div>
 
-          {/* Faux champs pour coller au design */}
           <div>
-            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Numéro Wave</label>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Lien de paiement marchand Wave (optionnel)</label>
+            <input
+              name="wavePaymentLink"
+              type="url"
+              value={wavePaymentLink}
+              onChange={(e) => setWavePaymentLink(e.target.value)}
+              placeholder="https://pay.wave.com/m/..."
+              autoComplete="url"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-bold outline-none border-[2.5px] border-ink focus:border-sun placeholder:text-[#8D98AF] placeholder:font-normal"
+              style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D" }}
+            />
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: "#C3CCE6" }}>
+              Le client ouvrira ce lien et saisira ou vérifiera le total de sa commande dans Wave. Le paiement reste à confirmer par toi.
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: "#C3CCE6" }}>Numéro Wave (si tu n’as pas de lien marchand)</label>
             <input
               name="waveNumber"
               type="tel"

@@ -177,7 +177,7 @@ export default async function DashboardPage() {
       title: "Règle paiement et livraison",
       description: "Choisis un paiement et précise comment tu livres.",
       complete: Boolean(
-        (shop.acceptsCash || shop.waveNumber || shop.orangeMoneyNumber) &&
+        (shop.acceptsCash || shop.wavePaymentLink || shop.waveNumber || shop.orangeMoneyNumber) &&
           shop.deliveryNote?.trim()
       ),
       href: "/espace/boutique#payment-settings",

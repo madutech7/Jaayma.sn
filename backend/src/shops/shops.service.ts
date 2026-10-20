@@ -17,6 +17,24 @@ const shopSchema = z.object({
   themeColor: z.enum(['#C8265A', '#0E7C66', '#FFC83D', '#3B4A7A', '#B4531E']).optional().default('#C8265A'),
   whatsapp: z.string().optional().nullable(),
   waveNumber: z.string().optional().nullable(),
+  wavePaymentLink: z
+    .string()
+    .url()
+    .max(500)
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === 'https:' &&
+          url.hostname === 'pay.wave.com' &&
+          !url.username &&
+          !url.password &&
+          /^\/(?:m|mqr)\/[^/]+\/?$/.test(url.pathname)
+        );
+      } catch {
+        return false;
+      }
+    }, 'Lien marchand Wave invalide'),
   orangeMoneyNumber: z.string().optional().nullable(),
   acceptsCash: z.boolean().optional().default(true),
   deliveryFee: z.number().int().nonnegative().default(0),

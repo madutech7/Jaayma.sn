@@ -36,6 +36,10 @@ export async function upsertShop(
     ? ((formData.get("coverKey") as string) || null)
     : undefined;
   const rawWave = (formData.get("waveNumber") as string) || "";
+  const hasWavePaymentLinkField = formData.has("wavePaymentLink");
+  const rawWavePaymentLink = hasWavePaymentLinkField
+    ? ((formData.get("wavePaymentLink") as string) || "").trim()
+    : "";
   const rawOrange = (formData.get("orangeMoneyNumber") as string) || "";
   const facebookPixelId = (formData.get("facebookPixelId") as string)?.trim() || null;
   const tiktokPixelId = (formData.get("tiktokPixelId") as string)?.trim() || null;
@@ -68,6 +72,10 @@ export async function upsertShop(
   if (rawWave && !waveNumber) {
     return { error: "Le numéro Wave n'est pas valide." };
   }
+  const wavePaymentLink = rawWavePaymentLink ? normalizeWavePaymentLink(rawWavePaymentLink) : null;
+  if (rawWavePaymentLink && !wavePaymentLink) {
+    return { error: "Colle un lien marchand Wave valide (https://pay.wave.com/m/…)." };
+  }
   const orangeMoneyNumber = rawOrange ? normalizePhone(rawOrange) : null;
   if (rawOrange && !orangeMoneyNumber) {
     return { error: "Le numéro Orange Money n'est pas valide." };
@@ -93,6 +101,7 @@ export async function upsertShop(
       deliveryNote: deliveryNote || null,
       status: isPublished ? "ACTIVE" : "DRAFT",
       waveNumber,
+      ...(hasWavePaymentLinkField ? { wavePaymentLink } : {}),
       orangeMoneyNumber,
       ...(canUseMarketingTools ? { facebookPixelId, tiktokPixelId } : {}),
       ...(logoKey !== undefined ? { logoUrl: logoKey } : {}),
@@ -114,5 +123,22 @@ export async function upsertShop(
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur lors de la sauvegarde.";
     return { error: msg };
+  }
+}
+
+function normalizeWavePaymentLink(value: string): string | null {
+  if (value.length > 500) return null;
+  try {
+    const url = new URL(value);
+    const isWaveMerchantLink =
+      url.protocol === "https:" &&
+      url.hostname === "pay.wave.com" &&
+      !url.username &&
+      !url.password &&
+      /^\/(?:m|mqr)\/[^/]+\/?$/.test(url.pathname);
+
+    return isWaveMerchantLink ? url.toString() : null;
+  } catch {
+    return null;
   }
 }

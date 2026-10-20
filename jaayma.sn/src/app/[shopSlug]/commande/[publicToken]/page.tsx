@@ -10,6 +10,7 @@ import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
 import { getEffectivePlan } from "@/lib/plans";
 import ProBadge from "@/components/ProBadge";
+import { ArrowUpRight } from "lucide-react";
 
 export const metadata = {
   title: "Commande envoyée | Jaaymaa",
@@ -189,12 +190,30 @@ export default async function OrderSuccessPage({
 
             {/* Paiement */}
             {order.paymentMethod === "wave" && (
-              <p className="text-sm font-semibold text-ink">
-                Wave : paie au{" "}
-                <span className="font-black">
-                  {wavePaymentNumber ? formatPhone(wavePaymentNumber) : "numéro du vendeur"}
-                </span>
-              </p>
+              shop.wavePaymentLink ? (
+                <div className="space-y-2.5 text-sm text-ink">
+                  <p className="font-bold">Paiement Wave · {formatFcfa(order.total)}</p>
+                  <a
+                    href={shop.wavePaymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-[2px] border-ink px-4 py-3 font-black text-sm transition-transform active:scale-[0.98]"
+                    style={{ backgroundColor: "#0F1E3D", color: "#FFC83D", boxShadow: "3px 3px 0 #0F1E3D" }}
+                  >
+                    Ouvrir le lien Wave <ArrowUpRight size={18} aria-hidden="true" />
+                  </a>
+                  <p className="text-xs leading-relaxed" style={{ color: "#3F4B69" }}>
+                    Dans Wave, vérifie ou saisis le total indiqué ci-dessus. La boutique confirmera ensuite la réception du paiement.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-ink">
+                  Wave : paie au{" "}
+                  <span className="font-black">
+                    {wavePaymentNumber ? formatPhone(wavePaymentNumber) : "numéro du vendeur"}
+                  </span>
+                </p>
+              )
             )}
             {order.paymentMethod === "orange_money" && (
               <p className="text-sm font-semibold text-ink">
