@@ -403,7 +403,7 @@ export const api = {
 
   async getShopBySlug(slug: string): Promise<Shop | null> {
     try {
-      const data = await request<any>(`/shops/${encodeURIComponent(slug)}`);
+      const data = await request<any>(`/shops/${encodeURIComponent(slug)}`, { cache: "no-store" });
       return normalizeShop(data);
     } catch {
       return null;

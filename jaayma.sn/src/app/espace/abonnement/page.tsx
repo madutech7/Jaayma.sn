@@ -111,13 +111,17 @@ export default async function AbonnementPage({
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
               Badge Boutique Pro
             </li>
+            <li className="flex items-start gap-2.5 font-bold text-ink text-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
+              Outils marketing : pixels Meta/TikTok et catalogue XML
+            </li>
           </ul>
 
           {/* PAIEMENT DE L'ABONNEMENT */}
           {!isPro ? (
             <div className="space-y-3">
               <SubscriptionPaymentButtons price={formattedProPrice} />
-              <p className="text-center text-xs font-medium text-[#C3CCE6]">Paiement sécurisé · Pro activé après confirmation</p>
+              <p className="text-center text-xs font-semibold text-ink/75">Paiement sécurisé · Pro activé après confirmation</p>
             </div>
           ) : (
             <div

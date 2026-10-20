@@ -8,6 +8,7 @@ import MarketingPixel from "@/components/MarketingPixel";
 import { OrderStatus } from "@/lib/orders";
 import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
+import { getEffectivePlan } from "@/lib/plans";
 
 export const metadata = {
   title: "Commande envoyée | Jaaymaa",
@@ -66,6 +67,7 @@ export default async function OrderSuccessPage({
 
   const shop = order.shop ?? (await api.getShopBySlug(shopSlug));
   if (!shop) notFound();
+  const canUseMarketingTools = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
 
   const wavePaymentNumber = shop.waveNumber || shop.whatsapp;
   const orangeMoneyPaymentNumber = shop.orangeMoneyNumber || shop.whatsapp;
@@ -86,8 +88,8 @@ export default async function OrderSuccessPage({
     <div className="min-h-screen pb-10" style={{ backgroundColor: "#FFC83D" }}>
       <AutoRefresh intervalMs={30000} />
       <MarketingPixel
-        facebookPixelId={shop.facebookPixelId}
-        tiktokPixelId={shop.tiktokPixelId}
+        facebookPixelId={canUseMarketingTools ? shop.facebookPixelId : null}
+        tiktokPixelId={canUseMarketingTools ? shop.tiktokPixelId : null}
         event="Purchase"
         eventData={{
           content_name: shop.name,

@@ -45,6 +45,7 @@ export const metadata: Metadata = {
 
 import { Suspense } from "react";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import RefreshSubscriptionPrice from "@/components/RefreshSubscriptionPrice";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 
@@ -62,6 +63,7 @@ export default function RootLayout({
           <NavigationProgressBar />
         </Suspense>
         <ServiceWorkerRegister />
+        <RefreshSubscriptionPrice />
         <GoogleAnalytics measurementId={process.env.GA_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""} />
         {children}
       </body>

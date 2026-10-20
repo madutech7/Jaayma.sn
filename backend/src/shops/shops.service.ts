@@ -115,6 +115,9 @@ export class ShopsService {
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
     }
+    if (hasMarketingPixelConfig(parsed.data)) {
+      throw new ForbiddenException('Les pixels marketing sont réservés au plan Pro.');
+    }
 
     const existingShopForOwner = await this.prisma.shop.findFirst({
       where: { ownerId },
@@ -157,6 +160,9 @@ export class ShopsService {
     }
     if (shop.ownerId !== ownerId) {
       throw new ForbiddenException('Vous ne pouvez modifier que votre boutique.');
+    }
+    if (!hasActiveProPlan(shop) && changesMarketingPixelConfig(parsed.data, shop)) {
+      throw new ForbiddenException('Les pixels marketing sont réservés au plan Pro.');
     }
 
     const updated = await this.prisma.shop.update({
@@ -239,4 +245,22 @@ export class ShopsService {
       },
     });
   }
+}
+
+function hasActiveProPlan(shop: { plan: string; planExpiresAt: Date | null }) {
+  return shop.plan === 'pro' && (!shop.planExpiresAt || shop.planExpiresAt.getTime() >= Date.now());
+}
+
+function hasMarketingPixelConfig(input: { facebookPixelId?: string | null; tiktokPixelId?: string | null }) {
+  return Boolean(input.facebookPixelId?.trim() || input.tiktokPixelId?.trim());
+}
+
+function changesMarketingPixelConfig(
+  input: { facebookPixelId?: string | null; tiktokPixelId?: string | null },
+  current: { facebookPixelId: string | null; tiktokPixelId: string | null },
+) {
+  return (
+    (input.facebookPixelId !== undefined && Boolean(input.facebookPixelId?.trim()) && input.facebookPixelId !== current.facebookPixelId) ||
+    (input.tiktokPixelId !== undefined && Boolean(input.tiktokPixelId?.trim()) && input.tiktokPixelId !== current.tiktokPixelId)
+  );
 }

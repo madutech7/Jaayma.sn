@@ -9,6 +9,7 @@ import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEMES } from "@/lib/s
 import type { Shop } from "@/types/schema";
 import ImageUploader from "@/components/ImageUploader";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -22,7 +23,7 @@ const SHOP_CATEGORIES = [
   "Autre",
 ];
 
-export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; publicOrigin: string }) {
+export default function ShopForm({ shop, publicOrigin, canUseMarketingTools }: { shop: Shop | null; publicOrigin: string; canUseMarketingTools: boolean }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(upsertShop, initialState);
   const [name, setName] = useState(shop?.name || "");
@@ -336,10 +337,11 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-bold text-white">
             <span>Outils marketing</span>
             <span className="flex items-center gap-2 text-[11px] font-semibold text-[#C3CCE6]">
-              Facultatif <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+              {canUseMarketingTools ? "Inclus avec Pro" : "Plan Pro"} <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
             </span>
           </summary>
           <div className="space-y-4 border-t border-white/10 p-4">
+          {canUseMarketingTools ? <>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-bold text-white">Tracking & Pixels Publicitaires</span>
@@ -413,6 +415,19 @@ export default function ShopForm({ shop, publicOrigin }: { shop: Shop | null; pu
               <div className="text-[11px] font-mono p-2 rounded-xl bg-[#0F1E3D] text-[#C3CCE6] truncate border border-white/5 select-all">
                 {`${publicOrigin}/api/shops/${shop.slug}/catalog.xml`}
               </div>
+            </div>
+          )}
+          </> : (
+            <div className="space-y-3 rounded-2xl border border-[#FFC83D]/30 bg-[#0F1E3D]/60 p-4">
+              <p className="text-xs leading-5 text-[#C3CCE6]">
+                Les pixels Meta et TikTok ainsi que le flux catalogue pour tes campagnes publicitaires sont réservés au plan Pro.
+              </p>
+              <Link
+                href="/espace/abonnement"
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border-2 border-ink bg-sun px-4 text-xs font-black text-ink shadow-[2px_2px_0_#0F1E3D]"
+              >
+                Découvrir le plan Pro
+              </Link>
             </div>
           )}
           </div>

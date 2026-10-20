@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { api } from "@/lib/api";
 import { getImageUrl } from "@/lib/images";
 import { getRequestOrigin } from "@/lib/site-url";
+import { getEffectivePlan } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,12 @@ export async function GET(
     if (!shop || !shop.isPublished) {
       return new NextResponse("Boutique introuvable ou non publiée", {
         status: 404,
+      });
+    }
+    if (getEffectivePlan(shop.plan, shop.planExpiresAt) !== "pro") {
+      return new NextResponse("Le flux catalogue est réservé au plan Pro.", {
+        status: 403,
+        headers: { "Cache-Control": "private, no-store" },
       });
     }
 
@@ -77,7 +84,7 @@ ${itemsXml}
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+        "Cache-Control": "private, no-store",
       },
     });
   } catch (error: unknown) {

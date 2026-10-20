@@ -6,6 +6,7 @@ import { normalizePhone } from "@/lib/phone";
 import { DEFAULT_SHOP_THEME, SHOP_THEME_COLORS } from "@/lib/shop-theme";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { api } from "@/lib/api";
+import { getEffectivePlan } from "@/lib/plans";
 
 export async function upsertShop(
   _prevState: unknown,
@@ -75,6 +76,7 @@ export async function upsertShop(
   try {
     const ctx = await getCurrentSellerContext();
     const existingShop = ctx?.shop ?? (await api.getShopByOwner(sellerId, token));
+    const canUseMarketingTools = getEffectivePlan(existingShop?.plan, existingShop?.planExpiresAt) === "pro";
 
     const shopData = {
       ownerId: sellerId,
@@ -92,8 +94,7 @@ export async function upsertShop(
       status: isPublished ? "ACTIVE" : "DRAFT",
       waveNumber,
       orangeMoneyNumber,
-      facebookPixelId,
-      tiktokPixelId,
+      ...(canUseMarketingTools ? { facebookPixelId, tiktokPixelId } : {}),
       ...(logoKey !== undefined ? { logoUrl: logoKey } : {}),
       ...(coverKey !== undefined ? { coverUrl: coverKey } : {}),
     };

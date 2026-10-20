@@ -11,6 +11,7 @@ import MarketingPixel from "@/components/MarketingPixel";
 import { cache } from "react";
 import { api } from "@/lib/api";
 import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEME_COLORS } from "@/lib/shop-theme";
+import { getEffectivePlan } from "@/lib/plans";
 import { MapPin, Star, Truck, ShoppingBag } from "lucide-react";
 
 const getShopBySlug = cache(async (shopSlug: string) => {
@@ -62,6 +63,7 @@ export default async function ShopPage({ params, searchParams }: {
 
   const shop = await getShopBySlug(shopSlug);
   if (!shop || !shop.isPublished) notFound();
+  const canUseMarketingTools = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
   const themeColor = shop.themeColor && SHOP_THEME_COLORS.some((theme) => theme === shop.themeColor)
     ? shop.themeColor
     : DEFAULT_SHOP_THEME;
@@ -80,8 +82,8 @@ export default async function ShopPage({ params, searchParams }: {
     <div className="min-h-screen pb-28" style={{ backgroundColor: "#FFFBF2" }}>
       <TrackVisit shopId={shop.id} />
       <MarketingPixel
-        facebookPixelId={shop.facebookPixelId}
-        tiktokPixelId={shop.tiktokPixelId}
+        facebookPixelId={canUseMarketingTools ? shop.facebookPixelId : null}
+        tiktokPixelId={canUseMarketingTools ? shop.tiktokPixelId : null}
         event="PageView"
         eventData={{
           content_name: shop.name,
