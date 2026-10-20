@@ -232,7 +232,7 @@ Les variables d'environnement sont a renseigner manuellement dans le dashboard R
 
 ### Paiement des abonnements Pro avec UnitechPay
 
-Le vendeur peut payer l'abonnement Pro (1 000 FCFA / 30 jours) avec Wave ou Orange Money depuis **Espace vendeur → Abonnement**. L'API ne reçoit jamais la clé UnitechPay du navigateur. Le plan Pro est activé uniquement après un webhook signé et vérifié.
+Le vendeur peut payer l'abonnement Pro (1 000 FCFA par défaut / 30 jours) avec Wave ou Orange Money depuis **Espace vendeur → Abonnement**. Un administrateur peut modifier ce montant dans **Administration → Réglages**. L'API ne reçoit jamais la clé UnitechPay du navigateur. Le plan Pro est activé uniquement après un webhook signé et vérifié.
 
 1. Créez un compte marchand UnitechPay et générez une clé API dans son tableau de bord.
 2. Dans Render → `jaayma-api` → **Environment**, ajoutez `UNITECHPAY_API_KEY` avec cette clé. Gardez-la secrète et ne la mettez pas dans Cloudflare ni dans le frontend.

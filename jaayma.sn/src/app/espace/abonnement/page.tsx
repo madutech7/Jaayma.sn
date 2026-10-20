@@ -2,8 +2,8 @@ import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getEffectivePlan } from "@/lib/plans";
 import { api } from "@/lib/api";
-import { startProSubscriptionPayment } from "@/app/actions/subscription";
 import { SubscriptionPaymentNotice } from "./SubscriptionPaymentNotice";
+import { SubscriptionPaymentButtons } from "./SubscriptionPaymentButtons";
 
 export const metadata = {
   title: "Mon Abonnement - Espace Vendeur",
@@ -25,6 +25,8 @@ export default async function AbonnementPage({
   const payment = token && paymentId
     ? await api.getSubscriptionPayment(token, paymentId).catch(() => null)
     : null;
+  const proPrice = await api.getProSubscriptionPrice().catch(() => null);
+  const formattedProPrice = proPrice ? new Intl.NumberFormat("fr-FR").format(proPrice.amount) : null;
 
   const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
   const isPro = effectivePlan === "pro";
@@ -87,7 +89,7 @@ export default async function AbonnementPage({
               </svg>
             </div>
             <div>
-              <h2 className="font-bricolage font-black text-ink text-2xl mb-1">PRO <span className="text-xl opacity-70">1 000 F</span></h2>
+              <h2 className="font-bricolage font-black text-ink text-2xl mb-1">PRO <span className="text-xl opacity-70">{formattedProPrice ? `${formattedProPrice} F` : "Tarif indisponible"}</span></h2>
               <p className="font-bold text-ink/80 text-[13px]">/ mois, sans engagement</p>
             </div>
           </div>
@@ -110,26 +112,7 @@ export default async function AbonnementPage({
           {/* PAIEMENT DE L'ABONNEMENT */}
           {!isPro ? (
             <div className="space-y-3">
-              <form action={startProSubscriptionPayment}>
-                <input type="hidden" name="method" value="wave" />
-                <button
-                  type="submit"
-                  className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                  style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
-                >
-                  Payer avec Wave · 1 000 F
-                </button>
-              </form>
-              <form action={startProSubscriptionPayment}>
-                <input type="hidden" name="method" value="orange_money" />
-                <button
-                  type="submit"
-                  className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                  style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
-                >
-                  Payer avec Orange Money · 1 000 F
-                </button>
-              </form>
+              <SubscriptionPaymentButtons price={formattedProPrice} />
               <p className="text-center text-xs font-medium text-[#C3CCE6]">Paiement sécurisé · Pro activé après confirmation</p>
             </div>
           ) : (

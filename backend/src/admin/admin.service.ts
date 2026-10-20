@@ -82,7 +82,7 @@ export class AdminService {
       Promise.resolve(this.notifications.getAdminPushSettings()),
       this.prisma.platformSetting.findUnique({
         where: { id: 'global' },
-        select: { explorerEnabled: true, maintenanceEnabled: true },
+        select: { explorerEnabled: true, maintenanceEnabled: true, proPriceXof: true },
       }),
     ]);
     return {
@@ -92,6 +92,7 @@ export class AdminService {
       databaseConnected: true,
       explorerEnabled: platformSettings?.explorerEnabled ?? true,
       maintenanceEnabled: platformSettings?.maintenanceEnabled ?? false,
+      proPriceXof: platformSettings?.proPriceXof ?? 1000,
     };
   }
 
@@ -104,6 +105,15 @@ export class AdminService {
       explorerEnabled: settings?.explorerEnabled ?? true,
       maintenanceEnabled: settings?.maintenanceEnabled ?? false,
     };
+  }
+
+  async setProPrice(proPriceXof: number) {
+    return this.prisma.platformSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', proPriceXof },
+      update: { proPriceXof },
+      select: { proPriceXof: true },
+    });
   }
 
   async setExplorerEnabled(explorerEnabled: boolean) {

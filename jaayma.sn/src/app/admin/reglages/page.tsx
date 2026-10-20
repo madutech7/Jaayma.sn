@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, adminPanelClass } from "../AdminUI";
 import ExplorerVisibilityControl from "./ExplorerVisibilityControl";
 import MaintenanceModeControl from "./MaintenanceModeControl";
+import ProPriceControl from "./ProPriceControl";
 
 export const metadata = { title: "Réglages · Administration Jaaymaa" };
 
@@ -23,6 +24,7 @@ export default async function AdminSettingsPage() {
 
         <ExplorerVisibilityControl initialEnabled={settings.explorerEnabled} />
         <MaintenanceModeControl initialEnabled={settings.maintenanceEnabled} />
+        <ProPriceControl initialPrice={settings.proPriceXof} />
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {checks.map((check) => (

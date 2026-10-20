@@ -13,7 +13,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
-const PRO_PRICE_XOF = 1000;
+const DEFAULT_PRO_PRICE_XOF = 1000;
 const PRO_DURATION_DAYS = 30;
 const UNITECHPAY_API_URL = 'https://api.unitech.sn/api.php';
 
@@ -52,15 +52,26 @@ export class SubscriptionsService {
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
+  async getPrice() {
+    const settings = await this.prisma.platformSetting.findUnique({
+      where: { id: 'global' },
+      select: { proPriceXof: true },
+    });
+    return { amount: settings?.proPriceXof ?? DEFAULT_PRO_PRICE_XOF };
+  }
+
   async createPayment(userId: string, input: unknown) {
     const parsed = createPaymentSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
     const apiKey = this.getApiKey();
-    const shop = await this.prisma.shop.findFirst({
-      where: { ownerId: userId },
-      include: { owner: { select: { phone: true } } },
-    });
+    const [shop, { amount }] = await Promise.all([
+      this.prisma.shop.findFirst({
+        where: { ownerId: userId },
+        include: { owner: { select: { phone: true } } },
+      }),
+      this.getPrice(),
+    ]);
     if (!shop || !shop.owner) throw new NotFoundException('Boutique ou vendeur introuvable.');
 
     const phone = this.getSenegalMobileNumber(shop.owner.phone);
@@ -68,7 +79,7 @@ export class SubscriptionsService {
     const payment = await this.prisma.subscriptionPayment.create({
       data: {
         shopId: shop.id,
-        amount: PRO_PRICE_XOF,
+        amount,
         currency: 'XOF',
         method: parsed.data.method,
         status: 'pending',
@@ -84,7 +95,7 @@ export class SubscriptionsService {
 
     const action = parsed.data.method === 'wave' ? 'create_wave_payment' : 'create_orange_om';
     const payload = {
-      amount: PRO_PRICE_XOF,
+      amount,
       customer_number: phone,
       description: `Jaaymaa Pro - ${shop.slug}`.slice(0, 120),
       callback_success: successUrl.toString(),
@@ -112,7 +123,7 @@ export class SubscriptionsService {
         result?.success !== true ||
         !paymentUrl ||
         !reference ||
-        Number(result.data?.amount) !== PRO_PRICE_XOF
+        Number(result.data?.amount) !== amount
       ) {
         await this.markPaymentStatus(payment.id, 'failed');
         this.logger.warn(`UnitechPay payment creation rejected (${response.status}).`);
@@ -142,7 +153,7 @@ export class SubscriptionsService {
       return {
         id: payment.id,
         paymentUrl: safePaymentUrl.toString(),
-        amount: PRO_PRICE_XOF,
+        amount,
         method: parsed.data.method,
       };
     } catch (error) {

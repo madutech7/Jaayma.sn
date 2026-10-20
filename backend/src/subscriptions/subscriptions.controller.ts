@@ -9,6 +9,11 @@ export class SubscriptionsController {
     @Inject(AuthService) private readonly auth: AuthService,
   ) {}
 
+  @Get('price')
+  getPrice() {
+    return this.subscriptions.getPrice();
+  }
+
   @Post('payments')
   createPayment(@Body() body: unknown, @Headers('authorization') authHeader?: string) {
     const userId = this.auth.requireSessionUserId(authHeader);

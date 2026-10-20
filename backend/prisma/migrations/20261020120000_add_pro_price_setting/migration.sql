@@ -1,0 +1,2 @@
+ALTER TABLE "PlatformSetting"
+ADD COLUMN "proPriceXof" INTEGER NOT NULL DEFAULT 1000;

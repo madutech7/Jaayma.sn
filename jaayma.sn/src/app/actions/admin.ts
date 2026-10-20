@@ -110,6 +110,23 @@ export async function setMaintenanceEnabled(enabled: boolean) {
   }
 }
 
+export async function setProSubscriptionPrice(amount: number) {
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100_000_000) {
+    return { error: "Le prix doit être un montant entier compris entre 1 et 100 000 000 F." };
+  }
+  const token = await getSessionToken();
+  if (!token) return { error: "Session expirée. Reconnectez-vous." };
+
+  try {
+    const result = await api.adminSetProSubscriptionPrice(token, amount);
+    revalidatePath("/admin/reglages");
+    revalidatePath("/espace/abonnement");
+    return { success: true as const, amount: result.proPriceXof };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Impossible de modifier le prix Pro." };
+  }
+}
+
 export async function sendAdminAnnouncement(_prevState: unknown, formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const body = String(formData.get("body") || "").trim();

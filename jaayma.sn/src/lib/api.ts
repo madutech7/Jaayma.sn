@@ -210,6 +210,14 @@ export const api = {
     });
   },
 
+  async adminSetProSubscriptionPrice(token: string, amount: number) {
+    return request<{ proPriceXof: number }>("/admin/settings/pro-price", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ amount }),
+    });
+  },
+
   async getAdminAccounts(token: string, params: { q?: string; hasShop?: string; page?: number }) {
     const search = new URLSearchParams();
     if (params.q) search.set("q", params.q);
@@ -240,6 +248,7 @@ export const api = {
       databaseConnected: boolean;
       explorerEnabled: boolean;
       maintenanceEnabled: boolean;
+      proPriceXof: number;
     }>("/admin/settings", { token, cache: "no-store" });
   },
 
@@ -259,6 +268,10 @@ export const api = {
 
   async getPublicFeatures() {
     return request<{ explorerEnabled: boolean; maintenanceEnabled: boolean }>("/admin/public-features", { cache: "no-store" });
+  },
+
+  async getProSubscriptionPrice() {
+    return request<{ amount: number }>("/subscriptions/price", { cache: "no-store" });
   },
 
   async getAdminNotificationHistory(token: string, page = 1) {

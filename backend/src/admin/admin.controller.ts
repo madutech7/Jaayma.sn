@@ -33,6 +33,10 @@ const explorerSettingSchema = z.object({
   enabled: z.boolean(),
 });
 
+const proPriceSchema = z.object({
+  amount: z.number().int().min(1).max(100_000_000),
+});
+
 @Controller('admin')
 export class AdminController {
   constructor(
@@ -161,6 +165,17 @@ export class AdminController {
     const parsed = explorerSettingSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
     return this.admin.setMaintenanceEnabled(parsed.data.enabled);
+  }
+
+  @Patch('settings/pro-price')
+  async setProPrice(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: unknown,
+  ) {
+    await this.requireAdmin(authHeader);
+    const parsed = proPriceSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    return this.admin.setProPrice(parsed.data.amount);
   }
 
   @Get('notifications')

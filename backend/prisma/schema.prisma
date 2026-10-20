@@ -72,6 +72,7 @@ model PlatformSetting {
   id                 String   @id @default("global")
   explorerEnabled    Boolean  @default(true)
   maintenanceEnabled Boolean  @default(false)
+  proPriceXof        Int      @default(1000)
   updatedAt          DateTime @updatedAt
 }
 
