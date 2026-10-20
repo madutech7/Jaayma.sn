@@ -36,7 +36,12 @@ async function bootstrap() {
     }
     next();
   });
-  app.use(json({ limit: '100kb' }));
+  app.use(json({
+    limit: '100kb',
+    verify: (request: Request, _response: Response, body: Buffer) => {
+      (request as Request & { rawBody?: Buffer }).rawBody = Buffer.from(body);
+    },
+  }));
   app.use(urlencoded({ extended: true, limit: '100kb' }));
   app.use(rateLimitMiddleware);
 

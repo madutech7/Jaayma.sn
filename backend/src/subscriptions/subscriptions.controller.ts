@@ -1,6 +1,9 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Post, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionsService } from './subscriptions.service';
+
+type RawBodyRequest = Request & { rawBody?: Buffer };
 
 @Controller('subscriptions')
 export class SubscriptionsController {
@@ -27,7 +30,11 @@ export class SubscriptionsController {
   }
 
   @Post('unitechpay/webhook')
-  handleUnitechPayWebhook(@Body() body: unknown) {
-    return this.subscriptions.handleWebhook(body);
+  handleUnitechPayWebhook(
+    @Body() body: unknown,
+    @Headers('x-unitechpay-signature') signature: string | undefined,
+    @Req() request: RawBodyRequest,
+  ) {
+    return this.subscriptions.handleWebhook(body, signature, request.rawBody);
   }
 }

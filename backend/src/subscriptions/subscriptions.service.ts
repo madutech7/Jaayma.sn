@@ -26,8 +26,8 @@ const webhookSchema = z.object({
   reference: z.string().min(1).max(200),
   amount: z.union([z.number(), z.string().min(1).max(20)]),
   status: z.string().min(1).max(40),
-  signed_at: z.union([z.number(), z.string().min(1).max(30)]),
-  signature: z.string().regex(/^[a-f\d]{64}$/i),
+  signed_at: z.union([z.number(), z.string().min(1).max(30)]).optional(),
+  signature: z.string().regex(/^[a-f\d]{64}$/i).optional(),
   transaction_id: z.union([z.number(), z.string().min(1).max(100)]).optional(),
 });
 
@@ -46,6 +46,8 @@ type UnitechPayResponse = {
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
+  private webhookConfigured = false;
+  private webhookConfiguration: Promise<void> | null = null;
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
@@ -65,6 +67,7 @@ export class SubscriptionsService {
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
     const apiKey = this.getApiKey();
+    await this.ensureWebhookConfigured(apiKey);
     const [shop, { amount }] = await Promise.all([
       this.prisma.shop.findFirst({
         where: { ownerId: userId },
@@ -173,17 +176,25 @@ export class SubscriptionsService {
     return payment;
   }
 
-  async handleWebhook(input: unknown) {
+  async handleWebhook(input: unknown, headerSignature?: string, rawBody?: Buffer) {
     const parsed = webhookSchema.safeParse(input);
-    const apiKey = this.config.get<string>('UNITECHPAY_API_KEY') ?? process.env.UNITECHPAY_API_KEY;
-    if (!apiKey) throw new ServiceUnavailableException('La configuration U‑NITech PAY est incomplète.');
+    const apiKey = this.getApiKey();
     if (!parsed.success) throw new BadRequestException('Webhook U‑NITech PAY invalide.');
 
     const event = parsed.data;
-    const canonicalPayload = [event.event, event.reference, String(event.amount), event.status, String(event.signed_at)].join('|');
-    const expected = createHmac('sha256', apiKey).update(canonicalPayload).digest();
-    const received = Buffer.from(event.signature, 'hex');
-    if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
+    const canonicalPayload = event.signed_at === undefined
+      ? null
+      : [event.event, event.reference, String(event.amount), event.status, String(event.signed_at)].join('|');
+    const bodySignatureValid = canonicalPayload !== null && event.signature !== undefined
+      ? this.signatureMatches(
+          createHmac('sha256', apiKey).update(canonicalPayload).digest(),
+          event.signature,
+        )
+      : false;
+    const headerSignatureValid = rawBody && headerSignature
+      ? this.signatureMatches(createHmac('sha256', apiKey).update(rawBody).digest(), headerSignature)
+      : false;
+    if (!bodySignatureValid && !headerSignatureValid) {
       throw new UnauthorizedException('Signature du webhook invalide.');
     }
 
@@ -261,6 +272,67 @@ export class SubscriptionsService {
       throw new ServiceUnavailableException('Le paiement en ligne n’est pas encore configuré.');
     }
     return apiKey.trim();
+  }
+
+  private async ensureWebhookConfigured(apiKey: string) {
+    if (this.webhookConfigured) return;
+    if (!this.webhookConfiguration) {
+      this.webhookConfiguration = this.configureWebhook(apiKey);
+    }
+    try {
+      await this.webhookConfiguration;
+      this.webhookConfigured = true;
+    } finally {
+      this.webhookConfiguration = null;
+    }
+  }
+
+  private async configureWebhook(apiKey: string) {
+    const webhookUrl = this.getWebhookUrl();
+    try {
+      const response = await fetch(`${UNITECHPAY_API_URL}?action=configure_webhook`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          webhook_url: webhookUrl,
+          events: ['payment_completed', 'payment_failed', 'payment_expired'],
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      const result = (await response.json().catch(() => null)) as { success?: boolean } | null;
+      if (!response.ok || result?.success !== true) {
+        this.logger.error(`UnitechPay webhook setup failed (${response.status}).`);
+        throw new ServiceUnavailableException('Impossible de préparer la confirmation automatique du paiement. Réessayez.');
+      }
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) throw error;
+      this.logger.error('UnitechPay webhook setup could not be reached.');
+      throw new ServiceUnavailableException('Impossible de joindre le service de confirmation des paiements. Réessayez.');
+    }
+  }
+
+  private getWebhookUrl() {
+    const configuredUrl = this.config.get<string>('UNITECHPAY_WEBHOOK_URL') ?? process.env.UNITECHPAY_WEBHOOK_URL;
+    const renderUrl = this.config.get<string>('RENDER_EXTERNAL_URL') ?? process.env.RENDER_EXTERNAL_URL;
+    const defaultBase = renderUrl?.trim() || 'https://jaayma-sn.onrender.com';
+    const rawUrl = configuredUrl?.trim() || `${defaultBase.replace(/\/$/, '')}/subscriptions/unitechpay/webhook`;
+    try {
+      const url = new URL(rawUrl);
+      if (url.protocol !== 'https:') throw new Error('HTTPS required');
+      return url.toString();
+    } catch {
+      throw new ServiceUnavailableException('UNITECHPAY_WEBHOOK_URL doit être une URL HTTPS valide.');
+    }
+  }
+
+  private signatureMatches(expected: Buffer, value: string) {
+    if (!/^[a-f\d]{64}$/i.test(value)) return false;
+    const received = Buffer.from(value, 'hex');
+    return received.length === expected.length && timingSafeEqual(received, expected);
   }
 
   private getFrontendUrl() {

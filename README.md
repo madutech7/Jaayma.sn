@@ -237,7 +237,7 @@ Le vendeur peut payer l'abonnement Pro (1 000 FCFA par défaut / 30 jours) avec 
 1. Créez un compte marchand UnitechPay et générez une clé API dans son tableau de bord.
 2. Dans Render → `jaayma-api` → **Environment**, ajoutez `UNITECHPAY_API_KEY` avec cette clé. Gardez-la secrète et ne la mettez pas dans Cloudflare ni dans le frontend.
 3. Réglez `FRONTEND_URL` sur l'adresse de production actuelle, par exemple `https://jaayma-sn.madutech0.workers.dev` tant que le domaine `jaayma.sn` n'est pas utilisé.
-4. Configurez une seule fois le webhook UnitechPay vers `https://jaayma-sn.onrender.com/subscriptions/unitechpay/webhook`, avec les événements `payment_completed`, `payment_failed` et `payment_expired`. Si le tableau de bord ne permet pas cette configuration, l'API UnitechPay l'accepte ainsi :
+4. Le backend configure automatiquement le webhook UnitechPay lors du premier paiement après chaque redémarrage, vers `UNITECHPAY_WEBHOOK_URL` (par défaut `https://jaayma-sn.onrender.com/subscriptions/unitechpay/webhook`), avec les événements `payment_completed`, `payment_failed` et `payment_expired`. Si vous préférez le configurer depuis le tableau de bord, l'API UnitechPay l'accepte ainsi :
 
 ```http
 POST https://api.unitech.sn/api.php?action=configure_webhook
