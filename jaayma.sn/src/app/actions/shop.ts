@@ -135,7 +135,7 @@ function normalizeWavePaymentLink(value: string): string | null {
       url.hostname === "pay.wave.com" &&
       !url.username &&
       !url.password &&
-      /^\/(?:m|mqr)\/[^/]+\/?$/.test(url.pathname);
+      /^\/(?:m|mqr)\/[^/]+(?:\/[^/]+)*\/?$/.test(url.pathname);
 
     return isWaveMerchantLink ? url.toString() : null;
   } catch {

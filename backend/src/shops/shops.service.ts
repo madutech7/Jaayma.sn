@@ -29,7 +29,7 @@ const shopSchema = z.object({
           url.hostname === 'pay.wave.com' &&
           !url.username &&
           !url.password &&
-          /^\/(?:m|mqr)\/[^/]+\/?$/.test(url.pathname)
+          /^\/(?:m|mqr)\/[^/]+(?:\/[^/]+)*\/?$/.test(url.pathname)
         );
       } catch {
         return false;
