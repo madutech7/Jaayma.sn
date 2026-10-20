@@ -118,15 +118,15 @@ export class UploadsService {
       throw new BadRequestException(parsed.error.flatten());
     }
 
-    if (parsed.data.folder === 'products') {
-      const shop = await this.prisma.shop.findFirst({
-        where: { ownerId: parsed.data.ownerId, status: { not: 'SUSPENDED' } },
-        select: { id: true },
-      });
+    // F-04: vérifier l'existence d'une boutique active pour tous les dossiers,
+    // pas uniquement "products" — évite la consommation de stockage non contrôlée.
+    const shop = await this.prisma.shop.findFirst({
+      where: { ownerId: parsed.data.ownerId, status: { not: 'SUSPENDED' } },
+      select: { id: true },
+    });
 
-      if (!shop) {
-        throw new BadRequestException('Boutique introuvable');
-      }
+    if (!shop) {
+      throw new BadRequestException('Boutique introuvable');
     }
 
     const { s3Client, bucket, publicBaseUrl } = this.getS3Config();

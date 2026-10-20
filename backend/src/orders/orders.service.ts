@@ -81,7 +81,23 @@ export class OrdersService {
   async findByReference(reference: string) {
     const order = await this.prisma.order.findUnique({
       where: { reference },
-      include: {
+      // F-06: ne pas exposer customerPhone et deliveryAddress sur ce endpoint public non authentifié
+      select: {
+        id: true,
+        reference: true,
+        status: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        customerName: true,
+        subtotal: true,
+        deliveryFee: true,
+        total: true,
+        note: true,
+        createdAt: true,
+        updatedAt: true,
+        shop: {
+          select: { id: true, name: true, slug: true, logoUrl: true, phone: true },
+        },
         items: {
           include: {
             product: {
@@ -89,7 +105,6 @@ export class OrdersService {
             },
           },
         },
-        shop: true,
       },
     });
 

@@ -27,7 +27,8 @@ const webhookSchema = z.object({
   reference: z.string().min(1).max(200),
   amount: z.union([z.number(), z.string().min(1).max(20)]),
   status: z.string().min(1).max(40),
-  signed_at: z.union([z.number(), z.string().min(1).max(30)]).optional(),
+  // F-02: signed_at est maintenant obligatoire pour prévenir les replays
+  signed_at: z.union([z.number(), z.string().min(1).max(30)]),
   signature: z.string().regex(/^[a-f\d]{64}$/i).optional(),
   transaction_id: z.union([z.number(), z.string().min(1).max(100)]).optional(),
 });
@@ -60,6 +61,10 @@ export class SubscriptionsService {
   private providerTransactionsCheckedAt = 0;
   private providerTransactionsCache: ProviderTransaction[] | null = null;
   private providerTransactionsRequest: Promise<ProviderTransaction[] | null> | null = null;
+  // F-02: liste de non-rejoue des références webhook (TTL 15 min)
+  private readonly webhookSeenRefs = new Map<string, number>();
+  private static readonly WEBHOOK_REPLAY_TTL_MS = 15 * 60_000;
+  private static readonly WEBHOOK_TIME_WINDOW_MS = 5 * 60_000;
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
@@ -266,10 +271,28 @@ export class SubscriptionsService {
     if (!parsed.success) throw new BadRequestException('Webhook U‑NITech PAY invalide.');
 
     const event = parsed.data;
-    const canonicalPayload = event.signed_at === undefined
-      ? null
-      : [event.event, event.reference, String(event.amount), event.status, String(event.signed_at)].join('|');
-    const bodySignatureValid = canonicalPayload !== null && event.signature !== undefined
+
+    // F-02a: vérifier la fenêtre temporelle (±5 min) pour prévenir les replays
+    const signedAtMs = Number(event.signed_at) * (String(event.signed_at).length <= 10 ? 1000 : 1);
+    const now = Date.now();
+    if (
+      !Number.isFinite(signedAtMs) ||
+      Math.abs(now - signedAtMs) > SubscriptionsService.WEBHOOK_TIME_WINDOW_MS
+    ) {
+      throw new UnauthorizedException('Webhook expiré ou horodatage invalide.');
+    }
+
+    // F-02b: liste de non-rejoue — rejeter une référence déjà vue dans les 15 min
+    this.pruneWebhookSeenRefs(now);
+    const replayKey = `${event.reference}:${event.event}`;
+    if (this.webhookSeenRefs.has(replayKey)) {
+      this.logger.warn(`Webhook replay détecté pour la référence ${event.reference}`);
+      return { received: true, processed: false };
+    }
+    this.webhookSeenRefs.set(replayKey, now);
+
+    const canonicalPayload = [event.event, event.reference, String(event.amount), event.status, String(event.signed_at)].join('|');
+    const bodySignatureValid = event.signature !== undefined
       ? this.signatureMatches(
           createHmac('sha256', apiKey).update(canonicalPayload).digest(),
           event.signature,
@@ -561,6 +584,15 @@ export class SubscriptionsService {
     if (!/^[a-f\d]{64}$/i.test(value)) return false;
     const received = Buffer.from(value, 'hex');
     return received.length === expected.length && timingSafeEqual(received, expected);
+  }
+
+  // F-02: purge des entrées expirées dans la liste de non-rejoue
+  private pruneWebhookSeenRefs(now: number) {
+    for (const [key, seenAt] of this.webhookSeenRefs) {
+      if (now - seenAt > SubscriptionsService.WEBHOOK_REPLAY_TTL_MS) {
+        this.webhookSeenRefs.delete(key);
+      }
+    }
   }
 
   private getFrontendUrl() {

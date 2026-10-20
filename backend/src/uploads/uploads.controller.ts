@@ -27,7 +27,15 @@ export class UploadsController {
   @Get('file/*')
   async getFile(@Req() req: Request, @Res() res: Response) {
     const encodedKey = req.url.replace(/^\/uploads\/file\//, '').split('?')[0];
-    const key = encodedKey.split('/').map(decodeURIComponent).join('/');
+    const segments = encodedKey.split('/').map(decodeURIComponent);
+
+    // F-01: rejeter tout segment vide, "." ou ".." (path traversal)
+    if (segments.length === 0 || segments.some((s) => s === '' || s === '.' || s === '..')) {
+      res.status(400).json({ statusCode: 400, message: 'Chemin de fichier invalide.' });
+      return;
+    }
+
+    const key = segments.join('/');
     const file = await this.uploadsService.getFile(key);
     res.setHeader('Content-Type', file.contentType);
     res.setHeader('Cache-Control', file.cacheControl);
