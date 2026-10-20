@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import type { Product } from "@/types/schema";
 import ProductImagesUploader from "@/components/ProductImagesUploader";
 import ProductOptionsEditor from "@/components/ProductOptionsEditor";
+import DeleteProductButton from "./DeleteProductButton";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -143,7 +144,7 @@ export default function ProductForm({
         )}
 
         {/*  BOUTON  */}
-        <div className="pt-8">
+        <div className="pt-8 space-y-3">
           <button
             type="submit"
             disabled={isPending}
@@ -152,6 +153,17 @@ export default function ProductForm({
           >
             {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (product ? "Enregistrer les modifications" : "Ajouter au catalogue")}
           </button>
+
+          {product && (
+            <div className="pt-2">
+              <DeleteProductButton
+                id={product.id}
+                name={product.name}
+                redirectTo="/espace/produits"
+                variant="button"
+              />
+            </div>
+          )}
         </div>
       </form>
     </div>

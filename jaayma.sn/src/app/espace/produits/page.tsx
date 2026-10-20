@@ -6,6 +6,7 @@ import { getEffectivePlan, getProductLimit } from "@/lib/plans";
 import { getImageUrl } from "@/lib/images";
 import { api } from "@/lib/api";
 import { Package, Plus, Lightbulb } from "lucide-react";
+import DeleteProductButton from "./DeleteProductButton";
 
 export const metadata = {
   title: "Mes Produits - Espace Vendeur",
@@ -120,98 +121,106 @@ export default async function ProduitsPage() {
           {shopProducts.map((product) => {
             const hasImage = Boolean(imageUrls[product.id]);
             return (
-              <Link
-                href={`/espace/produits/${product.id}`}
-                prefetch={true}
+              <div
                 key={product.id}
-                className="flex items-center p-3 rounded-[20px] border-[2.5px] border-ink active:scale-[0.98] transition-transform shadow-[3px_3px_0_#0F1E3D] hover:-translate-y-0.5"
+                className="flex items-center p-3 rounded-[20px] border-[2.5px] border-ink transition-transform shadow-[3px_3px_0_#0F1E3D] hover:-translate-y-0.5"
                 style={{ backgroundColor: "#FFFBF2" }}
               >
-                {/* Miniature / Placeholder moderne */}
-                {hasImage ? (
-                  <div className="w-14 h-14 rounded-2xl shrink-0 border-[2px] border-ink mr-3.5 overflow-hidden bg-white shadow-[2px_2px_0_#0F1E3D] flex items-center justify-center p-0.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={imageUrls[product.id]}
-                      alt={product.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover rounded-xl"
-                    />
-                  </div>
-                ) : (
-                  (() => {
-                    const palette = [
-                      { bg: "#FFC83D", text: "#0F1E3D" },
-                      { bg: "#F6C3D2", text: "#8C1C41" },
-                      { bg: "#CFEFE6", text: "#075F4D" },
-                      { bg: "#DCE5FF", text: "#263B70" },
-                    ];
-                    const colorIndex = Math.abs((product.name || "P").charCodeAt(0)) % palette.length;
-                    const color = palette[colorIndex];
-                    const initial = (product.name || "P").trim().charAt(0).toUpperCase();
+                <Link
+                  href={`/espace/produits/${product.id}`}
+                  prefetch={true}
+                  className="flex items-center flex-1 min-w-0"
+                >
+                  {/* Miniature / Placeholder moderne */}
+                  {hasImage ? (
+                    <div className="w-14 h-14 rounded-2xl shrink-0 border-[2px] border-ink mr-3.5 overflow-hidden bg-white shadow-[2px_2px_0_#0F1E3D] flex items-center justify-center p-0.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrls[product.id]}
+                        alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    </div>
+                  ) : (
+                    (() => {
+                      const palette = [
+                        { bg: "#FFC83D", text: "#0F1E3D" },
+                        { bg: "#F6C3D2", text: "#8C1C41" },
+                        { bg: "#CFEFE6", text: "#075F4D" },
+                        { bg: "#DCE5FF", text: "#263B70" },
+                      ];
+                      const colorIndex = Math.abs((product.name || "P").charCodeAt(0)) % palette.length;
+                      const color = palette[colorIndex];
+                      const initial = (product.name || "P").trim().charAt(0).toUpperCase();
 
-                    return (
-                      <div
-                        className="w-14 h-14 rounded-2xl shrink-0 border-[2px] border-ink mr-3.5 overflow-hidden shadow-[2px_2px_0_#0F1E3D] flex flex-col items-center justify-center relative select-none"
-                        style={{ backgroundColor: color.bg }}
-                        title="Aucune photo pour cet article"
-                      >
-                        <span
-                          className="font-bricolage font-black text-xl leading-none"
-                          style={{ color: color.text }}
+                      return (
+                        <div
+                          className="w-14 h-14 rounded-2xl shrink-0 border-[2px] border-ink mr-3.5 overflow-hidden shadow-[2px_2px_0_#0F1E3D] flex flex-col items-center justify-center relative select-none"
+                          style={{ backgroundColor: color.bg }}
+                          title="Aucune photo pour cet article"
                         >
-                          {initial}
+                          <span
+                            className="font-bricolage font-black text-xl leading-none"
+                            style={{ color: color.text }}
+                          >
+                            {initial}
+                          </span>
+                          <Package
+                            className="w-3.5 h-3.5 absolute bottom-1 right-1 opacity-40"
+                            style={{ color: color.text }}
+                            strokeWidth={2.5}
+                          />
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-center gap-2">
+                      <p className="line-clamp-2 font-bold text-ink text-[15px] leading-snug">{product.name}</p>
+                      {!hasImage && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded border border-ink/25 text-[#3F4B69] bg-[#0F1E3D]/5 shrink-0">
+                          Sans photo
                         </span>
-                        <Package
-                          className="w-3.5 h-3.5 absolute bottom-1 right-1 opacity-40"
-                          style={{ color: color.text }}
-                          strokeWidth={2.5}
-                        />
-                      </div>
-                    );
-                  })()
-                )}
-
-                <div className="flex-1 min-w-0 pr-2">
-                  <div className="flex items-center gap-2">
-                    <p className="line-clamp-2 font-bold text-ink text-[15px] leading-snug">{product.name}</p>
-                    {!hasImage && (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded border border-ink/25 text-[#3F4B69] bg-[#0F1E3D]/5 shrink-0">
-                        Sans photo
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="font-bricolage font-black text-sm" style={{ color: "#C8265A" }}>
+                        {formatFcfa(product.price)}
+                      </p>
+                      <span
+                        className="text-[10px] font-black px-2 py-0.5 rounded-full border border-ink/20"
+                        style={{
+                          backgroundColor: (product.stock ?? 0) > 0 ? "rgba(14,124,102,0.12)" : "rgba(200,38,90,0.12)",
+                          color: (product.stock ?? 0) > 0 ? "#0E7C66" : "#C8265A",
+                        }}
+                      >
+                        {(product.stock ?? 0) > 0 ? `${product.stock} en stock` : "Rupture"}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="font-bricolage font-black text-sm" style={{ color: "#C8265A" }}>
-                      {formatFcfa(product.price)}
-                    </p>
-                    <span
-                      className="text-[10px] font-black px-2 py-0.5 rounded-full border border-ink/20"
-                      style={{
-                        backgroundColor: (product.stock ?? 0) > 0 ? "rgba(14,124,102,0.12)" : "rgba(200,38,90,0.12)",
-                        color: (product.stock ?? 0) > 0 ? "#0E7C66" : "#C8265A",
-                      }}
-                    >
-                      {(product.stock ?? 0) > 0 ? `${product.stock} en stock` : "Rupture"}
-                    </span>
-                  </div>
-                </div>
+                </Link>
 
-                {/* Pill Status */}
-                <div className="shrink-0 pl-3 border-l-2 border-ink/10 flex items-center h-full">
-                  <div
+                {/* Actions: Pill Status + Bouton Supprimer */}
+                <div className="shrink-0 pl-3 border-l-2 border-ink/10 flex items-center gap-2">
+                  <Link
+                    href={`/espace/produits/${product.id}`}
+                    prefetch={true}
                     className="w-11 h-6 rounded-full flex items-center relative transition-colors"
                     style={{ backgroundColor: product.isActive ? "#0E7C66" : "#3A4A75" }}
-                    title={product.isActive ? "Produit visible" : "Brouillon / Masqué"}
+                    title={product.isActive ? "Produit visible (cliquez pour modifier)" : "Brouillon / Masqué"}
                   >
                     <div
                       className="w-4 h-4 rounded-full bg-white absolute transition-all shadow-sm"
                       style={{ left: product.isActive ? "22px" : "4px" }}
                     />
-                  </div>
+                  </Link>
+
+                  <DeleteProductButton id={product.id} name={product.name} />
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

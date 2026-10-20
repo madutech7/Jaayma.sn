@@ -178,7 +178,6 @@ export default function EspaceNav() {
       <nav
         aria-label="Navigation espace vendeur"
         className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 lg:hidden"
-        style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
         <div className="flex items-center justify-between rounded-full border-[2.5px] border-ink bg-[#FFFBF2] p-1.5 text-ink shadow-[4px_4px_0_#0F1E3D]">
           {NAV.map((item) => {
