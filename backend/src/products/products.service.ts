@@ -96,7 +96,16 @@ export class ProductsService {
           select: { id: true, productId: true, url: true, alt: true, position: true },
         },
         shop: {
-          select: { id: true, slug: true, name: true, logoUrl: true, deliveryFee: true, category: true },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            logoUrl: true,
+            deliveryFee: true,
+            category: true,
+            plan: true,
+            planExpiresAt: true,
+          },
         },
       },
     });

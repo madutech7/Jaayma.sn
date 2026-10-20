@@ -12,6 +12,7 @@ import { cache } from "react";
 import { api } from "@/lib/api";
 import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEME_COLORS } from "@/lib/shop-theme";
 import { getEffectivePlan } from "@/lib/plans";
+import ProBadge from "@/components/ProBadge";
 import { MapPin, Star, Truck, ShoppingBag } from "lucide-react";
 
 const getShopBySlug = cache(async (shopSlug: string) => {
@@ -63,7 +64,7 @@ export default async function ShopPage({ params, searchParams }: {
 
   const shop = await getShopBySlug(shopSlug);
   if (!shop || !shop.isPublished) notFound();
-  const canUseMarketingTools = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
+  const isProActive = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
   const themeColor = shop.themeColor && SHOP_THEME_COLORS.some((theme) => theme === shop.themeColor)
     ? shop.themeColor
     : DEFAULT_SHOP_THEME;
@@ -82,8 +83,8 @@ export default async function ShopPage({ params, searchParams }: {
     <div className="min-h-screen pb-28" style={{ backgroundColor: "#FFFBF2" }}>
       <TrackVisit shopId={shop.id} />
       <MarketingPixel
-        facebookPixelId={canUseMarketingTools ? shop.facebookPixelId : null}
-        tiktokPixelId={canUseMarketingTools ? shop.tiktokPixelId : null}
+        facebookPixelId={isProActive ? shop.facebookPixelId : null}
+        tiktokPixelId={isProActive ? shop.tiktokPixelId : null}
         event="PageView"
         eventData={{
           content_name: shop.name,
@@ -138,7 +139,7 @@ export default async function ShopPage({ params, searchParams }: {
 
           {/* Shop name + info */}
           <div className="px-5 pt-6 pb-4 max-w-xl mx-auto">
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-3 mb-1">
               {shop.logoKey && (
                 <div className="relative w-16 h-16 shrink-0 overflow-hidden rounded-full border-[3px] border-white bg-white shadow-[3px_3px_0_#0F1E3D]">
                   <Image
@@ -151,9 +152,10 @@ export default async function ShopPage({ params, searchParams }: {
                   />
                 </div>
               )}
-              <h1 className="min-w-0 font-bricolage font-black leading-tight" style={{ color: themeForeground, fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
+              <h1 className="min-w-0 flex-1 font-bricolage font-black leading-tight" style={{ color: themeForeground, fontSize: "clamp(2rem, 9vw, 3rem)", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
                 {shop.name}
               </h1>
+              {isProActive && <ProBadge variant="dark" />}
             </div>
             {(shop.headline || shop.tagline || shop.area || shop.quartier) && (
               <div className="flex flex-wrap items-center gap-x-2 text-sm font-medium mb-2.5" style={{ color: themeSecondaryText }}>

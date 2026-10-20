@@ -9,6 +9,7 @@ import { OrderStatus } from "@/lib/orders";
 import { getRequestOrigin } from "@/lib/site-url";
 import { api } from "@/lib/api";
 import { getEffectivePlan } from "@/lib/plans";
+import ProBadge from "@/components/ProBadge";
 
 export const metadata = {
   title: "Commande envoyée | Jaaymaa",
@@ -67,7 +68,7 @@ export default async function OrderSuccessPage({
 
   const shop = order.shop ?? (await api.getShopBySlug(shopSlug));
   if (!shop) notFound();
-  const canUseMarketingTools = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
+  const isProActive = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
 
   const wavePaymentNumber = shop.waveNumber || shop.whatsapp;
   const orangeMoneyPaymentNumber = shop.orangeMoneyNumber || shop.whatsapp;
@@ -88,8 +89,8 @@ export default async function OrderSuccessPage({
     <div className="min-h-screen pb-10" style={{ backgroundColor: "#FFC83D" }}>
       <AutoRefresh intervalMs={30000} />
       <MarketingPixel
-        facebookPixelId={canUseMarketingTools ? shop.facebookPixelId : null}
-        tiktokPixelId={canUseMarketingTools ? shop.tiktokPixelId : null}
+        facebookPixelId={isProActive ? shop.facebookPixelId : null}
+        tiktokPixelId={isProActive ? shop.tiktokPixelId : null}
         event="Purchase"
         eventData={{
           content_name: shop.name,
@@ -132,6 +133,7 @@ export default async function OrderSuccessPage({
             <span className="font-bold">{order.number}</span>
             {shop.whatsapp ? " et te répond sur WhatsApp." : "."}
           </p>
+          {isProActive && <ProBadge className="mx-auto mt-3" />}
         </div>
 
         {/* ─── STATUT badge ─── */}

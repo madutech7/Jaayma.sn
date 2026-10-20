@@ -8,7 +8,9 @@ import { getImageUrl } from "@/lib/images";
 import ProductImageFrame, { WAX_PATTERNS } from "@/components/ProductImageFrame";
 import PriceDisplay from "@/components/PriceDisplay";
 import FormattedDescription from "@/components/FormattedDescription";
+import ProBadge from "@/components/ProBadge";
 import type { Product, Shop } from "@/types/schema";
+import { getEffectivePlan } from "@/lib/plans";
 
 export interface ExploreItem {
   product: Product;
@@ -37,6 +39,7 @@ function ExploreProductSheet({
   onOpenShop: () => void;
 }) {
   const { product, shop, imageUrl } = item;
+  const isProActive = getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro";
   const dragStartYRef = useRef<number | null>(null);
 
   const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -111,7 +114,10 @@ function ExploreProductSheet({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#6A748B]">Vendu par</p>
-                <p className="truncate font-bricolage font-black text-ink">{shop.name}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-bricolage font-black text-ink">{shop.name}</p>
+                  {isProActive && <ProBadge />}
+                </div>
                 {(shop.area || shop.quartier) && <p className="truncate text-xs text-[#3F4B69]">{shop.area || shop.quartier}</p>}
               </div>
             </div>
@@ -464,7 +470,10 @@ export default function ExplorerFeed({
                     </div>
                     <div className="min-w-0">
                       <p className="text-[9px] uppercase tracking-wide leading-none" style={{ color: "#3F4B69" }}>Vendu par</p>
-                      <p className="font-bold text-ink text-xs truncate mt-0.5">{shop.name}</p>
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                        <p className="min-w-0 truncate font-bold text-ink text-xs">{shop.name}</p>
+                        {getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro" && <ProBadge compact />}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -511,7 +520,10 @@ export default function ExplorerFeed({
                     ) : shop.name.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-bricolage font-black text-ink text-base leading-tight line-clamp-1">{shop.name}</p>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <p className="min-w-0 flex-1 truncate font-bricolage font-black text-ink text-base leading-tight">{shop.name}</p>
+                    {getEffectivePlan(shop.plan, shop.planExpiresAt) === "pro" && <ProBadge compact />}
+                  </div>
                     <p className="mt-1 text-xs leading-snug line-clamp-2" style={{ color: "#3F4B69" }}>{shop.headline || shop.description || "Découvrez la boutique"}</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {shop.category && <span className="rounded-full border border-ink/20 bg-[#FFC83D]/50 px-2 py-0.5 text-[10px] font-bold text-ink">{shop.category}</span>}
