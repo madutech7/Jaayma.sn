@@ -269,17 +269,16 @@ export default async function AbonnementPage({
       className="relative overflow-hidden rounded-3xl border-[2.5px] border-ink bg-[#FFFBF2] p-6 text-ink shadow-[5px_5px_0_#0F1E3D]"
     >
       <div className="absolute inset-x-0 top-0 h-2 bg-sun" aria-hidden="true" />
-      <div className="mb-3 flex min-h-7 justify-end">
-        {isProPlus ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-[#FFC83D] px-3 py-1 text-xs font-black text-[#0F1E3D] shadow-[2px_2px_0_#0F1E3D]">
+      <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span className="inline-flex items-center rounded-full border border-ink/15 bg-sun/25 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-ink">
+          Formule annuelle
+        </span>
+        {isProPlus && (
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink bg-[#FFC83D] px-3 py-1 text-xs font-black text-[#0F1E3D] shadow-[2px_2px_0_#0F1E3D]">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             Plan Actif
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-ink/15 bg-sun/25 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-ink">
-            ★ Formule annuelle
           </span>
         )}
       </div>
@@ -290,13 +289,8 @@ export default async function AbonnementPage({
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-bricolage text-2xl font-black text-ink">PRO+</h2>
-            <span className="rounded-full border border-ink/20 bg-white/80 px-2 py-0.5 text-[10px] font-black uppercase text-ink">
-              Formule Annuelle
-            </span>
-          </div>
+        <div className="min-w-0">
+          <h2 className="font-bricolage text-2xl font-black text-ink">PRO+</h2>
           <p className="mt-0.5 text-lg font-bold text-ink">
             {formattedProPlusPrice} F <span className="text-xs font-medium text-ink/65">/ an (facturé en 1 fois)</span>
           </p>
