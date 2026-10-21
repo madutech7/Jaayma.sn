@@ -1,0 +1,5 @@
+ALTER TABLE "PlatformSetting"
+ADD COLUMN "proPlusPriceXof" INTEGER NOT NULL DEFAULT 10000;
+
+ALTER TABLE "SubscriptionPayment"
+ADD COLUMN "plan" TEXT NOT NULL DEFAULT 'pro';

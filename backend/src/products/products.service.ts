@@ -285,8 +285,14 @@ export class ProductsService {
 }
 
 function planLimits(plan: string, expiresAt: Date | null) {
-  const isPro = plan === 'pro' && (!expiresAt || expiresAt.getTime() >= Date.now());
-  return isPro
-    ? { maxActiveProducts: 200, maxPhotos: 4 }
-    : { maxActiveProducts: 10, maxPhotos: 1 };
+  const isActive = !expiresAt || expiresAt.getTime() >= Date.now();
+  if (isActive) {
+    if (plan === 'pro_plus') {
+      return { maxActiveProducts: 200, maxPhotos: 4 };
+    }
+    if (plan === 'pro') {
+      return { maxActiveProducts: 100, maxPhotos: 3 };
+    }
+  }
+  return { maxActiveProducts: 10, maxPhotos: 1 };
 }

@@ -15,11 +15,14 @@ import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
 const DEFAULT_PRO_PRICE_XOF = 1000;
+const DEFAULT_PRO_PLUS_PRICE_XOF = 10000;
 const PRO_DURATION_DAYS = 30;
+const PRO_PLUS_DURATION_DAYS = 365;
 const UNITECHPAY_API_URL = 'https://api.unitech.sn/api.php';
 
 const createPaymentSchema = z.object({
   method: z.enum(['wave', 'orange_money']),
+  plan: z.enum(['pro', 'pro_plus']).default('pro').optional(),
 });
 
 const webhookSchema = z.object({
@@ -71,29 +74,42 @@ export class SubscriptionsService {
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
-  private cachedPrice: { amount: number; expiresAt: number } | null = null;
+  private cachedPrice: {
+    data: { amount: number; proPriceXof: number; proPlusAmount: number; proPlusPriceXof: number };
+    expiresAt: number;
+  } | null = null;
 
   async getPrice() {
     const now = Date.now();
     if (this.cachedPrice && this.cachedPrice.expiresAt > now) {
-      return { amount: this.cachedPrice.amount };
+      return this.cachedPrice.data;
     }
     const settings = await this.prisma.platformSetting.findUnique({
       where: { id: 'global' },
-      select: { proPriceXof: true },
+      select: { proPriceXof: true, proPlusPriceXof: true },
     });
     const amount = settings?.proPriceXof ?? DEFAULT_PRO_PRICE_XOF;
-    this.cachedPrice = { amount, expiresAt: now + 60_000 };
-    return { amount };
+    const proPlusAmount = settings?.proPlusPriceXof ?? DEFAULT_PRO_PLUS_PRICE_XOF;
+    const data = {
+      amount,
+      proPriceXof: amount,
+      proPlusAmount,
+      proPlusPriceXof: proPlusAmount,
+    };
+    this.cachedPrice = { data, expiresAt: now + 60_000 };
+    return data;
   }
 
   async createPayment(userId: string, input: unknown) {
     const parsed = createPaymentSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
+    const requestedPlan = parsed.data.plan ?? 'pro';
+    const isProPlus = requestedPlan === 'pro_plus';
+
     const apiKey = this.getApiKey();
     await this.ensureWebhookConfigured(apiKey);
-    const [shop, { amount }] = await Promise.all([
+    const [shop, prices] = await Promise.all([
       this.prisma.shop.findFirst({
         where: { ownerId: userId },
         include: { owner: { select: { phone: true } } },
@@ -102,6 +118,7 @@ export class SubscriptionsService {
     ]);
     if (!shop || !shop.owner) throw new NotFoundException('Boutique ou vendeur introuvable.');
 
+    const amount = isProPlus ? prices.proPlusAmount : prices.amount;
     const phone = this.getSenegalMobileNumber(shop.owner.phone);
     const frontendUrl = this.getFrontendUrl();
     const payment = await this.prisma.subscriptionPayment.create({
@@ -110,6 +127,7 @@ export class SubscriptionsService {
         amount,
         currency: 'XOF',
         method: parsed.data.method,
+        plan: requestedPlan,
         status: 'pending',
       },
       select: { id: true },
@@ -125,7 +143,7 @@ export class SubscriptionsService {
     const payload = {
       amount,
       customer_number: phone,
-      description: `Jaaymaa Pro - ${shop.slug}`.slice(0, 120),
+      description: `Jaaymaa ${isProPlus ? 'Pro+ (1 an)' : 'Pro (30 jours)'} - ${shop.slug}`.slice(0, 120),
       callback_success: successUrl.toString(),
       callback_cancel: cancelUrl.toString(),
     };
@@ -492,6 +510,14 @@ export class SubscriptionsService {
       });
       if (claimed.count === 0) return false;
 
+      const payment = await tx.subscriptionPayment.findUnique({
+        where: { id: paymentId },
+        select: { plan: true },
+      });
+      const isProPlus = payment?.plan === 'pro_plus';
+      const targetPlan = isProPlus ? 'pro_plus' : 'pro';
+      const durationDays = isProPlus ? PRO_PLUS_DURATION_DAYS : PRO_DURATION_DAYS;
+
       const shop = await tx.shop.findUnique({
         where: { id: shopId },
         select: { plan: true, planExpiresAt: true },
@@ -500,14 +526,16 @@ export class SubscriptionsService {
 
       const now = new Date();
       const activeExpiry =
-        shop.plan === 'pro' && shop.planExpiresAt && shop.planExpiresAt > now
+        (shop.plan === targetPlan || (shop.plan === 'pro' && isProPlus)) &&
+        shop.planExpiresAt &&
+        shop.planExpiresAt > now
           ? shop.planExpiresAt
           : now;
-      const planExpiresAt = new Date(activeExpiry.getTime() + PRO_DURATION_DAYS * 24 * 60 * 60 * 1000);
+      const planExpiresAt = new Date(activeExpiry.getTime() + durationDays * 24 * 60 * 60 * 1000);
       await tx.shop.update({
         where: { id: shopId },
         data: {
-          plan: 'pro',
+          plan: targetPlan,
           planExpiresAt,
           proReminder3DaysSentAt: null,
           proReminder1DaySentAt: null,

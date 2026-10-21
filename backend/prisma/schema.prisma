@@ -73,6 +73,7 @@ model PlatformSetting {
   explorerEnabled    Boolean  @default(true)
   maintenanceEnabled Boolean  @default(false)
   proPriceXof        Int      @default(1000)
+  proPlusPriceXof    Int      @default(10000)
   updatedAt          DateTime @updatedAt
 }
 
@@ -124,6 +125,7 @@ model SubscriptionPayment {
   amount                Int
   currency              String    @default("XOF")
   method                String
+  plan                  String    @default("pro")
   status                String    @default("pending")
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

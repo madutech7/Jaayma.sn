@@ -8,9 +8,13 @@ import { startProSubscriptionPayment } from "@/app/actions/subscription";
 export function SubscriptionPaymentButtons({
   price,
   isRenewal = false,
+  plan = "pro",
+  variant = "default",
 }: {
   price: string | null;
   isRenewal?: boolean;
+  plan?: "pro" | "pro_plus";
+  variant?: "default" | "gold";
 }) {
   const [pendingMethod, setPendingMethod] = useState<"wave" | "orange_money" | null>(null);
   const submissionStarted = useRef(false);
@@ -25,38 +29,67 @@ export function SubscriptionPaymentButtons({
     setPendingMethod(method);
   }
 
-  const waveLabel = isRenewal ? "Prolonger avec Wave" : "Payer avec Wave";
-  const omLabel = isRenewal ? "Prolonger avec Orange Money" : "Payer avec Orange Money";
+  const isProPlus = plan === "pro_plus";
+  const waveLabel = isRenewal
+    ? isProPlus ? "Prolonger Pro+ avec Wave" : "Prolonger avec Wave"
+    : isProPlus ? "Passer à Pro+ avec Wave" : "Payer avec Wave";
+  const omLabel = isRenewal
+    ? isProPlus ? "Prolonger Pro+ avec Orange Money" : "Prolonger avec Orange Money"
+    : isProPlus ? "Passer à Pro+ avec Orange Money" : "Payer avec Orange Money";
+
+  const waveBtnStyle = variant === "gold"
+    ? { backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "4px 4px 0 #000" }
+    : { backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" };
+
+  const omBtnStyle = variant === "gold"
+    ? { backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #000" }
+    : { backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" };
 
   return (
     <>
       <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "wave")}>
         <input type="hidden" name="method" value="wave" />
+        <input type="hidden" name="plan" value={plan} />
         <button
           type="submit"
           disabled={isPending || !price}
           className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:cursor-wait disabled:opacity-80"
-          style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
+          style={waveBtnStyle}
         >
           {pendingMethod === "wave" && <Loader2 size={18} className="animate-spin" />}
-          {pendingMethod === "wave" ? "Création du paiement Wave…" : isPending ? "Patientez…" : price ? `${waveLabel} · ${price} F` : "Prix indisponible"}
+          {pendingMethod === "wave"
+            ? "Création du paiement Wave…"
+            : isPending
+            ? "Patientez…"
+            : price
+            ? `${waveLabel} · ${price} F`
+            : "Prix indisponible"}
         </button>
       </form>
       <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "orange_money")}>
         <input type="hidden" name="method" value="orange_money" />
+        <input type="hidden" name="plan" value={plan} />
         <button
           type="submit"
           disabled={isPending || !price}
           className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:cursor-wait disabled:opacity-80"
-          style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
+          style={omBtnStyle}
         >
           {pendingMethod === "orange_money" && <Loader2 size={18} className="animate-spin" />}
-          {pendingMethod === "orange_money" ? "Création du paiement Orange Money…" : isPending ? "Patientez…" : price ? `${omLabel} · ${price} F` : "Prix indisponible"}
+          {pendingMethod === "orange_money"
+            ? "Création du paiement Orange Money…"
+            : isPending
+            ? "Patientez…"
+            : price
+            ? `${omLabel} · ${price} F`
+            : "Prix indisponible"}
         </button>
       </form>
       {(isPending || !price) && (
         <p className="text-center text-xs font-medium text-[#C3CCE6]" role="status" aria-live="polite">
-          {isPending ? "Préparation sécurisée du paiement, cela peut prendre quelques secondes. Ne fermez pas cette page." : "Le prix Pro ne peut pas être chargé. Actualisez la page pour réessayer."}
+          {isPending
+            ? "Préparation sécurisée du paiement, cela peut prendre quelques secondes. Ne fermez pas cette page."
+            : "Le tarif ne peut pas être chargé. Actualisez la page pour réessayer."}
         </p>
       )}
     </>

@@ -1,10 +1,11 @@
 /**
- * Plan limits and helpers for Jaay.
+ * Plan limits and helpers for Jaaymaa.
  * Free plan: 10 active products, 1 photo per product.
- * Pro plan: 200 active products, 4 photos per product.
+ * Pro plan: 100 active products, 3 photos per product (monthly).
+ * Pro+ plan: 200 active products, 4 photos per product (annual).
  */
 
-export type Plan = "free" | "pro";
+export type Plan = "free" | "pro" | "pro_plus";
 
 export const PLAN_LIMITS = {
   free: {
@@ -12,28 +13,38 @@ export const PLAN_LIMITS = {
     maxPhotosPerProduct: 1,
   },
   pro: {
+    maxActiveProducts: 100,
+    maxPhotosPerProduct: 3,
+  },
+  pro_plus: {
     maxActiveProducts: 200,
     maxPhotosPerProduct: 4,
   },
 } as const satisfies Record<Plan, { maxActiveProducts: number; maxPhotosPerProduct: number }>;
+
+export function isPaidPlan(plan?: string | null): boolean {
+  return plan === "pro" || plan === "pro_plus";
+}
 
 /** Returns the effective plan, considering expiry. */
 export function getEffectivePlan(
   plan?: string | null,
   planExpiresAt?: number | string | Date | null
 ): Plan {
-  if (plan === "pro") {
+  if (plan === "pro" || plan === "pro_plus") {
     const now = Math.floor(Date.now() / 1000);
     const expiresUnix =
       typeof planExpiresAt === "number"
-        ? planExpiresAt
+        ? planExpiresAt > 1e12
+          ? Math.floor(planExpiresAt / 1000)
+          : planExpiresAt
         : planExpiresAt
           ? Math.floor(new Date(planExpiresAt).getTime() / 1000)
           : null;
     if (expiresUnix && expiresUnix < now) {
-      return "free"; // Pro expired
+      return "free"; // Expired
     }
-    return "pro";
+    return plan;
   }
   return "free";
 }
@@ -65,14 +76,14 @@ export function getPhotoLimit(effectivePlan: Plan): number {
 }
 
 /**
- * Returns the number of full days remaining on a Pro subscription.
- * Returns null if not Pro or if planExpiresAt is missing.
+ * Returns the number of full days remaining on a paid subscription.
+ * Returns null if not Pro/Pro+ or if planExpiresAt is missing.
  */
 export function getProDaysRemaining(
   plan?: string | null,
   planExpiresAt?: number | string | Date | null
 ): number | null {
-  if (plan !== "pro" || !planExpiresAt) return null;
+  if (!isPaidPlan(plan) || !planExpiresAt) return null;
   const expiresMs =
     typeof planExpiresAt === "number"
       ? planExpiresAt > 1e12
@@ -85,12 +96,12 @@ export function getProDaysRemaining(
 }
 
 /**
- * Returns a visual urgency level based on remaining Pro days:
+ * Returns a visual urgency level based on remaining paid days:
  * - "expired"  → 0 days left
  * - "critical" → 1–3 days left
  * - "warning"  → 4–7 days left
  * - "ok"       → 8+ days
- * - null       → not Pro
+ * - null       → not paid plan
  */
 export function getProUrgency(
   plan?: string | null,

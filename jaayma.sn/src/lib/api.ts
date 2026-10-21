@@ -218,6 +218,14 @@ export const api = {
     });
   },
 
+  async adminSetProPlusSubscriptionPrice(token: string, amount: number) {
+    return request<{ proPlusPriceXof: number }>("/admin/settings/pro-plus-price", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ amount }),
+    });
+  },
+
   async getAdminAccounts(token: string, params: { q?: string; hasShop?: string; page?: number }) {
     const search = new URLSearchParams();
     if (params.q) search.set("q", params.q);
@@ -249,6 +257,7 @@ export const api = {
       explorerEnabled: boolean;
       maintenanceEnabled: boolean;
       proPriceXof: number;
+      proPlusPriceXof?: number;
     }>("/admin/settings", { token, cache: "no-store" });
   },
 
@@ -271,7 +280,12 @@ export const api = {
   },
 
   async getProSubscriptionPrice() {
-    return request<{ amount: number }>("/subscriptions/price", { cache: "no-store" });
+    return request<{
+      amount: number;
+      proPriceXof?: number;
+      proPlusAmount?: number;
+      proPlusPriceXof?: number;
+    }>("/subscriptions/price", { cache: "no-store" });
   },
 
   async getAdminNotificationHistory(token: string, page = 1) {
@@ -564,7 +578,11 @@ export const api = {
   },
 
   // ─── SUBSCRIPTIONS ───
-  async createSubscriptionPayment(token: string, method: "wave" | "orange_money") {
+  async createSubscriptionPayment(
+    token: string,
+    method: "wave" | "orange_money",
+    plan: "pro" | "pro_plus" = "pro"
+  ) {
     return request<{
       id: string;
       paymentUrl: string;
@@ -573,7 +591,7 @@ export const api = {
     }>("/subscriptions/payments", {
       method: "POST",
       token,
-      body: JSON.stringify({ method }),
+      body: JSON.stringify({ method, plan }),
     });
   },
 

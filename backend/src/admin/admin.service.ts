@@ -82,7 +82,7 @@ export class AdminService {
       Promise.resolve(this.notifications.getAdminPushSettings()),
       this.prisma.platformSetting.findUnique({
         where: { id: 'global' },
-        select: { explorerEnabled: true, maintenanceEnabled: true, proPriceXof: true },
+        select: { explorerEnabled: true, maintenanceEnabled: true, proPriceXof: true, proPlusPriceXof: true },
       }),
     ]);
     return {
@@ -93,6 +93,7 @@ export class AdminService {
       explorerEnabled: platformSettings?.explorerEnabled ?? true,
       maintenanceEnabled: platformSettings?.maintenanceEnabled ?? false,
       proPriceXof: platformSettings?.proPriceXof ?? 1000,
+      proPlusPriceXof: platformSettings?.proPlusPriceXof ?? 10000,
     };
   }
 
@@ -124,6 +125,15 @@ export class AdminService {
       create: { id: 'global', proPriceXof },
       update: { proPriceXof },
       select: { proPriceXof: true },
+    });
+  }
+
+  async setProPlusPrice(proPlusPriceXof: number) {
+    return this.prisma.platformSetting.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', proPlusPriceXof },
+      update: { proPlusPriceXof },
+      select: { proPlusPriceXof: true },
     });
   }
 

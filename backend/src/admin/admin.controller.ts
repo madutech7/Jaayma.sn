@@ -180,6 +180,17 @@ export class AdminController {
     return this.admin.setProPrice(parsed.data.amount);
   }
 
+  @Patch('settings/pro-plus-price')
+  async setProPlusPrice(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: unknown,
+  ) {
+    await this.requireAdmin(authHeader);
+    const parsed = proPriceSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    return this.admin.setProPlusPrice(parsed.data.amount);
+  }
+
   @Get('notifications')
   async notificationHistory(
     @Headers('authorization') authHeader: string | undefined,

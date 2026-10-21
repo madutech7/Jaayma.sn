@@ -241,7 +241,8 @@ export default async function DashboardPage() {
   }).format(now);
 
   const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
-  const isPro = effectivePlan === "pro";
+  const isPaid = effectivePlan === "pro" || effectivePlan === "pro_plus";
+  const planLabel = effectivePlan === "pro_plus" ? "Plan Pro+" : effectivePlan === "pro" ? "Plan Pro" : "Plan Gratuit";
   const proDaysRemaining = getProDaysRemaining(shop.plan, shop.planExpiresAt);
   const proUrgency = getProUrgency(shop.plan, shop.planExpiresAt);
   const showRenewalBanner = proUrgency === "warning" || proUrgency === "critical" || proUrgency === "expired";
@@ -289,13 +290,13 @@ export default async function DashboardPage() {
             <Link
               href="/espace/abonnement"
               className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5 ${
-                isPro
+                isPaid
                   ? "bg-[#0F1E3D] text-[#FFC83D]"
                   : "bg-[#FFFBF2] text-[#3F4B69]"
               }`}
             >
-              <Sparkles size={13} className={isPro ? "text-[#FFC83D]" : "text-[#B4531E]"} />
-              {isPro ? "Plan Pro" : "Plan Gratuit"}
+              <Sparkles size={13} className={isPaid ? "text-[#FFC83D]" : "text-[#B4531E]"} />
+              {planLabel}
             </Link>
             <a
               href={`${fullUrl}?from=seller`}

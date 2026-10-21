@@ -13,9 +13,12 @@ export async function startProSubscriptionPayment(formData: FormData): Promise<n
     redirect("/espace/abonnement?erreur=paiement");
   }
 
+  const rawPlan = formData.get("plan");
+  const plan = rawPlan === "pro_plus" ? "pro_plus" : "pro";
+
   let payment: Awaited<ReturnType<typeof api.createSubscriptionPayment>>;
   try {
-    payment = await api.createSubscriptionPayment(token, method);
+    payment = await api.createSubscriptionPayment(token, method, plan);
   } catch {
     redirect("/espace/abonnement?erreur=paiement");
   }

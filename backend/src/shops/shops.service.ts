@@ -266,7 +266,8 @@ export class ShopsService {
 }
 
 function hasActiveProPlan(shop: { plan: string; planExpiresAt: Date | null }) {
-  return shop.plan === 'pro' && (!shop.planExpiresAt || shop.planExpiresAt.getTime() >= Date.now());
+  const isPaid = shop.plan === 'pro' || shop.plan === 'pro_plus';
+  return isPaid && (!shop.planExpiresAt || shop.planExpiresAt.getTime() >= Date.now());
 }
 
 function hasMarketingPixelConfig(input: { facebookPixelId?: string | null; tiktokPixelId?: string | null }) {
