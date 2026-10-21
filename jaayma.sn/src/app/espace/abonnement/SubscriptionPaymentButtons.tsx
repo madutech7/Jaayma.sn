@@ -9,12 +9,10 @@ export function SubscriptionPaymentButtons({
   price,
   isRenewal = false,
   plan = "pro",
-  variant = "default",
 }: {
   price: string | null;
   isRenewal?: boolean;
   plan?: "pro" | "pro_plus";
-  variant?: "default" | "gold";
 }) {
   const [pendingMethod, setPendingMethod] = useState<"wave" | "orange_money" | null>(null);
   const submissionStarted = useRef(false);
@@ -37,14 +35,6 @@ export function SubscriptionPaymentButtons({
     ? isProPlus ? "Prolonger Pro+ avec Orange Money" : "Prolonger avec Orange Money"
     : isProPlus ? "Passer à Pro+ avec Orange Money" : "Payer avec Orange Money";
 
-  const waveBtnStyle = variant === "gold"
-    ? { backgroundColor: "#FFC83D", color: "#0F1E3D", boxShadow: "4px 4px 0 #000" }
-    : { backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" };
-
-  const omBtnStyle = variant === "gold"
-    ? { backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #000" }
-    : { backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" };
-
   return (
     <>
       <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "wave")}>
@@ -54,7 +44,7 @@ export function SubscriptionPaymentButtons({
           type="submit"
           disabled={isPending || !price}
           className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:cursor-wait disabled:opacity-80"
-          style={waveBtnStyle}
+          style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
         >
           {pendingMethod === "wave" && <Loader2 size={18} className="animate-spin" />}
           {pendingMethod === "wave"
@@ -73,7 +63,7 @@ export function SubscriptionPaymentButtons({
           type="submit"
           disabled={isPending || !price}
           className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:cursor-wait disabled:opacity-80"
-          style={omBtnStyle}
+          style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
         >
           {pendingMethod === "orange_money" && <Loader2 size={18} className="animate-spin" />}
           {pendingMethod === "orange_money"

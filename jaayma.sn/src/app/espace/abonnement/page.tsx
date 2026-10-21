@@ -266,73 +266,69 @@ export default async function AbonnementPage({
   // 3. CARTE PRO+ (ANNUELLE)
   const ProPlusCard = () => (
     <div
-      className="p-6 rounded-3xl border-[2.5px] border-ink relative overflow-hidden"
-      style={{
-        backgroundColor: "#0F1E3D",
-        color: "#FFFBF2",
-        boxShadow: "5px 5px 0 #000",
-      }}
+      className="relative overflow-hidden rounded-3xl border-[2.5px] border-ink bg-[#FFFBF2] p-6 text-ink shadow-[5px_5px_0_#0F1E3D]"
     >
-      <div className="absolute top-4 right-4">
+      <div className="absolute inset-x-0 top-0 h-2 bg-sun" aria-hidden="true" />
+      <div className="mb-3 flex min-h-7 justify-end">
         {isProPlus ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-[#FFC83D] px-3 py-1 text-xs font-black text-[#0F1E3D] shadow-[2px_2px_0_#000]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-[#FFC83D] px-3 py-1 text-xs font-black text-[#0F1E3D] shadow-[2px_2px_0_#0F1E3D]">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             Plan Actif
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-[#FFC83D]/40 bg-[#FFC83D]/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#FFC83D]">
-            ★ 1 an de sérénité
+          <span className="inline-flex items-center gap-1 rounded-full border border-ink/15 bg-sun/25 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-ink">
+            ★ Formule annuelle
           </span>
         )}
       </div>
 
-      <div className="flex items-center mb-6">
-        <div className="w-16 h-16 rounded-full border-[2.5px] border-[#FFC83D] flex items-center justify-center bg-[#FFC83D] mr-4 shrink-0 shadow-[2px_2px_0_#000]">
+      <div className="mb-6 flex items-center">
+        <div className="mr-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[2.5px] border-ink bg-sun shadow-[2px_2px_0_#0F1E3D]">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F1E3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-bricolage font-black text-2xl" style={{ color: "#FFC83D" }}>PRO+</h2>
-            <span className="rounded-full border border-[#FFC83D]/30 bg-[#FFC83D]/10 px-2 py-0.5 text-[10px] font-black uppercase text-[#FFC83D]">
+            <h2 className="font-bricolage text-2xl font-black text-ink">PRO+</h2>
+            <span className="rounded-full border border-ink/20 bg-white/80 px-2 py-0.5 text-[10px] font-black uppercase text-ink">
               Formule Annuelle
             </span>
           </div>
-          <p className="font-bold text-lg mt-0.5 text-white">
-            {formattedProPlusPrice} F <span className="text-xs font-medium text-white/70">/ an (facturé en 1 fois)</span>
+          <p className="mt-0.5 text-lg font-bold text-ink">
+            {formattedProPlusPrice} F <span className="text-xs font-medium text-ink/65">/ an (facturé en 1 fois)</span>
           </p>
         </div>
       </div>
 
-      <ul className="space-y-2.5 mb-6 text-white/95">
+      <ul className="mb-6 space-y-2.5 text-ink">
         <li className="flex items-start gap-2.5 font-bold text-sm">
-          <span className="text-[#FFC83D] mt-0.5 shrink-0">✓</span>
+          <span className="mt-0.5 shrink-0 text-[#9A6500]">✓</span>
           Jusqu'à 200 produits en ligne
         </li>
         <li className="flex items-start gap-2.5 font-bold text-sm">
-          <span className="text-[#FFC83D] mt-0.5 shrink-0">✓</span>
+          <span className="mt-0.5 shrink-0 text-[#9A6500]">✓</span>
           Jusqu'à 4 photos par produit
         </li>
         <li className="flex items-start gap-2.5 font-bold text-sm">
-          <span className="text-[#FFC83D] mt-0.5 shrink-0">✓</span>
+          <span className="mt-0.5 shrink-0 text-[#9A6500]">✓</span>
           Badge Boutique Pro certifié
         </li>
         <li className="flex items-start gap-2.5 font-bold text-sm">
-          <span className="text-[#FFC83D] mt-0.5 shrink-0">✓</span>
+          <span className="mt-0.5 shrink-0 text-[#9A6500]">✓</span>
           Outils marketing : pixels Meta/TikTok et catalogue XML
         </li>
         <li className="flex items-start gap-2.5 font-bold text-sm">
-          <span className="text-[#FFC83D] mt-0.5 shrink-0">✓</span>
+          <span className="mt-0.5 shrink-0 text-[#9A6500]">✓</span>
           Payez une seule fois pour 365 jours complets
         </li>
       </ul>
 
       {/* BLOC STATUT PRO+ (visible quand l'utilisateur est abonné à PRO+) */}
       {isProPlus && uConfig && daysRemaining !== null && expiryFormatted && (
-        <div className="mb-6 rounded-2xl border-[2px] border-ink bg-white p-4 text-ink" style={{ boxShadow: "3px 3px 0 #000" }}>
+        <div className="mb-6 rounded-2xl border-[2px] border-ink bg-white p-4 text-ink shadow-[3px_3px_0_#0F1E3D]">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <span
@@ -393,35 +389,35 @@ export default async function AbonnementPage({
 
       {/* BOUTONS PAIEMENT OU PROLONGATION PRO+ */}
       {isProPlus ? (
-        <div className="pt-2 border-t border-white/20 space-y-3">
-          <div className="rounded-2xl border-2 border-[#FFC83D] bg-white/10 p-3.5 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#FFC83D]">
+        <div className="space-y-3 border-t border-ink/15 pt-4">
+          <div className="rounded-2xl border-2 border-ink/15 bg-sun/15 p-3.5 text-center">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-ink">
               Prolonger mon Pro+ (1 an)
             </p>
-            <p className="mt-1 text-xs font-medium text-white/80">
+            <p className="mt-1 text-xs font-medium text-ink/70">
               {daysRemaining !== null && daysRemaining > 0
                 ? "Ajoutez 365 jours à votre échéance actuelle. Aucun jour n'est perdu."
                 : "Renouvelez pour 1 an complet de sérénité."}
             </p>
           </div>
-          <SubscriptionPaymentButtons price={formattedProPlusPrice} isRenewal plan="pro_plus" variant="gold" />
+          <SubscriptionPaymentButtons price={formattedProPlusPrice} isRenewal plan="pro_plus" />
         </div>
       ) : isPro ? (
-        <div className="pt-2 border-t border-white/20 space-y-3">
-          <div className="rounded-2xl border-2 border-[#FFC83D] bg-white/10 p-3.5 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#FFC83D]">
+        <div className="space-y-3 border-t border-ink/15 pt-4">
+          <div className="rounded-2xl border-2 border-ink/15 bg-sun/15 p-3.5 text-center">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-ink">
               Passer à la formule Pro+ (1 an)
             </p>
-            <p className="mt-1 text-xs font-medium text-white/80">
+            <p className="mt-1 text-xs font-medium text-ink/70">
               Débloquez 200 produits et 4 photos/produit pendant 365 jours. Vos jours Pro actuels sont conservés.
             </p>
           </div>
-          <SubscriptionPaymentButtons price={formattedProPlusPrice} plan="pro_plus" variant="gold" />
+          <SubscriptionPaymentButtons price={formattedProPlusPrice} plan="pro_plus" />
         </div>
       ) : (
         <div className="space-y-3">
-          <SubscriptionPaymentButtons price={formattedProPlusPrice} plan="pro_plus" variant="gold" />
-          <p className="text-center text-xs font-semibold text-white/70">
+          <SubscriptionPaymentButtons price={formattedProPlusPrice} plan="pro_plus" />
+          <p className="text-center text-xs font-semibold text-ink/65">
             Paiement en 1 fois · Valable 365 jours
           </p>
         </div>

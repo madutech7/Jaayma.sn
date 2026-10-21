@@ -134,7 +134,7 @@ export default function ProPriceControl({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-ink/20 bg-[#0F1E3D] px-2.5 py-0.5 text-[10px] font-black uppercase text-[#FFC83D]">
+              <span className="rounded-full border border-ink/20 bg-sun/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-ink">
                 Formule Annuelle (1 an)
               </span>
             </div>
@@ -163,7 +163,7 @@ export default function ProPriceControl({
               <button
                 type="submit"
                 disabled={isProPlusPending}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-ink bg-[#0F1E3D] text-[#FFC83D] px-4 text-xs font-black shadow-[2px_2px_0_#0F1E3D] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-70"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-ink bg-sun px-4 text-xs font-black text-ink shadow-[2px_2px_0_#0F1E3D] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-70"
               >
                 {isProPlusPending ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                 {isProPlusPending ? "Enregistrement…" : "Enregistrer"}

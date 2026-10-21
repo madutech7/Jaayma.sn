@@ -74,16 +74,7 @@ export class SubscriptionsService {
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
-  private cachedPrice: {
-    data: { amount: number; proPriceXof: number; proPlusAmount: number; proPlusPriceXof: number };
-    expiresAt: number;
-  } | null = null;
-
   async getPrice() {
-    const now = Date.now();
-    if (this.cachedPrice && this.cachedPrice.expiresAt > now) {
-      return this.cachedPrice.data;
-    }
     const settings = await this.prisma.platformSetting.findUnique({
       where: { id: 'global' },
       select: { proPriceXof: true, proPlusPriceXof: true },
@@ -96,7 +87,6 @@ export class SubscriptionsService {
       proPlusAmount,
       proPlusPriceXof: proPlusAmount,
     };
-    this.cachedPrice = { data, expiresAt: now + 60_000 };
     return data;
   }
 
