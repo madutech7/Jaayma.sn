@@ -22,7 +22,7 @@ import { AnalyticsService } from './analytics.service';
 import { AdminService } from './admin.service';
 
 const planSchema = z.object({
-  plan: z.enum(['free', 'pro']),
+  plan: z.enum(['free', 'pro', 'pro_plus']),
   durationDays: z.number().int().min(1).max(3650).optional(),
 });
 
@@ -218,7 +218,8 @@ export class AdminController {
     await this.requireAdmin(authHeader);
     const parsed = planSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
-    return this.admin.updateShopPlan(id, parsed.data.plan, parsed.data.durationDays ?? 30);
+    const defaultDurationDays = parsed.data.plan === 'pro_plus' ? 365 : 30;
+    return this.admin.updateShopPlan(id, parsed.data.plan, parsed.data.durationDays ?? defaultDurationDays);
   }
 
   @Patch('shops/:id/status')
@@ -270,8 +271,10 @@ function parseStatus(value?: string): ShopStatus | undefined {
     : undefined;
 }
 
-function parsePlan(value?: string): 'free' | 'pro' | 'expired' | undefined {
-  return value === 'free' || value === 'pro' || value === 'expired' ? value : undefined;
+function parsePlan(value?: string): 'all' | 'free' | 'pro' | 'pro_plus' | 'expired' | undefined {
+  return value === 'all' || value === 'free' || value === 'pro' || value === 'pro_plus' || value === 'expired'
+    ? value
+    : undefined;
 }
 
 function parseOrderStatus(value?: string) {

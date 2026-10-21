@@ -24,11 +24,13 @@ export default async function AdminDashboardPage() {
           <MetricCard label="Ventes encaissées" value={formatFcfa(metrics.revenue)} caption={`${formatFcfa(metrics.revenueToday)} aujourd’hui · ${metrics.paidOrders} commandes payées`} icon={<CircleDollarSign size={18} />} tone="blue" />
         </section>
 
-        <section className={`${adminPanelClass()} mt-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:p-5`} aria-label="État de la plateforme">
+        <section className={`${adminPanelClass()} mt-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 xl:grid-cols-6 sm:p-5`} aria-label="État de la plateforme">
           <QuickStat label="Boutiques actives" value={metrics.activeShops} icon={<BadgeCheck size={17} className="text-baobab" />} />
           <QuickStat label="Brouillons" value={metrics.draftShops} icon={<Boxes size={17} className="text-muted" />} />
           <QuickStat label="Pro actif" value={metrics.proShops} icon={<CreditCard size={17} className="text-[#9A6500]" />} />
+          <QuickStat label="Pro+ actif" value={metrics.proPlusShops} icon={<BadgeCheck size={17} className="text-[#9A6500]" />} />
           <QuickStat label="Pro expiré" value={metrics.expiredProShops} icon={<AlertTriangle size={17} className="text-[#8A5A00]" />} />
+          <QuickStat label="Pro+ expiré" value={metrics.expiredProPlusShops} icon={<AlertTriangle size={17} className="text-[#8A5A00]" />} />
         </section>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -57,7 +59,7 @@ export default async function AdminDashboardPage() {
             <h2 className="mt-1 font-bricolage text-lg font-black">Gestion de la plateforme</h2>
             <div className="mt-4 grid gap-2">
               <QuickLink href="/admin/boutiques" title="Gérer les boutiques" description="Publication, suspension et catalogue" icon={<Store size={17} />} />
-              <QuickLink href="/admin/abonnements" title="Abonnements Pro" description={`${metrics.proShops} actifs · ${metrics.expiredProShops} expirés`} icon={<CreditCard size={17} />} />
+              <QuickLink href="/admin/abonnements" title="Abonnements Pro et Pro+" description={`${metrics.proShops + metrics.proPlusShops} actifs · ${metrics.expiredProShops + metrics.expiredProPlusShops} expirés`} icon={<CreditCard size={17} />} />
               <QuickLink href="/admin/notifications" title="Envoyer une notification" description="Informer les vendeurs abonnés au push" icon={<Bell size={17} />} />
             </div>
           </section>

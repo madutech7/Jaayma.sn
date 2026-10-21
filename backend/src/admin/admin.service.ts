@@ -188,7 +188,9 @@ export class AdminService {
         draftShops: number;
         suspendedShops: number;
         proShops: number;
+        proPlusShops: number;
         expiredProShops: number;
+        expiredProPlusShops: number;
       }>>`
         SELECT
           COUNT(*)::int AS "totalShops",
@@ -196,7 +198,9 @@ export class AdminService {
           COUNT(*) FILTER (WHERE "status" = 'DRAFT')::int AS "draftShops",
           COUNT(*) FILTER (WHERE "status" = 'SUSPENDED')::int AS "suspendedShops",
           COUNT(*) FILTER (WHERE "plan" = 'pro' AND ("planExpiresAt" IS NULL OR "planExpiresAt" >= NOW()))::int AS "proShops",
-          COUNT(*) FILTER (WHERE "plan" = 'pro' AND "planExpiresAt" < NOW())::int AS "expiredProShops"
+          COUNT(*) FILTER (WHERE "plan" = 'pro_plus' AND ("planExpiresAt" IS NULL OR "planExpiresAt" >= NOW()))::int AS "proPlusShops",
+          COUNT(*) FILTER (WHERE "plan" = 'pro' AND "planExpiresAt" < NOW())::int AS "expiredProShops",
+          COUNT(*) FILTER (WHERE "plan" = 'pro_plus' AND "planExpiresAt" < NOW())::int AS "expiredProPlusShops"
         FROM "Shop"
       `,
       this.prisma.$queryRaw<Array<{
@@ -242,7 +246,9 @@ export class AdminService {
         draftShops: shops.draftShops,
         suspendedShops: shops.suspendedShops,
         proShops: shops.proShops,
+        proPlusShops: shops.proPlusShops,
         expiredProShops: shops.expiredProShops,
+        expiredProPlusShops: shops.expiredProPlusShops,
         sellers,
         activeProducts,
         totalOrders: orders.totalOrders,
@@ -259,7 +265,7 @@ export class AdminService {
   async getShops(filters: {
     q?: string;
     status?: ShopStatus;
-    plan?: 'free' | 'pro' | 'expired';
+    plan?: 'all' | 'free' | 'pro' | 'pro_plus' | 'expired';
     page: number;
   }) {
     const where = this.buildShopWhere(filters);
@@ -295,33 +301,43 @@ export class AdminService {
 
   async getSubscriptions(filters: {
     q?: string;
-    plan?: 'free' | 'pro' | 'expired';
+    plan?: 'all' | 'free' | 'pro' | 'pro_plus' | 'expired';
     page: number;
   }) {
-    const [totalShops, proShops, expiredProShops, shops] = await Promise.all([
+    const now = new Date();
+    const [totalShops, proShops, proPlusShops, expiredProShops, expiredProPlusShops, shops] = await Promise.all([
       this.prisma.shop.count(),
       this.prisma.shop.count({
-        where: { plan: 'pro', OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: new Date() } }] },
+        where: { plan: 'pro', OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: now } }] },
       }),
-      this.prisma.shop.count({ where: { plan: 'pro', planExpiresAt: { lt: new Date() } } }),
+      this.prisma.shop.count({
+        where: { plan: 'pro_plus', OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: now } }] },
+      }),
+      this.prisma.shop.count({ where: { plan: 'pro', planExpiresAt: { lt: now } } }),
+      this.prisma.shop.count({ where: { plan: 'pro_plus', planExpiresAt: { lt: now } } }),
       this.getShops({ ...filters, status: undefined }),
     ]);
-    return { metrics: { totalShops, proShops, expiredProShops }, shops };
+    return { metrics: { totalShops, proShops, proPlusShops, expiredProShops, expiredProPlusShops }, shops };
   }
 
   private buildShopWhere(filters: {
     q?: string;
     status?: ShopStatus;
-    plan?: 'free' | 'pro' | 'expired';
+    plan?: 'all' | 'free' | 'pro' | 'pro_plus' | 'expired';
   }): Prisma.ShopWhereInput {
     const query = filters.q?.trim().slice(0, 100);
     const shopFilters: Prisma.ShopWhereInput[] = [];
     if (filters.status) shopFilters.push({ status: filters.status });
     if (filters.plan === 'expired') {
-      shopFilters.push({ plan: 'pro', planExpiresAt: { lt: new Date() } });
+      shopFilters.push({ plan: { in: ['pro', 'pro_plus'] }, planExpiresAt: { lt: new Date() } });
     } else if (filters.plan === 'pro') {
       shopFilters.push({
         plan: 'pro',
+        OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: new Date() } }],
+      });
+    } else if (filters.plan === 'pro_plus') {
+      shopFilters.push({
+        plan: 'pro_plus',
         OR: [{ planExpiresAt: null }, { planExpiresAt: { gte: new Date() } }],
       });
     } else if (filters.plan === 'free') {
@@ -329,6 +345,7 @@ export class AdminService {
         OR: [
           { plan: 'free' },
           { plan: 'pro', planExpiresAt: { lt: new Date() } },
+          { plan: 'pro_plus', planExpiresAt: { lt: new Date() } },
         ],
       });
     }
@@ -399,9 +416,9 @@ export class AdminService {
     };
   }
 
-  async updateShopPlan(id: string, plan: 'free' | 'pro', durationDays: number) {
+  async updateShopPlan(id: string, plan: 'free' | 'pro' | 'pro_plus', durationDays: number) {
     await this.ensureShopExists(id);
-    const planExpiresAt = plan === 'pro' ? new Date(Date.now() + durationDays * 86_400_000) : null;
+    const planExpiresAt = plan === 'free' ? null : new Date(Date.now() + durationDays * 86_400_000);
     return this.prisma.shop.update({
       where: { id },
       data: { plan, planExpiresAt, proReminder3DaysSentAt: null, proReminder1DaySentAt: null },

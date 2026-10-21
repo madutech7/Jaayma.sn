@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, CreditCard, Zap } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CheckCircle2, Settings2, Zap } from "lucide-react";
 import { getSessionToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AdminError, AdminPageTitle, AdminPagination, adminPanelClass } from "../AdminUI";
 import AdminFilterForm from "../AdminFilterForm";
 import AdminShopRow from "../AdminShopRow";
 
-export const metadata = { title: "Abonnements Pro · Administration Jaaymaa" };
+export const metadata = { title: "Abonnements · Administration Jaaymaa" };
 type SearchParams = Promise<{ q?: string; plan?: string; page?: string }>;
 
 export default async function AdminSubscriptionsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -14,7 +14,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
   const token = await getSessionToken();
   if (!token) return <AdminError message="Votre session a expiré. Reconnectez-vous." />;
   const query = params.q?.trim() || "";
-  const plan = params.plan || "pro";
+  const plan = params.plan || "all";
   const page = Math.max(1, Number.parseInt(params.page || "1", 10) || 1);
   try {
     const overview = await api.getAdminSubscriptions(token, { q: query, plan, page });
@@ -27,18 +27,22 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
     };
     return (
       <>
-        <AdminPageTitle eyebrow="Offre commerciale" title="Abonnements Pro" description="Suivez les plans gratuits, Pro actifs et expirés. Activez ou renouvelez un accès Pro directement depuis la fiche boutique." action={<span className="rounded-xl border-2 border-ink bg-papier px-3 py-2 text-xs font-black text-ink"><CreditCard size={14} className="mr-1.5 inline" />Suivi des plans</span>} />
+        <AdminPageTitle eyebrow="Offre commerciale" title="Abonnements Pro et Pro+" description="Consultez les formules actives et expirées, changez le plan d’une boutique ou modifiez les tarifs depuis les réglages." action={<Link href="/admin/reglages" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border-2 border-ink bg-papier px-3 py-2 text-xs font-black text-ink shadow-[2px_2px_0_#0F1E3D] transition-transform hover:-translate-y-0.5"><Settings2 size={14} />Modifier les tarifs</Link>} />
 
-        <section className="mb-5 grid grid-cols-3 gap-3">
+        <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
           <SubscriptionStat label="Pro actifs" value={overview.metrics.proShops} icon={<CheckCircle2 size={16} className="text-baobab" />} />
+          <SubscriptionStat label="Pro+ actifs" value={overview.metrics.proPlusShops} icon={<BadgeCheck size={16} className="text-[#9A6500]" />} />
           <SubscriptionStat label="Pro expirés" value={overview.metrics.expiredProShops} icon={<AlertTriangle size={16} className="text-[#8A5A00]" />} />
-          <SubscriptionStat label="Gratuit / expiré" value={Math.max(0, overview.metrics.totalShops - overview.metrics.proShops)} icon={<Zap size={16} className="text-muted" />} />
+          <SubscriptionStat label="Pro+ expirés" value={overview.metrics.expiredProPlusShops} icon={<AlertTriangle size={16} className="text-[#8A5A00]" />} />
+          <SubscriptionStat label="Gratuit / expiré" value={Math.max(0, overview.metrics.totalShops - overview.metrics.proShops - overview.metrics.proPlusShops)} icon={<Zap size={16} className="text-muted" />} />
         </section>
 
         <section className={`${adminPanelClass()} overflow-hidden`}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 p-4 sm:p-5">
             <div className="flex flex-wrap gap-2">
+              <PlanTab href="/admin/abonnements?plan=all" active={plan === "all"}>Tous</PlanTab>
               <PlanTab href="/admin/abonnements?plan=pro" active={plan === "pro"}>Pro actifs</PlanTab>
+              <PlanTab href="/admin/abonnements?plan=pro_plus" active={plan === "pro_plus"}>Pro+ actifs</PlanTab>
               <PlanTab href="/admin/abonnements?plan=expired" active={plan === "expired"}>Expirés</PlanTab>
               <PlanTab href="/admin/abonnements?plan=free" active={plan === "free"}>Gratuits</PlanTab>
             </div>
@@ -48,15 +52,17 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
               <button className="rounded-lg border-2 border-ink bg-sun px-4 text-xs font-black text-ink">Rechercher</button>
             </AdminFilterForm>
           </div>
-          <div className="overflow-x-auto"><table className="w-full min-w-[870px] border-collapse text-left"><thead><tr className="bg-[#F0EDE8] text-[10px] font-black uppercase tracking-[0.13em] text-muted"><th className="px-4 py-3.5 sm:px-5">Boutique</th><th className="px-4 py-3.5">Vendeur</th><th className="px-4 py-3.5">Activité</th><th className="px-4 py-3.5">Abonnement</th><th className="px-4 py-3.5 text-right">Action</th></tr></thead><tbody>
+          <div className="overflow-x-auto"><table className="w-full min-w-[1050px] border-collapse text-left"><thead><tr className="bg-[#F0EDE8] text-[10px] font-black uppercase tracking-[0.13em] text-muted"><th className="px-4 py-3.5 sm:px-5">Boutique</th><th className="px-4 py-3.5">Vendeur</th><th className="px-4 py-3.5">Activité</th><th className="px-4 py-3.5">Abonnement</th><th className="px-4 py-3.5 text-right">Changer la formule</th></tr></thead><tbody>
             {overview.shops.items.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted">Aucune boutique dans cette catégorie.</td></tr> : overview.shops.items.map((shop) => {
-              const isExpiredPro = shop.plan === "pro" && Boolean(shop.planExpiresAt) && new Date(shop.planExpiresAt!).getTime() < Date.now();
-              return <AdminShopRow key={shop.id} shop={{ id: shop.id, name: shop.name, slug: shop.slug, plan: shop.plan === "pro" ? "pro" : "free", planExpiresAt: shop.planExpiresAt ? Math.floor(new Date(shop.planExpiresAt).getTime() / 1000) : null, isPublished: shop.status === "ACTIVE", isSuspended: shop.status === "SUSPENDED", isDraft: shop.status === "DRAFT", isExpiredPro, createdAt: Math.floor(new Date(shop.createdAt).getTime() / 1000), sellerName: shop.owner?.name || "Vendeur", sellerPhone: shop.owner?.phone || shop.whatsapp || "—", productCount: shop._count.products, orderCount: shop._count.orders }} />;
+              const isPaidPlan = shop.plan === "pro" || shop.plan === "pro_plus";
+              const isExpiredPlan = isPaidPlan && Boolean(shop.planExpiresAt) && new Date(shop.planExpiresAt!).getTime() < Date.now();
+              const normalizedPlan = shop.plan === "pro" || shop.plan === "pro_plus" ? shop.plan : "free";
+              return <AdminShopRow key={shop.id} shop={{ id: shop.id, name: shop.name, slug: shop.slug, plan: normalizedPlan, planExpiresAt: shop.planExpiresAt ? Math.floor(new Date(shop.planExpiresAt).getTime() / 1000) : null, isPublished: shop.status === "ACTIVE", isSuspended: shop.status === "SUSPENDED", isDraft: shop.status === "DRAFT", isExpiredPlan, createdAt: Math.floor(new Date(shop.createdAt).getTime() / 1000), sellerName: shop.owner?.name || "Vendeur", sellerPhone: shop.owner?.phone || shop.whatsapp || "—", productCount: shop._count.products, orderCount: shop._count.orders }} />;
             })}
           </tbody></table></div>
           <AdminPagination page={overview.shops.page} totalPages={overview.shops.totalPages} total={overview.shops.total} pageSize={overview.shops.pageSize} noun="boutiques" hrefForPage={makeHref} />
         </section>
-        <p className="mt-4 text-xs leading-5 text-muted/65">L’activation Pro de cette page applique l’accès pendant 30 jours. Les paiements réels ne sont pas enregistrés dans Jaaymaa pour le moment.</p>
+        <p className="mt-4 text-xs leading-5 text-muted/65">Les accès attribués depuis cette page durent 30 jours pour Pro et 365 jours pour Pro+. Ils sont gérés manuellement et ne correspondent pas à une confirmation de paiement.</p>
       </>
     );
   } catch (error) {

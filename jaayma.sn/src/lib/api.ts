@@ -86,7 +86,9 @@ export const api = {
       draftShops: number;
       suspendedShops: number;
       proShops: number;
+      proPlusShops: number;
       expiredProShops: number;
+      expiredProPlusShops: number;
       sellers: number;
       activeProducts: number;
       totalOrders: number;
@@ -127,7 +129,13 @@ export const api = {
     token: string,
     params: { q?: string; plan?: string; page?: number },
   ): Promise<{
-    metrics: { totalShops: number; proShops: number; expiredProShops: number };
+    metrics: {
+      totalShops: number;
+      proShops: number;
+      proPlusShops: number;
+      expiredProShops: number;
+      expiredProPlusShops: number;
+    };
     shops: AdminShopPage;
   }> {
     const search = new URLSearchParams();
@@ -176,8 +184,8 @@ export const api = {
   async adminUpdateShopPlan(
     token: string,
     id: string,
-    plan: "free" | "pro",
-    durationDays = 30
+    plan: "free" | "pro" | "pro_plus",
+    durationDays = plan === "pro_plus" ? 365 : 30
   ) {
     return request(`/admin/shops/${encodeURIComponent(id)}/plan`, {
       method: "PATCH",

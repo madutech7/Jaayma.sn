@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setShopPlan, setShopSuspension } from "@/app/actions/admin";
-import { Loader2, ExternalLink, Package, ShoppingBag, Ban, CheckCircle2, FileText, Zap } from "lucide-react";
+import { Loader2, ExternalLink, Package, ShoppingBag, Ban, CheckCircle2, FileText, Sparkles, Zap } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 
 interface ShopRowProps {
@@ -11,12 +11,12 @@ interface ShopRowProps {
     id: string;
     name: string;
     slug: string;
-    plan: "free" | "pro";
+    plan: "free" | "pro" | "pro_plus";
     planExpiresAt: number | null;
     isPublished: boolean;
     isSuspended: boolean;
     isDraft: boolean;
-    isExpiredPro: boolean;
+    isExpiredPlan: boolean;
     createdAt: number;
     sellerName: string;
     sellerPhone: string;
@@ -30,11 +30,12 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [currentPlan, setCurrentPlan] = useState<"free" | "pro">(shop.isExpiredPro ? "free" : shop.plan);
+  const [currentPlan, setCurrentPlan] = useState<"free" | "pro" | "pro_plus">(shop.plan);
   const [isSuspended, setIsSuspended] = useState(shop.isSuspended);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
 
-  const isPro = currentPlan === "pro";
+  const selectedPlanDuration = currentPlan === "pro_plus" ? 365 : 30;
+  const selectedPlanLabel = currentPlan === "pro_plus" ? "Pro+" : "Pro";
 
   let expiryFormatted = "";
   if (shop.planExpiresAt) {
@@ -45,15 +46,14 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
     }).format(new Date(shop.planExpiresAt * 1000));
   }
 
-  async function handleTogglePlan() {
-    const nextPlan = isPro ? "free" : "pro";
+  async function handleSavePlan() {
+    const nextPlan = currentPlan;
     setLoading(true);
     setError("");
     setSuccess("");
-    const res = await setShopPlan(shop.id, nextPlan, 30);
+    const res = await setShopPlan(shop.id, nextPlan, selectedPlanDuration);
     if (!res.error) {
-      setCurrentPlan(nextPlan);
-      setSuccess(nextPlan === "pro" ? "Plan Pro activé pour 30 jours." : "Plan Gratuit activé.");
+      setSuccess(nextPlan === "free" ? "Plan Gratuit activé." : `Plan ${selectedPlanLabel} actif pour ${selectedPlanDuration} jours.`);
       router.refresh();
     } else {
       setError(res.error);
@@ -144,9 +144,13 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
             </span>
           )}
 
-          {shop.isExpiredPro ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[#F3C65E]/40 bg-[#F3C65E]/10 px-2.5 py-1 text-[10px] font-black text-[#8A5A00]">Pro expiré</span>
-          ) : isPro ? (
+          {shop.isExpiredPlan ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#F3C65E]/40 bg-[#F3C65E]/10 px-2.5 py-1 text-[10px] font-black text-[#8A5A00]">{shop.plan === "pro_plus" ? "Pro+ expiré" : "Pro expiré"}</span>
+          ) : shop.plan === "pro_plus" ? (
+            <span className="inline-flex items-center gap-1 rounded border-2 border-ink bg-sun px-2.5 py-1 text-[11px] font-black text-ink shadow-[2px_2px_0_#0F1E3D]">
+              <span>Pro+</span><Sparkles size={11} className="shrink-0" />{expiryFormatted ? `(${expiryFormatted})` : ""}
+            </span>
+          ) : shop.plan === "pro" ? (
             <span className="inline-flex items-center gap-1 rounded border-2 border-sun px-2.5 py-1 text-[11px] font-black text-[#9A6500]">
               <span>Pro</span>
               <Zap size={11} className="shrink-0 fill-sun text-[#9A6500]" />
@@ -162,30 +166,37 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
 
       {/* Actions */}
       <td className="py-4 px-4 text-right">
-        <div className="flex items-center justify-end gap-2">
-          {/* Plan Pro Button */}
-          <button
-            type="button"
-            onClick={handleTogglePlan}
-            disabled={loading}
-            className={`text-xs font-bold px-3 py-1.5 rounded-full border-[2px] border-ink transition-all inline-flex items-center gap-1.5 ${
-              isPro
-                ? "bg-papier hover:bg-papier text-ink"
-                : "bg-sun hover:-translate-y-0.5 text-ink shadow-[2px_2px_0_#0F1E3D]"
-            }`}
-          >
-            {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : isPro ? (
-              "Passer en Gratuit"
-            ) : (
-              <>
-                <Zap size={12} className="fill-[#0F1E3D] text-[#0F1E3D] shrink-0" />
-                <span>{shop.isExpiredPro ? "Renouveler Pro (30j)" : "Activer Pro (30j)"}</span>
-              </>
-            )}
-          </button>
-
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center justify-end gap-2">
+            {/* Plan selector */}
+            <select
+              aria-label={`Formule de ${shop.name}`}
+              value={currentPlan}
+              onChange={(event) => setCurrentPlan(event.target.value as "free" | "pro" | "pro_plus")}
+              disabled={loading}
+              className="min-h-9 rounded-full border-2 border-ink bg-papier px-3 text-xs font-bold text-ink outline-none focus:ring-2 focus:ring-sun disabled:opacity-60"
+            >
+              <option value="free">Gratuit</option>
+              <option value="pro">Pro · 30 jours</option>
+              <option value="pro_plus">Pro+ · 365 jours</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleSavePlan}
+              disabled={loading || (currentPlan === "free" && shop.plan === "free")}
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-sun px-3 text-xs font-black text-ink shadow-[2px_2px_0_#0F1E3D] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : currentPlan === "free" ? (
+                shop.plan === "free" ? "Plan actuel" : "Passer en Gratuit"
+              ) : currentPlan === shop.plan ? (
+                `Renouveler ${selectedPlanLabel}`
+              ) : (
+                `Activer ${selectedPlanLabel}`
+              )}
+            </button>
+          </div>
           {/* Suspend Button */}
           <button
             type="button"
@@ -199,24 +210,24 @@ export default function AdminShopRow({ shop }: ShopRowProps) {
           >
             {isSuspended ? "Rétablir" : "Suspendre"}
           </button>
-
-          <ConfirmModal
-            isOpen={showSuspendModal}
-            onClose={() => setShowSuspendModal(false)}
-            onConfirm={handleConfirmSuspension}
-            title={isSuspended ? `Rétablir la boutique ?` : `Suspendre la boutique ?`}
-            description={
-              isSuspended
-                ? `Voulez-vous rétablir la boutique "${shop.name}" ? Elle sera de nouveau accessible aux clients.`
-                : `Êtes-vous sûr de vouloir suspendre la boutique "${shop.name}" ? Elle ne sera plus accessible aux clients.`
-            }
-            confirmLabel={isSuspended ? "Oui, rétablir" : "Oui, suspendre"}
-            cancelLabel="Annuler"
-            variant={isSuspended ? "primary" : "danger"}
-            icon="warning"
-            isLoading={loading}
-          />
         </div>
+
+        <ConfirmModal
+          isOpen={showSuspendModal}
+          onClose={() => setShowSuspendModal(false)}
+          onConfirm={handleConfirmSuspension}
+          title={isSuspended ? `Rétablir la boutique ?` : `Suspendre la boutique ?`}
+          description={
+            isSuspended
+              ? `Voulez-vous rétablir la boutique "${shop.name}" ? Elle sera de nouveau accessible aux clients.`
+              : `Êtes-vous sûr de vouloir suspendre la boutique "${shop.name}" ? Elle ne sera plus accessible aux clients.`
+          }
+          confirmLabel={isSuspended ? "Oui, rétablir" : "Oui, suspendre"}
+          cancelLabel="Annuler"
+          variant={isSuspended ? "primary" : "danger"}
+          icon="warning"
+          isLoading={loading}
+        />
         {(error || success) && (
           <p role={error ? "alert" : "status"} className={`mt-2 text-right text-[10px] font-bold ${error ? "text-[#A51F49]" : "text-baobab"}`}>
             {error || success}

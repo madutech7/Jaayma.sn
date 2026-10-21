@@ -44,8 +44,8 @@ export async function checkIsAdmin(): Promise<{
 
 export async function setShopPlan(
   shopId: string,
-  plan: "free" | "pro",
-  durationDays: number = 30
+  plan: "free" | "pro" | "pro_plus",
+  durationDays: number = plan === "pro_plus" ? 365 : 30
 ) {
   const token = await getSessionToken();
   if (!token) return { error: "Session expirée. Reconnectez-vous." };
@@ -54,6 +54,8 @@ export async function setShopPlan(
     await api.adminUpdateShopPlan(token, shopId, plan, durationDays);
 
     revalidatePath("/admin");
+    revalidatePath("/admin/abonnements");
+    revalidatePath("/admin/boutiques");
     revalidatePath("/espace/abonnement");
     revalidatePath("/espace");
     return { success: true };
