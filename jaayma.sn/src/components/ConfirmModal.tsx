@@ -44,13 +44,57 @@ export default function ConfirmModal({
     }
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
     }
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
     };
   }, [isOpen, isLoading, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const body = document.body;
+    const root = document.documentElement;
+    const scrollY = window.scrollY;
+    const originalHref = window.location.href;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      paddingRight: body.style.paddingRight,
+      overflow: body.style.overflow,
+    };
+    const previousRootStyles = {
+      overflow: root.style.overflow,
+      overscrollBehavior: root.style.overscrollBehavior,
+    };
+    const scrollbarWidth = Math.max(0, window.innerWidth - root.clientWidth);
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
+    body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+
+    return () => {
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.right = previousBodyStyles.right;
+      body.style.width = previousBodyStyles.width;
+      body.style.paddingRight = previousBodyStyles.paddingRight;
+      body.style.overflow = previousBodyStyles.overflow;
+      root.style.overflow = previousRootStyles.overflow;
+      root.style.overscrollBehavior = previousRootStyles.overscrollBehavior;
+      if (window.location.href === originalHref) window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
 
   if (!isOpen || !mounted) return null;
 
@@ -80,7 +124,7 @@ export default function ConfirmModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-sm rounded-[28px] border-[2.5px] border-ink p-6 text-ink shadow-[5px_5px_0_#0F1E3D] animate-in fade-in zoom-in-95 duration-150 relative z-10"
+        className="relative z-10 max-h-[calc(100svh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-[28px] border-[2.5px] border-ink p-6 text-ink shadow-[5px_5px_0_#0F1E3D] animate-in fade-in duration-100"
         style={{ backgroundColor: "#FFFBF2" }}
       >
         <div className="flex flex-col items-center text-center">
@@ -106,7 +150,7 @@ export default function ConfirmModal({
               type="button"
               disabled={isLoading}
               onClick={onClose}
-              className="flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink text-ink bg-white hover:bg-neutral-50 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap"
+              className="flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink text-ink bg-white hover:bg-neutral-50 transition-colors shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap"
             >
               {cancelLabel}
             </button>
@@ -115,7 +159,7 @@ export default function ConfirmModal({
               type="button"
               disabled={isLoading}
               onClick={onConfirm}
-              className={`flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap ${confirmColors}`}
+              className={`flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink flex items-center justify-center gap-1.5 transition-colors shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap ${confirmColors}`}
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />}
               <span>{confirmLabel}</span>
