@@ -5,7 +5,13 @@ import type { FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { startProSubscriptionPayment } from "@/app/actions/subscription";
 
-export function SubscriptionPaymentButtons({ price }: { price: string | null }) {
+export function SubscriptionPaymentButtons({
+  price,
+  isRenewal = false,
+}: {
+  price: string | null;
+  isRenewal?: boolean;
+}) {
   const [pendingMethod, setPendingMethod] = useState<"wave" | "orange_money" | null>(null);
   const submissionStarted = useRef(false);
   const isPending = pendingMethod !== null;
@@ -19,6 +25,9 @@ export function SubscriptionPaymentButtons({ price }: { price: string | null }) 
     setPendingMethod(method);
   }
 
+  const waveLabel = isRenewal ? "Prolonger avec Wave" : "Payer avec Wave";
+  const omLabel = isRenewal ? "Prolonger avec Orange Money" : "Payer avec Orange Money";
+
   return (
     <>
       <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "wave")}>
@@ -30,7 +39,7 @@ export function SubscriptionPaymentButtons({ price }: { price: string | null }) 
           style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
         >
           {pendingMethod === "wave" && <Loader2 size={18} className="animate-spin" />}
-          {pendingMethod === "wave" ? "Création du paiement Wave…" : isPending ? "Patientez…" : price ? `Payer avec Wave · ${price} F` : "Prix indisponible"}
+          {pendingMethod === "wave" ? "Création du paiement Wave…" : isPending ? "Patientez…" : price ? `${waveLabel} · ${price} F` : "Prix indisponible"}
         </button>
       </form>
       <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "orange_money")}>
@@ -42,7 +51,7 @@ export function SubscriptionPaymentButtons({ price }: { price: string | null }) 
           style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
         >
           {pendingMethod === "orange_money" && <Loader2 size={18} className="animate-spin" />}
-          {pendingMethod === "orange_money" ? "Création du paiement Orange Money…" : isPending ? "Patientez…" : price ? `Payer avec Orange Money · ${price} F` : "Prix indisponible"}
+          {pendingMethod === "orange_money" ? "Création du paiement Orange Money…" : isPending ? "Patientez…" : price ? `${omLabel} · ${price} F` : "Prix indisponible"}
         </button>
       </form>
       {(isPending || !price) && (

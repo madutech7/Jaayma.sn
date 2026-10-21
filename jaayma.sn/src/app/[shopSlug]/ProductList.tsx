@@ -516,9 +516,13 @@ export default function ProductList({
                 key={pageNumber}
                 type="button"
                 aria-current={pageNumber === currentPage ? "page" : undefined}
-                onClick={() => { setPage(pageNumber); document.getElementById("catalogue-top")?.scrollIntoView({ behavior: "smooth" }); }}
                 className="h-10 min-w-10 rounded-full border-2 border-ink px-3 text-sm font-black transition-transform active:scale-95"
-                style={{ backgroundColor: pageNumber === currentPage ? themeColor : "#FFFBF2", color: themeForeground, boxShadow: pageNumber === currentPage ? "2px 2px 0 #0F1E3D" : "none" }}
+                onClick={() => { setPage(pageNumber); document.getElementById("catalogue-top")?.scrollIntoView({ behavior: "smooth" }); }}
+                style={{
+                  backgroundColor: pageNumber === currentPage ? themeColor : "#FFFBF2",
+                  color: pageNumber === currentPage ? themeForeground : "#0F1E3D",
+                  boxShadow: pageNumber === currentPage ? "2px 2px 0 #0F1E3D" : "none",
+                }}
               >{pageNumber}</button>
             ))}
             <button

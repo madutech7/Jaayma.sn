@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  AlertTriangle,
+  ArrowRight,
   ArrowUpRight,
   BadgeCheck,
   Box,
@@ -13,6 +15,7 @@ import {
   CreditCard,
   ExternalLink,
   PackagePlus,
+  Sparkles,
   Store,
   Truck,
   Wallet,
@@ -21,6 +24,7 @@ import { formatFcfa } from "@/lib/money";
 import { getRequestOrigin } from "@/lib/site-url";
 import { getImageUrl } from "@/lib/images";
 import { api } from "@/lib/api";
+import { getEffectivePlan, getProDaysRemaining, getProUrgency } from "@/lib/plans";
 import type { Order } from "@/types/schema";
 import ShareShopButton from "./ShareShopButton";
 import ShopQrCode from "./ShopQrCode";
@@ -236,6 +240,25 @@ export default async function DashboardPage() {
     timeZone: "Africa/Dakar",
   }).format(now);
 
+  const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
+  const isPro = effectivePlan === "pro";
+  const proDaysRemaining = getProDaysRemaining(shop.plan, shop.planExpiresAt);
+  const proUrgency = getProUrgency(shop.plan, shop.planExpiresAt);
+  const showRenewalBanner = proUrgency === "warning" || proUrgency === "critical" || proUrgency === "expired";
+
+  const expiryFormatted = shop.planExpiresAt
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Africa/Dakar",
+      }).format(
+        typeof shop.planExpiresAt === "number"
+          ? new Date(shop.planExpiresAt > 1e12 ? shop.planExpiresAt : shop.planExpiresAt * 1000)
+          : new Date(shop.planExpiresAt)
+      )
+    : null;
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-5 sm:px-6 sm:py-7 lg:px-10">
       <section className="overflow-hidden rounded-[26px] border-[2.5px] border-ink bg-[#FFC83D] shadow-[5px_5px_0_#0F1E3D]">
@@ -263,6 +286,17 @@ export default async function DashboardPage() {
               <span className={`h-2 w-2 rounded-full ${shop.isPublished ? "bg-[#0E7C66]" : "bg-[#C8265A]"}`} />
               {shop.isPublished ? "Boutique en ligne" : "Boutique non publiée"}
             </span>
+            <Link
+              href="/espace/abonnement"
+              className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5 ${
+                isPro
+                  ? "bg-[#0F1E3D] text-[#FFC83D]"
+                  : "bg-[#FFFBF2] text-[#3F4B69]"
+              }`}
+            >
+              <Sparkles size={13} className={isPro ? "text-[#FFC83D]" : "text-[#B4531E]"} />
+              {isPro ? "Plan Pro" : "Plan Gratuit"}
+            </Link>
             <a
               href={`${fullUrl}?from=seller`}
               target="_blank"
@@ -275,6 +309,85 @@ export default async function DashboardPage() {
           <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 h-52 w-52 rounded-full border-[24px] border-[#0F1E3D]/[0.06] sm:-right-2 sm:-top-28 sm:h-72 sm:w-72" />
         </div>
       </section>
+
+      {showRenewalBanner && (
+        <section
+          role="alert"
+          className={`overflow-hidden rounded-[22px] border-[2.5px] border-ink p-5 sm:p-6 shadow-[4px_4px_0_#0F1E3D] ${
+            proUrgency === "expired" || proUrgency === "critical"
+              ? "bg-[#FFF2F4]"
+              : "bg-[#FFF9E6]"
+          }`}
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-ink shadow-[2px_2px_0_#0F1E3D] ${
+                  proUrgency === "expired" || proUrgency === "critical"
+                    ? "bg-[#C8265A] text-white"
+                    : "bg-[#FFC83D] text-ink"
+                }`}
+              >
+                {proUrgency === "expired" || proUrgency === "critical" ? (
+                  <AlertTriangle size={22} strokeWidth={2.4} />
+                ) : (
+                  <Clock3 size={22} strokeWidth={2.4} />
+                )}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${
+                      proUrgency === "expired" || proUrgency === "critical"
+                        ? "bg-[#C8265A] text-white"
+                        : "bg-[#FEF3D6] text-[#8A5A00]"
+                    }`}
+                  >
+                    {proUrgency === "expired"
+                      ? "Abonnement Pro expiré"
+                      : proUrgency === "critical"
+                      ? `Expire dans ${proDaysRemaining} jour${(proDaysRemaining ?? 0) > 1 ? "s" : ""}`
+                      : `Expire dans ${proDaysRemaining} jours`}
+                  </span>
+                  {expiryFormatted && (
+                    <span className="text-xs font-semibold text-[#3F4B69]">
+                      {proUrgency === "expired" ? `Depuis le ${expiryFormatted}` : `Échéance le ${expiryFormatted}`}
+                    </span>
+                  )}
+                </div>
+                <h2 className="mt-1 font-bricolage text-lg font-black text-ink sm:text-xl">
+                  {proUrgency === "expired"
+                    ? "Ton abonnement Pro a pris fin"
+                    : proUrgency === "critical"
+                    ? "Renouvellement Pro urgent"
+                    : "Pense à renouveler ton abonnement Pro"}
+                </h2>
+                <p className="mt-1 text-xs font-medium leading-5 text-[#273756] sm:text-sm">
+                  {proUrgency === "expired"
+                    ? "Tes fonctionnalités Pro sont en pause (photos limitées, visibilité standard). Renouvelle dès aujourd'hui pour réactiver tous tes avantages."
+                    : proUrgency === "critical"
+                    ? "Il ne te reste que quelques jours pour prolonger et conserver tes photos illimitées et ton badge Pro sans interruption."
+                    : "Prolonge ton abonnement en toute sérénité via Wave ou Orange Money pour continuer à booster tes ventes."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center">
+              <Link
+                href="/espace/abonnement"
+                className={`inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink px-5 py-2.5 text-xs font-black shadow-[3px_3px_0_#0F1E3D] transition-transform hover:-translate-y-0.5 sm:text-sm ${
+                  proUrgency === "expired" || proUrgency === "critical"
+                    ? "bg-[#C8265A] text-white"
+                    : "bg-[#0F1E3D] text-[#FFC83D]"
+                }`}
+              >
+                {proUrgency === "expired" ? "Réactiver mon Pro" : "Prolonger mon Pro"}
+                <ArrowRight size={15} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {completedSetupSteps < setupSteps.length && (
         <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="setup-title">

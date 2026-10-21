@@ -63,3 +63,43 @@ export function getProductLimit(effectivePlan: Plan): number {
 export function getPhotoLimit(effectivePlan: Plan): number {
   return PLAN_LIMITS[effectivePlan].maxPhotosPerProduct;
 }
+
+/**
+ * Returns the number of full days remaining on a Pro subscription.
+ * Returns null if not Pro or if planExpiresAt is missing.
+ */
+export function getProDaysRemaining(
+  plan?: string | null,
+  planExpiresAt?: number | string | Date | null
+): number | null {
+  if (plan !== "pro" || !planExpiresAt) return null;
+  const expiresMs =
+    typeof planExpiresAt === "number"
+      ? planExpiresAt > 1e12
+        ? planExpiresAt       // already ms
+        : planExpiresAt * 1000 // unix seconds → ms
+      : new Date(planExpiresAt).getTime();
+  const diff = expiresMs - Date.now();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (24 * 60 * 60 * 1000));
+}
+
+/**
+ * Returns a visual urgency level based on remaining Pro days:
+ * - "expired"  → 0 days left
+ * - "critical" → 1–3 days left
+ * - "warning"  → 4–7 days left
+ * - "ok"       → 8+ days
+ * - null       → not Pro
+ */
+export function getProUrgency(
+  plan?: string | null,
+  planExpiresAt?: number | string | Date | null
+): "expired" | "critical" | "warning" | "ok" | null {
+  const days = getProDaysRemaining(plan, planExpiresAt);
+  if (days === null) return null;
+  if (days <= 0) return "expired";
+  if (days <= 3) return "critical";
+  if (days <= 7) return "warning";
+  return "ok";
+}

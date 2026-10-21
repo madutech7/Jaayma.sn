@@ -1,6 +1,6 @@
 import { getCurrentSellerContext, getSessionToken } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getEffectivePlan } from "@/lib/plans";
+import { getEffectivePlan, getProDaysRemaining, getProUrgency } from "@/lib/plans";
 import { api } from "@/lib/api";
 import { SubscriptionPaymentNotice } from "./SubscriptionPaymentNotice";
 import { SubscriptionPaymentButtons } from "./SubscriptionPaymentButtons";
@@ -30,6 +30,56 @@ export default async function AbonnementPage({
 
   const effectivePlan = getEffectivePlan(shop.plan, shop.planExpiresAt);
   const isPro = effectivePlan === "pro";
+  const daysRemaining = getProDaysRemaining(shop.plan, shop.planExpiresAt);
+  const urgency = getProUrgency(shop.plan, shop.planExpiresAt);
+
+  // Format expiry date for display (Senegal TZ)
+  const expiryFormatted = shop.planExpiresAt
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Africa/Dakar",
+      }).format(
+        typeof shop.planExpiresAt === "number"
+          ? new Date(shop.planExpiresAt > 1e12 ? shop.planExpiresAt : shop.planExpiresAt * 1000)
+          : new Date(shop.planExpiresAt)
+      )
+    : null;
+
+  // Urgency visual tokens
+  const urgencyConfig = {
+    ok: {
+      dotColor: "#0E7C66",
+      badgeBg: "#D9F1E9",
+      badgeText: "#075F4D",
+      label: "Actif",
+      progressColor: "#0E7C66",
+    },
+    warning: {
+      dotColor: "#B4531E",
+      badgeBg: "#FEF3D6",
+      badgeText: "#8A5A00",
+      label: "Expire bientôt",
+      progressColor: "#FFC83D",
+    },
+    critical: {
+      dotColor: "#C8265A",
+      badgeBg: "#FCE7EC",
+      badgeText: "#C8265A",
+      label: "Urgent",
+      progressColor: "#C8265A",
+    },
+    expired: {
+      dotColor: "#C8265A",
+      badgeBg: "#FCE7EC",
+      badgeText: "#C8265A",
+      label: "Expiré",
+      progressColor: "#C8265A",
+    },
+  } as const;
+
+  const uConfig = urgency ? urgencyConfig[urgency] : null;
 
   return (
     <div className="p-5 max-w-xl mx-auto lg:max-w-2xl min-h-screen" style={{ backgroundColor: "#0F1E3D" }}>
@@ -43,7 +93,7 @@ export default async function AbonnementPage({
 
       {params.erreur === "paiement" && (
         <div className="mb-5 rounded-2xl border-2 border-ink bg-[#FFFBF2] p-4" role="alert">
-          <p className="font-bricolage font-black text-[#C8265A]">Le paiement n’a pas pu démarrer</p>
+          <p className="font-bricolage font-black text-[#C8265A]">Le paiement n'a pas pu démarrer</p>
           <p className="mt-1 text-sm font-medium text-ink/75">Réessayez dans un instant. Si le problème persiste, le paiement en ligne doit peut-être encore être configuré.</p>
         </div>
       )}
@@ -117,18 +167,100 @@ export default async function AbonnementPage({
             </li>
           </ul>
 
-          {/* PAIEMENT DE L'ABONNEMENT */}
+          {/* BLOC STATUT PRO (visible uniquement pour les Pro actifs) */}
+          {isPro && uConfig && daysRemaining !== null && expiryFormatted && (
+            <div className="mb-6 rounded-2xl border-[2px] border-ink bg-white/95 p-4" style={{ boxShadow: "3px 3px 0 #0F1E3D" }}>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: uConfig.dotColor }}
+                  />
+                  <p className="font-bricolage font-black text-ink text-[15px]">Statut de l'abonnement</p>
+                </div>
+                <span
+                  className="text-[10px] font-black px-2.5 py-1 rounded-full border border-ink/20"
+                  style={{ backgroundColor: uConfig.badgeBg, color: uConfig.badgeText }}
+                >
+                  {uConfig.label}
+                </span>
+              </div>
+
+              {/* Barre de progression visuelle */}
+              <div className="mb-3">
+                <div
+                  className="h-2 w-full rounded-full overflow-hidden"
+                  style={{ backgroundColor: "#0F1E3D10" }}
+                  role="progressbar"
+                  aria-label="Jours restants"
+                  aria-valuemin={0}
+                  aria-valuemax={30}
+                  aria-valuenow={Math.min(daysRemaining, 30)}
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500"
+                    style={{
+                      width: `${Math.min(100, (daysRemaining / 30) * 100)}%`,
+                      backgroundColor: uConfig.progressColor,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between gap-2">
+                <div>
+                  <p className="text-sm font-bold text-ink">
+                    {daysRemaining > 0 ? (
+                      <>
+                        <span className="font-bricolage font-black text-lg" style={{ color: uConfig.dotColor }}>
+                          {daysRemaining}
+                        </span>
+                        {" "}jour{daysRemaining > 1 ? "s" : ""} restant{daysRemaining > 1 ? "s" : ""}
+                      </>
+                    ) : (
+                      <span style={{ color: "#C8265A" }}>Votre abonnement a expiré</span>
+                    )}
+                  </p>
+                  <p className="text-xs font-medium text-[#3F4B69] mt-0.5">
+                    {daysRemaining > 0
+                      ? `Actif jusqu'au ${expiryFormatted}`
+                      : `Expiré le ${expiryFormatted}`
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PAIEMENT / RENOUVELLEMENT */}
           {!isPro ? (
             <div className="space-y-3">
               <SubscriptionPaymentButtons price={formattedProPrice} />
               <p className="text-center text-xs font-semibold text-ink/75">Paiement sécurisé · Pro activé après confirmation</p>
             </div>
           ) : (
-            <div
-              className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#0F1E3D", color: "#FFC83D" }}
-            >
-              Plan Pro Actif 
+            <div className="space-y-3">
+              {/* Bouton statut actif */}
+              <div
+                className="w-full py-4 rounded-full font-bold text-[15px] border-[2.5px] border-ink flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#0F1E3D", color: "#FFC83D" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Plan Pro Actif
+              </div>
+
+              {/* Bouton prolonger */}
+              <div className="pt-2 border-t border-ink/15">
+                <p className="text-center text-xs font-bold text-ink/80 mb-3">
+                  {daysRemaining !== null && daysRemaining > 0
+                    ? "Prolongez maintenant pour ajouter 30 jours à votre échéance actuelle. Aucun jour n'est perdu."
+                    : "Renouvelez pour réactiver votre accès Pro immédiatement."
+                  }
+                </p>
+                <SubscriptionPaymentButtons price={formattedProPrice} isRenewal />
+              </div>
             </div>
           )}
         </div>

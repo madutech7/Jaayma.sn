@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, AlertTriangle, LogOut, Trash2 } from "lucide-react";
 
 export interface ConfirmModalProps {
@@ -28,7 +29,12 @@ export default function ConfirmModal({
   icon = "trash",
   isLoading = false,
 }: ConfirmModalProps) {
+  const [mounted, setMounted] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -42,11 +48,11 @@ export default function ConfirmModal({
     }
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     };
   }, [isOpen, isLoading, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const iconColors = {
     danger: { bg: "#FCE7EC", color: "#C8265A" },
@@ -60,9 +66,9 @@ export default function ConfirmModal({
     primary: "bg-[#0E7C66] text-white",
   }[variant];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
       style={{ backgroundColor: "rgba(10, 21, 48, 0.72)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoading) {
@@ -74,7 +80,7 @@ export default function ConfirmModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-sm rounded-[28px] border-[2.5px] border-ink p-6 text-ink shadow-[5px_5px_0_#0F1E3D] animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-sm rounded-[28px] border-[2.5px] border-ink p-6 text-ink shadow-[5px_5px_0_#0F1E3D] animate-in fade-in zoom-in-95 duration-150 relative z-10"
         style={{ backgroundColor: "#FFFBF2" }}
       >
         <div className="flex flex-col items-center text-center">
@@ -100,7 +106,7 @@ export default function ConfirmModal({
               type="button"
               disabled={isLoading}
               onClick={onClose}
-              className="flex-1 py-3 px-4 rounded-full font-bold text-xs border-[2px] border-ink text-ink bg-white hover:bg-neutral-50 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50"
+              className="flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink text-ink bg-white hover:bg-neutral-50 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap"
             >
               {cancelLabel}
             </button>
@@ -109,14 +115,15 @@ export default function ConfirmModal({
               type="button"
               disabled={isLoading}
               onClick={onConfirm}
-              className={`flex-1 py-3 px-4 rounded-full font-bold text-xs border-[2px] border-ink flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 ${confirmColors}`}
+              className={`flex-1 py-3 px-3 sm:px-4 rounded-full font-bold text-xs border-[2px] border-ink flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[2px_2px_0_#0F1E3D] disabled:opacity-50 whitespace-nowrap ${confirmColors}`}
             >
-              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />}
               <span>{confirmLabel}</span>
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
