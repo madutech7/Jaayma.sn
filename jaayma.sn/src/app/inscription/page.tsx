@@ -1,30 +1,66 @@
-﻿"use client";
+"use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { registerSeller, type AuthResult } from "../actions/auth";
+import { registerSeller } from "../actions/auth";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-
-const initialState: AuthResult = { error: undefined, success: false };
 
 export default function InscriptionPage() {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(registerSeller, initialState);
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const signupTracked = useRef(false);
 
+  const isLoading = isSubmitting || isPending;
+
   useEffect(() => {
-    if (state?.success && !signupTracked.current) {
-      signupTracked.current = true;
-      trackAnalyticsEvent("sign_up", { method: "phone" });
-      router.push("/espace");
+    router.prefetch("/espace");
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (isLoading) return;
+
+    setError(null);
+    setIsSubmitting(true);
+
+    const formData = new FormData();
+    formData.append("phone", phone);
+    formData.append("password", password);
+
+    try {
+      const res = await registerSeller(null, formData);
+      if (res?.error) {
+        setError(res.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (res?.success) {
+        if (!signupTracked.current) {
+          signupTracked.current = true;
+          trackAnalyticsEvent("sign_up", { method: "phone" });
+        }
+        startTransition(() => {
+          router.push("/espace");
+          router.refresh();
+        });
+      } else {
+        setIsSubmitting(false);
+      }
+    } catch {
+      setError("Une erreur inattendue est survenue lors de l'inscription.");
+      setIsSubmitting(false);
     }
-  }, [state, router]);
+  }
 
   const inputClass =
-    "w-full px-4 py-3.5 rounded-2xl text-sm font-medium outline-none border-[2.5px] border-ink focus:border-sun";
+    "w-full px-4 py-3.5 rounded-2xl text-sm font-medium outline-none border-[2.5px] border-ink focus:border-sun disabled:opacity-80";
   const inputStyle = { backgroundColor: "#fff", color: "#0F1E3D" };
 
   return (
@@ -50,7 +86,7 @@ export default function InscriptionPage() {
 
       {/*  FORMULAIRE  */}
       <div className="px-5">
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold mb-1.5" style={{ color: "#5A4200" }}>Numéro de téléphone</label>
             <div className="relative">
@@ -60,6 +96,9 @@ export default function InscriptionPage() {
                 type="tel"
                 autoComplete="tel"
                 required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={isLoading}
                 placeholder="77 123 45 67"
                 className={`${inputClass} pl-14`}
                 style={inputStyle}
@@ -75,24 +114,32 @@ export default function InscriptionPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
               className={inputClass}
               style={inputStyle}
             />
           </div>
 
-          {state?.error && (
+          {error && (
             <div className="px-4 py-3 rounded-xl border-[2px] text-sm font-medium" style={{ backgroundColor: "rgba(200,38,90,0.1)", borderColor: "#C8265A", color: "#C8265A" }}>
-              {state.error}
+              {error}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={isPending}
-            className="w-full py-4 rounded-full font-bold text-sm border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60 mt-2"
+            disabled={isLoading}
+            className="w-full py-4 rounded-full font-bold text-sm border-[2.5px] border-ink flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-80 mt-2"
             style={{ backgroundColor: "#0F1E3D", color: "#FFC83D", boxShadow: "4px 4px 0 #0F1E3D" }}
           >
-            {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer mon compte"}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Création en cours...</span>
+              </>
+            ) : (
+              "Créer mon compte"
+            )}
           </button>
         </form>
 
