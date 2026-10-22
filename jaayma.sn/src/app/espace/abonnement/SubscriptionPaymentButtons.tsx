@@ -28,92 +28,67 @@ export function SubscriptionPaymentButtons({
     setPendingMethod(method);
   }
 
-  const isProPlus = plan === "pro_plus";
   const actionLabel = isRenewal
-    ? isProPlus ? "Prolonger Pro+ avec" : "Prolonger avec"
-    : isProPlus ? "Passer à Pro+ avec" : "Payer avec";
+    ? "Prolonger avec"
+    : plan === "pro_plus" ? "Passer à Pro+ avec" : "Payer avec";
+  const paymentMethods = [
+    { method: "wave", label: "Wave", logo: "/payments/wave.png" },
+    { method: "orange_money", label: "Orange Money", logo: "/payments/orange-money.svg" },
+  ] as const;
 
   return (
     <>
       <div className="grid grid-cols-2 gap-2.5">
-        <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "wave")}>
-          <input type="hidden" name="method" value="wave" />
-          <input type="hidden" name="plan" value={plan} />
-          <button
-            type="submit"
-            disabled={isPending || !price}
-            className="flex min-h-[112px] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-[2.5px] border-ink px-2 py-3 text-center text-xs font-bold transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-80 sm:min-h-[88px] sm:flex-row sm:gap-2 sm:px-3 sm:text-left sm:text-[13px]"
-            style={{ backgroundColor: "#0F1E3D", color: "#fff", boxShadow: "4px 4px 0 #0F1E3D" }}
+        {paymentMethods.map(({ method, label, logo }) => (
+          <form
+            key={method}
+            action={startProSubscriptionPayment}
+            onSubmit={(event) => markPending(event, method)}
           >
-            {pendingMethod === "wave" ? (
-              <Loader2 size={18} className="shrink-0 animate-spin" />
-            ) : price && !isPending ? (
-              <Image
-                src="/payments/wave.png"
-                alt=""
-                aria-hidden="true"
-                width={36}
-                height={36}
-                className="h-8 w-8 shrink-0 rounded-full object-contain sm:h-9 sm:w-9"
-              />
-            ) : null}
-            <span className="flex min-w-0 flex-col items-center leading-tight sm:items-start">
-              {pendingMethod === "wave"
-                ? "Création du paiement…"
-                : isPending
-                ? "Patientez…"
-                : price
-                ? <>
-                    <span className="text-[10px] font-semibold sm:text-[11px]">{actionLabel}</span>
-                    <span className="font-black">Wave</span>
-                    <span className="text-[11px] sm:text-xs">{price} F</span>
-                  </>
-                : "Prix indisponible"}
-            </span>
-          </button>
-        </form>
-
-        <form action={startProSubscriptionPayment} onSubmit={(event) => markPending(event, "orange_money")}>
-          <input type="hidden" name="method" value="orange_money" />
-          <input type="hidden" name="plan" value={plan} />
-          <button
-            type="submit"
-            disabled={isPending || !price}
-            className="flex min-h-[112px] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-[2.5px] border-ink px-2 py-3 text-center text-xs font-bold transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-80 sm:min-h-[88px] sm:flex-row sm:gap-2 sm:px-3 sm:text-left sm:text-[13px]"
-            style={{ backgroundColor: "#FFFBF2", color: "#0F1E3D", boxShadow: "4px 4px 0 #0F1E3D" }}
-          >
-            {pendingMethod === "orange_money" ? (
-              <Loader2 size={18} className="shrink-0 animate-spin" />
-            ) : price && !isPending ? (
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E6DDC8] bg-white p-0.5 sm:h-9 sm:w-9">
-                <Image
-                  src="/payments/orange-money.svg"
-                  alt=""
+            <input type="hidden" name="method" value={method} />
+            <input type="hidden" name="plan" value={plan} />
+            <button
+              type="submit"
+              disabled={isPending || !price}
+              className="flex min-h-[84px] w-full items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-[#FDF9F2] px-2.5 py-2 text-left text-ink shadow-[4px_5px_0_#151D3B] transition-transform active:translate-y-0.5 active:shadow-[2px_3px_0_#151D3B] disabled:cursor-wait disabled:opacity-80 sm:min-h-[92px] sm:gap-2.5 sm:px-3"
+            >
+              {pendingMethod === method ? (
+                <Loader2 size={20} className="shrink-0 animate-spin" aria-hidden="true" />
+              ) : price ? (
+                <span
+                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+                    method === "orange_money" ? "border border-[#E6DDC8] bg-white" : ""
+                  }`}
                   aria-hidden="true"
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
-                />
+                >
+                  <Image
+                    src={logo}
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="h-full w-full rounded-full object-contain"
+                  />
+                </span>
+              ) : null}
+              <span className="flex min-w-0 flex-col leading-tight">
+                {pendingMethod === method
+                  ? "Création du paiement…"
+                  : isPending
+                  ? "Patientez…"
+                  : price
+                  ? <>
+                      <span className="text-[9px] font-semibold text-[#5B5640] sm:text-[10px]">{actionLabel}</span>
+                      <span className="text-[13px] font-black sm:text-sm">{label}</span>
+                      <span className="text-[11px] font-bold sm:text-xs">{price} F</span>
+                    </>
+                  : "Prix indisponible"}
               </span>
-            ) : null}
-            <span className="flex min-w-0 flex-col items-center leading-tight sm:items-start">
-              {pendingMethod === "orange_money"
-                ? "Création du paiement…"
-                : isPending
-                ? "Patientez…"
-                : price
-                ? <>
-                    <span className="text-[10px] font-semibold sm:text-[11px]">{actionLabel}</span>
-                    <span className="font-black">Orange Money</span>
-                    <span className="text-[11px] sm:text-xs">{price} F</span>
-                  </>
-                : "Prix indisponible"}
-            </span>
-          </button>
-        </form>
+            </button>
+          </form>
+        ))}
       </div>
       {(isPending || !price) && (
-        <p className="text-center text-xs font-medium text-[#C3CCE6]" role="status" aria-live="polite">
+        <p className="text-center text-xs font-medium text-[#5B5640]" role="status" aria-live="polite">
           {isPending
             ? "Préparation sécurisée du paiement, cela peut prendre quelques secondes. Ne fermez pas cette page."
             : "Le tarif ne peut pas être chargé. Actualisez la page pour réessayer."}
