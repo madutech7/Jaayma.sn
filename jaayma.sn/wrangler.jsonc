@@ -14,8 +14,8 @@
     ]
   },
   "vars": {
-    "API_BASE_URL": "https://madutech7-samaxaalis-backend.hf.space",
-    "NEXT_PUBLIC_API_URL": "https://madutech7-samaxaalis-backend.hf.space",
+    "API_BASE_URL": "https://madutech7-jaaymaa.hf.space",
+    "NEXT_PUBLIC_API_URL": "https://madutech7-jaaymaa.hf.space",
     "GA_MEASUREMENT_ID": "G-2SVKFRMHT3"
   },
   "assets": {

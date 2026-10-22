@@ -15,7 +15,7 @@ export default {
         const backendUrl =
           (typeof env.API_BASE_URL === "string" && env.API_BASE_URL) ||
           (typeof env.NEXT_PUBLIC_API_URL === "string" && env.NEXT_PUBLIC_API_URL) ||
-          "https://madutech7-samaxaalis-backend.hf.space";
+          "https://madutech7-jaaymaa.hf.space";
 
         const targetUrl = `${backendUrl.replace(/\/$/, "")}/health`;
 

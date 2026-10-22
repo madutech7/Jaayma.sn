@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const backendUrl =
     process.env.API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://madutech7-samaxaalis-backend.hf.space';
+    'https://madutech7-jaaymaa.hf.space';
 
   const targetUrl = `${backendUrl.replace(/\/$/, '')}/health`;
   const startTime = Date.now();

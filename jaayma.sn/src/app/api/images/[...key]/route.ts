@@ -7,7 +7,7 @@ const API_BASE_URL =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "production"
-    ? "https://madutech7-samaxaalis-backend.hf.space"
+    ? "https://madutech7-jaaymaa.hf.space"
     : "http://127.0.0.1:4000");
 
 async function getLegacyImage(key: string): Promise<NextResponse | null> {

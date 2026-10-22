@@ -587,7 +587,7 @@ export class SubscriptionsService {
   private getWebhookUrl() {
     const configuredUrl = this.config.get<string>('UNITECHPAY_WEBHOOK_URL') ?? process.env.UNITECHPAY_WEBHOOK_URL;
     const renderUrl = this.config.get<string>('RENDER_EXTERNAL_URL') ?? process.env.RENDER_EXTERNAL_URL;
-    const defaultBase = renderUrl?.trim() || 'https://madutech7-samaxaalis-backend.hf.space';
+    const defaultBase = renderUrl?.trim() || 'https://madutech7-jaaymaa.hf.space';
     const rawUrl = configuredUrl?.trim() || `${defaultBase.replace(/\/$/, '')}/subscriptions/unitechpay/webhook`;
     try {
       const url = new URL(rawUrl);
