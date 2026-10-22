@@ -50,13 +50,13 @@ export function SubscriptionPaymentButtons({
             <button
               type="submit"
               disabled={isPending || !price}
-              className="flex min-h-[84px] w-full items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-[#FDF9F2] px-2.5 py-2 text-left text-ink shadow-[4px_5px_0_#151D3B] transition-transform active:translate-y-0.5 active:shadow-[2px_3px_0_#151D3B] disabled:cursor-wait disabled:opacity-80 sm:min-h-[92px] sm:gap-2.5 sm:px-3"
+              className="flex min-h-[68px] w-full items-center justify-center gap-1.5 rounded-full border-[2.5px] border-ink bg-[#FDF9F2] px-2 py-1.5 text-left text-ink shadow-[3px_4px_0_#151D3B] transition-transform active:translate-y-0.5 active:shadow-[2px_3px_0_#151D3B] disabled:cursor-wait disabled:opacity-80 sm:min-h-[84px] sm:gap-2.5 sm:px-3 sm:py-2 sm:shadow-[4px_5px_0_#151D3B]"
             >
               {pendingMethod === method ? (
                 <Loader2 size={20} className="shrink-0 animate-spin" aria-hidden="true" />
               ) : price ? (
                 <span
-                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
                     method === "orange_money" ? "border border-[#E6DDC8] bg-white" : ""
                   }`}
                   aria-hidden="true"
@@ -77,9 +77,9 @@ export function SubscriptionPaymentButtons({
                   ? "Patientez…"
                   : price
                   ? <>
-                      <span className="text-[9px] font-semibold text-[#5B5640] sm:text-[10px]">{actionLabel}</span>
-                      <span className="text-[13px] font-black sm:text-sm">{label}</span>
-                      <span className="text-[11px] font-bold sm:text-xs">{price} F</span>
+                      <span className="text-[8px] font-semibold text-[#5B5640] sm:text-[10px]">{actionLabel}</span>
+                      <span className="text-xs font-black sm:text-sm">{label}</span>
+                      <span className="text-[10px] font-bold sm:text-xs">{price} F</span>
                     </>
                   : "Prix indisponible"}
               </span>
