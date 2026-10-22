@@ -54,3 +54,4 @@ coverage/
 # Cache
 .turbo/
 .cache/
+hf-space/

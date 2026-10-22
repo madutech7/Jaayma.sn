@@ -14,8 +14,8 @@
     ]
   },
   "vars": {
-    "API_BASE_URL": "https://jaayma-sn.onrender.com",
-    "NEXT_PUBLIC_API_URL": "https://jaayma-sn.onrender.com",
+    "API_BASE_URL": "https://madutech7-samaxaalis-backend.hf.space",
+    "NEXT_PUBLIC_API_URL": "https://madutech7-samaxaalis-backend.hf.space",
     "GA_MEASUREMENT_ID": "G-2SVKFRMHT3"
   },
   "assets": {
