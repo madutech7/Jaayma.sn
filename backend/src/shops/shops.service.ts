@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { cachePublicExplore } from '../public-explore-cache';
 
 const shopSchema = z.object({
   ownerId: z.string().optional().nullable(),
@@ -108,23 +109,49 @@ export class ShopsService {
       ];
     }
 
-    const items = await this.prisma.shop.findMany({
-      where: whereClause,
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
-      skip: (page - 1) * limit,
-      take: limit + 1,
-      include: {
-        products: {
-          where: { status: 'ACTIVE' },
-          take: 4,
-          include: { images: { orderBy: { position: 'asc' }, take: 1 } },
-        },
-      },
-    });
+    const cacheKey = JSON.stringify(['shops', query ?? '', options.category ?? '', page, limit]);
 
-    const hasNextPage = items.length > limit;
-    if (hasNextPage) items.pop();
-    return { items, hasNextPage };
+    return cachePublicExplore(cacheKey, async () => {
+      const items = await this.prisma.shop.findMany({
+        where: whereClause,
+        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit + 1,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          headline: true,
+          description: true,
+          area: true,
+          category: true,
+          deliveryFee: true,
+          logoUrl: true,
+          plan: true,
+          planExpiresAt: true,
+          status: true,
+          products: {
+            where: { status: 'ACTIVE' },
+            orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+            take: 3,
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              images: {
+                orderBy: { position: 'asc' },
+                take: 1,
+                select: { id: true, productId: true, url: true, alt: true, position: true },
+              },
+            },
+          },
+        },
+      });
+
+      const hasNextPage = items.length > limit;
+      if (hasNextPage) items.pop();
+      return { items, hasNextPage };
+    });
   }
 
   async create(input: unknown, ownerId: string) {

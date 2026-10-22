@@ -112,7 +112,7 @@ model Shop {
   orders                 Order[]
   subscriptionPayments   SubscriptionPayment[]
 
-  @@index([status, featured])
+  @@index([status, featured, createdAt])
   @@index([area])
   @@index([category])
 }
@@ -152,7 +152,7 @@ model Product {
   images      ProductImage[]
   orderItems  OrderItem[]
 
-  @@index([shopId, status])
+  @@index([shopId, status, position])
   @@index([shopId, position])
   @@index([createdAt])
 }

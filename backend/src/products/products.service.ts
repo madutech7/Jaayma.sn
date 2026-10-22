@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { cachePublicExplore } from '../public-explore-cache';
 
 const productImageSchema = z.object({
   url: z.string().min(1),
@@ -70,50 +71,54 @@ export class ProductsService {
         : {}),
     };
 
-    const results = await this.prisma.product.findMany({
-      where,
-      orderBy: [
-        { shop: { featured: 'desc' } },
-        { shop: { createdAt: 'desc' } },
-        { position: 'asc' },
-        { createdAt: 'desc' },
-      ],
-      skip: (page - 1) * limit,
-      take: limit + 1,
-      select: {
-        id: true,
-        shopId: true,
-        name: true,
-        description: true,
-        price: true,
-        stock: true,
-        position: true,
-        status: true,
-        optionsJson: true,
-        images: {
-          orderBy: { position: 'asc' },
-          take: 1,
-          select: { id: true, productId: true, url: true, alt: true, position: true },
-        },
-        shop: {
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            logoUrl: true,
-            deliveryFee: true,
-            category: true,
-            plan: true,
-            planExpiresAt: true,
+    const cacheKey = JSON.stringify(['products', query ?? '', options.category ?? '', page, limit]);
+
+    return cachePublicExplore(cacheKey, async () => {
+      const results = await this.prisma.product.findMany({
+        where,
+        orderBy: [
+          { shop: { featured: 'desc' } },
+          { shop: { createdAt: 'desc' } },
+          { position: 'asc' },
+          { createdAt: 'desc' },
+        ],
+        skip: (page - 1) * limit,
+        take: limit + 1,
+        select: {
+          id: true,
+          shopId: true,
+          name: true,
+          description: true,
+          price: true,
+          stock: true,
+          position: true,
+          status: true,
+          optionsJson: true,
+          images: {
+            orderBy: { position: 'asc' },
+            take: 1,
+            select: { id: true, productId: true, url: true, alt: true, position: true },
+          },
+          shop: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              logoUrl: true,
+              deliveryFee: true,
+              category: true,
+              plan: true,
+              planExpiresAt: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return {
-      items: results.slice(0, limit),
-      hasNextPage: results.length > limit,
-    };
+      return {
+        items: results.slice(0, limit),
+        hasNextPage: results.length > limit,
+      };
+    });
   }
 
   async findById(id: string, ownerId: string) {
