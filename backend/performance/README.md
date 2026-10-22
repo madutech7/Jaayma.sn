@@ -1,6 +1,6 @@
 # Tests de charge avec k6
 
-Les scénarios ciblent l'API publique Jaayma. Le test de charge envoie des requêtes GET sur `/health`, `/shops/explore` et `/products/explore` : il ne crée ni commande ni paiement.
+Les scénarios ciblent l'API publique Jaayma. Le profil de montée en charge n'envoie que des requêtes GET et ne crée ni commande ni paiement. `/health` sert uniquement au contrôle préalable, pas au parcours des VU, car cette route ne lit pas Neon.
 
 ## Installation de k6 sur Windows
 
@@ -28,15 +28,17 @@ Dans un autre terminal, depuis la racine du dépôt :
 k6 run backend/performance/k6/jaayma-load-test.js
 ```
 
-Par défaut, le test cible `http://127.0.0.1:4000` et monte progressivement jusqu'à 20 utilisateurs virtuels sur environ cinq minutes. Les résultats incluent le taux d'erreur, les contrôles de réponse et les latences par endpoint.
+Par défaut, le test cible `http://127.0.0.1:4000` et monte progressivement jusqu'à 20 utilisateurs virtuels sur environ cinq minutes. Chaque VU simule une session qui consulte les boutiques et les produits ; environ un parcours sur quatre ouvre la deuxième page produits. Les contrôles vérifient aussi que les réponses contiennent un tableau `items`.
 
-Chaque réponse non-200 affiche maintenant l'endpoint, le statut HTTP, la durée, le type de contenu et un extrait limité du corps. Cela permet de distinguer une réponse 4xx/5xx d'un délai réseau dans le rapport k6.
+Un VU est une session active simultanée, pas un vendeur, un visiteur unique ou un nombre d'utilisateurs par jour. Le nombre de requêtes dépend des pauses et du parcours. Le profil teste surtout les lectures de catalogue ; il ne mesure pas les commandes, les paiements ni les actions d'écriture.
+
+Chaque réponse non-200 affiche l'endpoint, le statut HTTP, la durée, le type de contenu et un extrait limité du corps. Le rapport sépare aussi l'attente de connexion, le temps avant le premier octet (TTFB), la connexion/TLS, l'envoi et la réception du corps. `http_req_duration` mesure la durée de la requête côté k6 ; le TTFB inclut encore le trajet réseau et ne représente donc pas uniquement le temps CPU du serveur.
 
 Le pool Prisma est réglé par `PRISMA_CONNECTION_LIMIT` (15 par défaut dans la configuration du projet). Cette limite s'applique à chaque processus API : avec plusieurs instances, additionner leurs limites avant de choisir la valeur. Augmenter `pool_timeout` seul retarde les erreurs `P2024` sans augmenter le débit.
 
 Les endpoints publics d'exploration gardent les résultats identiques pendant 15 secondes par processus et mutualisent les requêtes identiques simultanées. Le cache est borné à 128 paramètres différents et les réponses d'erreur ne sont pas gardées. Les changements de boutiques et produits peuvent donc mettre au plus 15 secondes à apparaître sur une instance API.
 
-Pour mesurer la limite, commencer par 10 VU, puis 15, 20 et 25. Comparer le p95 et `http_req_failed`; arrêter la montée si les erreurs `P2024` apparaissent. Le test par défaut sollicite directement l'API locale et contourne le cache de la couche web.
+Pour mesurer la limite, commencer par 3 à 5 VU, puis augmenter par petits paliers en surveillant le p95, `http_req_failed`, Neon et les journaux Render. Arrêter la montée si les erreurs apparaissent ou si la latence devient instable. Un résultat sans erreur HTTP mais avec des seuils p95 dépassés signifie que l'API répond, mais trop lentement selon les objectifs du profil. Le test par défaut sollicite directement l'API et contourne le cache de la couche web.
 
 Pour choisir un autre nombre d'utilisateurs virtuels ou une API de test autorisée :
 
