@@ -12,6 +12,8 @@ import { cache } from "react";
 import { api } from "@/lib/api";
 import { DEFAULT_SHOP_THEME, getShopThemeForeground, SHOP_THEME_COLORS } from "@/lib/shop-theme";
 import { getEffectivePlan } from "@/lib/plans";
+import { getRequestOrigin } from "@/lib/site-url";
+import { getSocialImageUrl } from "@/lib/social-metadata";
 import ProBadge from "@/components/ProBadge";
 import { MapPin, Star, Truck, ShoppingBag } from "lucide-react";
 
@@ -22,10 +24,39 @@ const getShopBySlug = cache(async (shopSlug: string) => {
 export async function generateMetadata({ params }: { params: Promise<{ shopSlug: string }> }) {
   const { shopSlug } = await params;
   const shop = await getShopBySlug(shopSlug);
-  if (!shop || !shop.isPublished) return { title: "Boutique introuvable" };
+  if (!shop || !shop.isPublished) {
+    return { title: "Boutique introuvable | Jaaymaa", robots: { index: false, follow: false } };
+  }
+
+  const origin = await getRequestOrigin();
+  const url = new URL(`/${encodeURIComponent(shop.slug)}`, origin).toString();
+  const title = `${shop.name} | Jaaymaa`;
+  const description = (shop.tagline || shop.description || `Découvre la boutique ${shop.name} sur Jaaymaa.`)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+  const firstProductImage = shop.products?.find((product) => product.imageUrls?.[0])?.imageUrls?.[0];
+  const image = getSocialImageUrl(
+    origin,
+    getImageUrl(shop.coverKey ?? shop.coverUrl),
+    firstProductImage,
+    getImageUrl(shop.logoKey ?? shop.logoUrl),
+  );
+
   return {
-    title: `${shop.name} | Jaaymaa`,
-    description: shop.tagline || `Bienvenue sur la boutique ${shop.name}`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      siteName: "Jaaymaa",
+      locale: "fr_SN",
+      title,
+      description,
+      url,
+      images: [{ url: image, alt: `Aperçu de la boutique ${shop.name}` }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

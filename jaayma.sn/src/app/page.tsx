@@ -11,6 +11,11 @@ export const metadata = {
     description: "Crée ta boutique en ligne en 2 minutes et vends sur WhatsApp.",
     locale: "fr_SN",
     type: "website",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "Jaaymaa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/icons/icon-512.png"],
   },
 };
 

@@ -7,14 +7,54 @@ import AutoRefresh from "./AutoRefresh";
 import MarketingPixel from "@/components/MarketingPixel";
 import { OrderStatus } from "@/lib/orders";
 import { getRequestOrigin } from "@/lib/site-url";
+import { getImageUrl } from "@/lib/images";
+import { getSocialImageUrl } from "@/lib/social-metadata";
 import { api } from "@/lib/api";
 import { getEffectivePlan } from "@/lib/plans";
 import ProBadge from "@/components/ProBadge";
 import { ArrowUpRight } from "lucide-react";
 
-export const metadata = {
-  title: "Commande envoyée | Jaaymaa",
-};
+export async function generateMetadata({ params }: {
+  params: Promise<{ shopSlug: string; publicToken: string }>;
+}) {
+  const { shopSlug, publicToken } = await params;
+  const order = await api.getOrderByReference(publicToken);
+  const shop = order?.shop ?? (order ? await api.getShopBySlug(shopSlug) : null);
+
+  if (!order || !shop) {
+    return {
+      title: "Suivi de commande | Jaaymaa",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const origin = await getRequestOrigin();
+  const url = new URL(`/${encodeURIComponent(shopSlug)}/commande/${encodeURIComponent(publicToken)}`, origin).toString();
+  const title = `Suivi de commande chez ${shop.name} | Jaaymaa`;
+  const description = `Consulte l’avancement de ta commande chez ${shop.name} sur Jaaymaa.`;
+  const image = getSocialImageUrl(
+    origin,
+    getImageUrl(shop.coverKey ?? shop.coverUrl),
+    getImageUrl(shop.logoKey ?? shop.logoUrl),
+  );
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    robots: { index: false, follow: false },
+    openGraph: {
+      type: "website",
+      siteName: "Jaaymaa",
+      locale: "fr_SN",
+      title,
+      description,
+      url,
+      images: [{ url: image, alt: `Boutique ${shop.name}` }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   new:             "Commande reçue",

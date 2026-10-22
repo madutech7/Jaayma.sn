@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     siteName: "Jaaymaa",
     locale: "fr_SN",
     type: "website",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "Jaaymaa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/icons/icon-512.png"],
   },
   robots: {
     index: true,
